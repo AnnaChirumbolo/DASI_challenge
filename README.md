@@ -5,11 +5,11 @@ Ecco la main repo per DASI challenge 2021!
 
 Partecipanti
 
-Anna Chirumbolo
+Anna Chirumbolo @annachirumbolo
 
-Alberto Baccari 
+Alberto Baccari @Menadel87
 
-Cinzia Schiavuta
+Cinzia Schiavuta @girasara
 
 ----
 
