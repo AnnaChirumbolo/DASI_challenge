@@ -153,7 +153,7 @@ doganella_filtered_save <- doganella_filtered %>%
 
 # saving 
 
-write.csv(doganella_filtered_save, "DOGANELLA_filtered.csv")
+write.csv(doganella_filtered_save, "processed_data/DOGANELLA_filtered.csv")
 
 ################################################################################
 ################################################################################
@@ -292,9 +292,9 @@ lupa_trial_outliers <- lupa_filtered %>%
 
 # saving with and without outliers .csv 
 
-write.csv(lupa_filtered, "LUPA_filtered.csv")
+write.csv(lupa_filtered, "processed_data/LUPA_filtered.csv")
 
-write.csv(lupa_trial_outliers, "LUPA_filtered_noout.csv")
+write.csv(lupa_trial_outliers, "processed_data/LUPA_filtered_noout.csv")
 
 
 ################################################################################
@@ -398,10 +398,12 @@ canneto_filtered[is.na(canneto_filtered$Rainfall_Settefrati),]
 
 ### saving 
 
-write.csv(canneto_filtered, "MADONNA_DI_CANNETO_filtered.csv")
+write.csv(canneto_filtered, "processed_data/MADONNA_DI_CANNETO_filtered.csv")
 
 
 
 ################################################################################
 ############################# Fine #############################################
+
+
 
