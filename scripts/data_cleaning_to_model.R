@@ -129,11 +129,6 @@ str(doganella7)
 
 
 
-### ciao alberto
-
-
-
-
 
 
 
