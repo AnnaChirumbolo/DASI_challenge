@@ -12,6 +12,7 @@ library(imputeTS)
 library(ggplot2)
 library(zoo)
 library(data.table)
+library(lubridate)
 
 ###############
 ##############
@@ -108,14 +109,28 @@ doganella6 <-setnames(doganella5, old = colnames(doganella5[,23:31]),
                                      "imp9"))
 
 
+rm(doganella7)
+
 doganella7 <- doganella6 %>% 
-  gather(key="imp", value = "imputed_depth_to_gw.m",23:31)
+  gather(key="imp", value = "imputed_depth_to_gw.m",23:31) %>%
+  mutate(Date = ymd(Date))
   
-  
+str(doganella7)
+
+
 ## vis with imputation 
 
 (imp_vis <- ggplot(doganella7, aes(Date, imputed_depth_to_gw.m, color = imp,
                                    group = imp))+
-    geom_line())
+    geom_line()+
+    theme_classic()+
+    scale_x_date(date_breaks = "1 year", date_labels = "%Y"))
+
+
+
+
+
+
+
 
 
