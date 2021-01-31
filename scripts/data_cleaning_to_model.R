@@ -269,6 +269,11 @@ View(doganella9)
     geom_boxplot()+
     theme_classic())
 
+# saving 
+
+ggsave("img/doganella_boxplot.jpg", dpi = 500, width = 10, height = 7)
+
+
 
 
 
