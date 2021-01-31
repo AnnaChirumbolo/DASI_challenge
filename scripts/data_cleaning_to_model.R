@@ -99,7 +99,8 @@ doganella4 <- data.frame(doganella, lapply(doganella[,14:22], na.approx))
 
 ## using na.ma from imputeTS
 
-doganella5 <- data.frame(doganella, lapply(doganella[,14:22], function(x) na_ma(x, k=1)))
+doganella5 <- data.frame(doganella, lapply(doganella[,14:22], 
+                                                     function(x) na_ma(x, k=1)))
 
 doganella6 <-setnames(doganella5, old = colnames(doganella5[,23:31]),
                       new = c("imp1","imp2",
@@ -125,6 +126,15 @@ str(doganella7)
     geom_line()+
     theme_classic()+
     scale_x_date(date_breaks = "1 year", date_labels = "%Y"))
+
+
+
+
+
+
+
+
+
 
 
 
