@@ -608,21 +608,163 @@ lupa3 <- lupa2 %>% select(-abs.flow_rate) %>%
   write.csv("processed_data//LUPA_to_model.csv")
 
 
+###################################################################################
+###################################################################################
 
 
 
+#### MADONNA DI CANNETO WATER SPRING ####
+
+# loading file 
+canneto <- read.csv("processed_data/MADONNA_DI_CANNETO_filtered.csv")
+
+str(canneto)
+
+canneto1 <- canneto %>% 
+  mutate(Date = ymd(Date),
+         flow_rate = abs(Flow_Rate_Madonna_di_Canneto)) %>%
+  select(-X, -Flow_Rate_Madonna_di_Canneto)
+
+
+str(canneto1)
+
+summary(canneto1)
+
+#### checking for missing ####
+
+statsNA(canneto1$flow_rate)
+
+(vis_canneto <- ggplot(canneto1, aes(Date, flow_rate))+
+    geom_line()+
+    theme_classic())
+
+ggplot_na_distribution(canneto1$flow_rate)
+
+
+# rain 
+
+statsNA(canneto1$Rainfall_Settefrati) # massive gap
+
+(vis_rain_canneto <- ggplot(canneto1, aes(Date, Rainfall_Settefrati))+
+    geom_line()+
+    theme_classic()) # last years of missing data... damn it
+
+ggplot_na_distribution(canneto1$Rainfall_Settefrati)
+# yep... damn it 
+
+
+# temp 
+
+statsNA(canneto1$Temperature_Settefrati)
+
+(vis_temp_canneto <- ggplot(canneto1, aes(Date, Temperature_Settefrati))+
+    geom_line()+
+    theme_classic()) # same thing for temperature 
+
+ggplot_na_distribution(canneto1$Temperature_Settefrati)
+
+#### either predict them or find meteo data
+
+#### fixing missing data for target ####
+
+canneto2 <- canneto1 %>% 
+  mutate(imp_flow_rate = na_ma(flow_rate))
+summary(canneto2)
+
+(imp_canneto <- ggplot(canneto2, aes(Date, imp_flow_rate))+
+    geom_line()+
+    theme_classic()) # not ideal - particularly for massive gap of 100+ rows ...
+# but it's the best option i guess
 
 
 
+#### outliers ####
+
+# target
+
+  # hist 
+(hist_canneto <- ggplot(canneto2, aes(imp_flow_rate))+
+   geom_histogram()+
+   theme_classic())
+
+  # boxplot
+(box_canneto <- ggplot(canneto2, aes(y = imp_flow_rate))+
+    geom_boxplot()+
+    theme_classic())
+  # no outliers visually 
+
+  # stats
+out_canneto <- boxplot.stats(canneto2$imp_flow_rate)
+out_canneto
+  # confirmed no out 
+
+  # grubbs test 
+test_canneto <- grubbs.test(canneto2$imp_flow_rate)
+test_canneto # confirmed no out 
+
+# rain 
+
+  # hist 
+(histr_canneto <- ggplot(canneto2, aes(Rainfall_Settefrati))+
+    geom_histogram()+
+    theme_classic())
+  # a bit of tail 
+
+  # boxplot 
+(boxr_canneto <- ggplot(canneto2, aes(y = Rainfall_Settefrati))+
+    geom_boxplot()+
+    theme_classic())
+
+  # stats 
+outr_canneto <- boxplot.stats(canneto2$Rainfall_Settefrati)$out
+outr_canneto
+
+  # grubbs test 
+outr_canneto_test <- grubbs.test(canneto2$Rainfall_Settefrati)
+outr_canneto_test # max value seems to be an outlier - statistically speaking
+
+  # let's visualise outliers over time 
+outr_canneto_ind <- which(canneto2$Rainfall_Settefrati %in% c(outr_canneto))
+outr_canneto_ind
+
+df_outr_canneto <- canneto2[outr_canneto_ind,]
+View(df_outr_canneto)
+
+    # plot
+(outr_canneto <- ggplot(df_outr_canneto, aes(Date, Rainfall_Settefrati))+
+    geom_point()+
+    theme_classic())
+  # spread out over time
+  # keeping them all 
 
 
+# temp 
+
+  # hist 
+(histt_canneto <- ggplot(canneto2, aes(Temperature_Settefrati))+
+    geom_histogram()+
+    theme_classic())
+
+  # boxplot
+(boxt_canneto <- ggplot(canneto2, aes(y = Temperature_Settefrati))+
+    geom_boxplot()+
+    theme_classic())
+  # no out 
+
+  # checking statistically 
+outt_canneto <- boxplot.stats(canneto2$Temperature_Settefrati)
+outt_canneto
+  # no out 
+
+  # grubbs test 
+testt_canneto <- grubbs.test(canneto2$Temperature_Settefrati)
+testt_canneto # confirmed stats - no out 
 
 
+#### saving (so far) ####
 
-
-
-
-
-
+canneto3 <- canneto2 %>% 
+  select(-flow_rate) %>%
+  write.csv("processed_data/MADONNA_DI_CANNETO_to_model.csv")
 
 
