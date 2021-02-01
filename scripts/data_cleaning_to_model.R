@@ -21,7 +21,7 @@ library(outliers)
 ##############
 
 
-#### doganella #####
+#### DOGANELLA AQUIFER #####
 
 doganella <- read.csv("processed_data/DOGANELLA_filtered.csv")
 
@@ -477,6 +477,7 @@ str(doganella_vol)
     facet_wrap(vars(pozzo))+
     theme_classic())
 
+#######################################################################################################
 ## to use these data:
 # need to remove the first years where there's total absence
 # ohterwise how to predict it? impossible 
@@ -490,6 +491,13 @@ str(doganella_vol)
 # and just use rain and temp as features 
 #######################################################################################################
 
+#### saving dataset as it is so far ####
+
+write.csv(doganella11,"processed_data/DOGANELLA_to_model.csv")
+
+
+
+#### LUPA WATER SPRING ####
 
 
 
