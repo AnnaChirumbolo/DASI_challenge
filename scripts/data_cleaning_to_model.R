@@ -500,6 +500,122 @@ write.csv(doganella11,"processed_data/DOGANELLA_to_model.csv")
 #### LUPA WATER SPRING ####
 
 
+lupa <- read.csv("processed_data/LUPA_filtered.csv")
+
+str(lupa)
+
+lupa1 <- lupa %>%
+  select(-X, -Flow_Rate_Lupa) %>%
+  mutate(Date = ymd(Date))
+
+summary(lupa1)
+
+statsNA(lupa1$abs.flow_rate)
+ggplot_na_distribution(lupa1$abs.flow_rate)
+
+
+(hist_rain_lupa <- ggplot(lupa1, aes(Rainfall_Terni))+
+    geom_histogram()+
+    theme_classic())
+
+
+(box_rain_lupa <- ggplot(lupa1, aes(y = Rainfall_Terni))+
+    geom_boxplot()+
+    theme_classic())
+
+
+#### dealing with missing first - target ####
+
+lupa2 <- lupa1 %>% 
+  mutate(imp_flow_rate = na_ma(abs.flow_rate, k = 1))
+
+# vis 
+
+(imp_lupa <- ggplot(lupa2, aes(Date, imp_flow_rate, group = 1))+
+    geom_line()+
+    theme_classic())
+  # goodies 
+
+#### dealing with outliers - target ####
+
+
+# hist 
+
+(hist_lupa <- ggplot(lupa2, aes(imp_flow_rate))+
+   geom_histogram()+
+   theme_classic())
+
+
+# boxplot
+
+(box_lupa <- ggplot(lupa2, aes(y = imp_flow_rate))+
+    geom_boxplot()+
+    theme_classic())
+
+
+# statistically 
+
+out_lupa <- boxplot.stats(lupa2$imp_flow_rate)$out
+out_lupa
+
+out_lupa_ind <- which(lupa2$imp_flow_rate %in% c(out_lupa))
+out_lupa_ind
+
+  # checking where these outliers occur in time 
+df_out_lupa <- lupa2[out_lupa_ind,]
+View(df_out_lupa)
+
+  # plotting 
+
+(vis_out_lupa <- ggplot(df_out_lupa, aes(Date, imp_flow_rate))+
+    geom_point()+
+    theme_classic()) # 2009 - outliers... is there a particular reason? 
+
+# grubbs test 
+
+test_lupa <- grubbs.test(lupa2$imp_flow_rate)
+test_lupa
+  # will just change value approx 0 
+
+
+boxplot.stats(lupa2$imp_flow_rate) # lower quartile 86.26
+
+lupa2$imp_flow_rate[lupa2$imp_flow_rate == 0] <- 86.26
+
+summary(lupa2$imp_flow_rate)
+
+## substituted lowest value = 0, to lower quartile value
+
+## checking with boxplot 
+
+(out_vis_lupa <- ggplot(lupa2, aes(y = imp_flow_rate))+
+    geom_boxplot()+
+    theme_classic())
+
+  # all the upper values above whisket stay 
+
+## vis distribution over time 
+(noout_lupa <- ggplot(lupa2, aes(Date, imp_flow_rate))+
+    geom_line()+
+    theme_classic())
+
+
+summary(lupa2)
+
+## saving dataset 
+
+lupa3 <- lupa2 %>% select(-abs.flow_rate) %>% 
+  write.csv("processed_data//LUPA_to_model.csv")
+
+
+
+
+
+
+
+
+
+
 
 
 
