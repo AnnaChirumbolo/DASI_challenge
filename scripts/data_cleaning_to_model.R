@@ -782,7 +782,67 @@ statsNA(canneto1$Temperature_Settefrati)
 
 ggplot_na_distribution(canneto1$Temperature_Settefrati)
 
-#### either predict them or find meteo data
+#### FILLING IN WITH METEO DATA FROM 3B METEO ####
+
+meteo_canneto <- list.files(path = "./data/MADONNA_DI_CANNETO_3BMETEO/",
+                                pattern = "*.csv$", 
+                                full.names = T) %>%
+  map_df(~read_plus(.)) 
+
+## manipulating rain data 
+rain_canneto <- meteo_canneto %>% 
+  rename(date1 = filename) %>% 
+  mutate(date1 = gsub("./data/MADONNA_DI_CANNETO_3BMETEO/canneto", "", date1),
+         date1 = gsub(".csv", "", date1),
+         date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
+  separate(date, into = c("weekday", "day")) %>%
+  select(-weekday) %>%
+  unite(date_final, day,date1, sep = " ") %>%
+  mutate(date_final = str_replace(date_final,"ago","08"),
+         date_final = str_replace(date_final, "gen", "01"),
+         date_final = str_replace(date_final, "feb", "02"),
+         date_final = str_replace(date_final, "mar", "03"),
+         date_final = str_replace(date_final, "apr", "04"),
+         date_final = str_replace(date_final, "mag", "05"),
+         date_final = str_replace(date_final, "giu", "06"),
+         date_final = str_replace(date_final, "lug", "07"),
+         date_final = str_replace(date_final, "set", "09"),
+         date_final = str_replace(date_final, "ott", "10"),
+         date_final = str_replace(date_final, "nov","11"),
+         date_final = str_replace(date_final, "dic", "12"),
+         date_final = gsub(" ", "/", date_final),
+         date_final = dmy(date_final)) %>%
+  rename(Date = date_final,
+         Rainfall_Settefrati = prec) %>%
+  select(Date, Rainfall_Settefrati)
+
+temp_canneto <- meteo_canneto %>% 
+  rename(date1 = filename) %>% 
+  mutate(date1 = gsub("./data/MADONNA_DI_CANNETO_3BMETEO/canneto", "", date1),
+         date1 = gsub(".csv", "", date1),
+         date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
+  separate(date, into = c("weekday", "day")) %>%
+  select(-weekday) %>%
+  unite(date_final, day,date1, sep = " ") %>%
+  mutate(date_final = str_replace(date_final,"ago","08"),
+         date_final = str_replace(date_final, "gen", "01"),
+         date_final = str_replace(date_final, "feb", "02"),
+         date_final = str_replace(date_final, "mar", "03"),
+         date_final = str_replace(date_final, "apr", "04"),
+         date_final = str_replace(date_final, "mag", "05"),
+         date_final = str_replace(date_final, "giu", "06"),
+         date_final = str_replace(date_final, "lug", "07"),
+         date_final = str_replace(date_final, "set", "09"),
+         date_final = str_replace(date_final, "ott", "10"),
+         date_final = str_replace(date_final, "nov","11"),
+         date_final = str_replace(date_final, "dic", "12"),
+         date_final = gsub(" ", "/", date_final),
+         date_final = dmy(date_final)) %>%
+  rename(Date = date_final) %>%
+  select(Date, tmin, tmax) %>%
+  mutate(Temperature_Settefrati = rowMeans(subset(., select = c(tmin,tmax)),
+                                            na.rm = T)) %>%
+  select(-tmin, -tmax)
 
 #### fixing missing data for target ####
 
@@ -795,6 +855,30 @@ summary(canneto2)
     theme_classic()) # not ideal - particularly for massive gap of 100+ rows ...
 # but it's the best option i guess
 
+
+
+## filling dataset to model with new meteo data 
+
+# temp
+canneto2$Temperature_Settefrati[is.na(canneto2$Temperature_Settefrati)] <- temp_canneto$Temperature_Settefrati[match(canneto2$Date[is.na(canneto2$Temperature_Settefrati)],
+                                                                                                                     temp_canneto$Date)]
+
+# rain 
+canneto2$Rainfall_Settefrati[is.na(canneto2$Rainfall_Settefrati)] <- rain_canneto$Rainfall_Settefrati[match(canneto2$Date[is.na(canneto2$Rainfall_Settefrati)],
+                                                                                                            rain_canneto$Date)]
+
+
+## checking all nas have been filled 
+
+statsNA(canneto2$Rainfall_Settefrati) # no more nas in the timeseries!!!
+statsNA(canneto2$Temperature_Settefrati) # no more nas in the timeseries!!!
+# yaass
+
+## checking visually 
+
+ggplot_na_distribution(canneto2$Rainfall_Settefrati)
+ggplot_na_distribution(canneto2$Temperature_Settefrati)
+# double yaasss
 
 
 #### outliers ####
