@@ -418,7 +418,73 @@ summary(doganella11$imp_temp_monteporzio) # longer gaps than 40 rows still na
 summary(doganella11$imp_temp_velletri) # longer gaps than 40 rows still na
 
 #### need to look for meteo data to fill in these gaps!!!
-#########################################################
+
+#### FILLING GAPS WITH METEO ####
+
+#### temperature Velletri
+
+read_plus <- function(flnm) {
+  read_csv(flnm) %>% 
+    mutate(filename = flnm)
+}
+
+temp_dog_ls <- list.files(path = "./data/DOGANELLA_3BMETEO/",
+                          pattern = "*.csv$", 
+                          full.names = T) %>%
+  map_df(~read_plus(.)) 
+
+## manipulating temp data 
+temp_dog <- temp_dog_ls %>% 
+  rename(date1 = filename) %>% 
+  mutate(date1 = gsub("./data/DOGANELLA_3BMETEO/", "", date1),
+         date1 = gsub(".csv", "", date1),
+         date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
+  separate(date, into = c("weekday", "day")) %>%
+  select(-weekday) %>%
+  unite(date_final, day,date1, sep = " ") %>%
+  mutate(date_final = str_replace(date_final,"ago","08"),
+         date_final = str_replace(date_final, "gen", "01"),
+         date_final = str_replace(date_final, "feb", "02"),
+         date_final = str_replace(date_final, "mar", "03"),
+         date_final = str_replace(date_final, "apr", "04"),
+         date_final = str_replace(date_final, "mag", "05"),
+         date_final = str_replace(date_final, "giu", "06"),
+         date_final = str_replace(date_final, "lug", "07"),
+         date_final = str_replace(date_final, "sett", "09"),
+         date_final = str_replace(date_final, "ott", "10"),
+         date_final = str_replace(date_final, "nov","11"),
+         date_final = str_replace(date_final, "dec", "12"),
+         date_final = gsub(" ", "/", date_final),
+         date_final = dmy(date_final)) %>%
+  rename(Date = date_final) %>%
+  select(Date, tmin, tmax) %>%
+  mutate(Temperature_Velletri = rowMeans(subset(., select = c(tmin,tmax)),
+                                         na.rm = T)) %>%
+  select(-tmin, -tmax)
+
+#summary(temp_dog)
+
+
+  # visualising trend in newly added temperature 
+
+(vis_temp_dog <- ggplot(temp_dog, aes(Date, Temperature_Velletri))+
+    geom_line()+
+    theme_classic())
+
+#### temperature Monteporzio
+
+
+
+
+### checking which years the data are still missing 
+missing_temp_velletri <- doganella11 %>% 
+  select(Date, imp_temp_velletri) %>%
+  filter(is.na(imp_temp_velletri))
+
+min(missing_temp_velletri$Date) # 11th jan 2015
+max(missing_temp_velletri$Date)# 31st dec 2018
+
+# not imputed: min = 29th june 2012, max = 31st dec 2019
 
 ## vis distrib data with imputed vars 
 
@@ -512,7 +578,6 @@ summary(lupa1)
 
 statsNA(lupa1$abs.flow_rate)
 ggplot_na_distribution(lupa1$abs.flow_rate)
-
 
 (hist_rain_lupa <- ggplot(lupa1, aes(Rainfall_Terni))+
     geom_histogram()+
