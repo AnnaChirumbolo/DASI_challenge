@@ -404,20 +404,6 @@ statsNA(doganella9$Temperature_Velletri)
 
 ggplot_na_distribution(doganella9$Temperature_Velletri)
 
-#### filling in missing data - rain and temp - with na_ma (imputeTS) ####
-
-doganella11 <- doganella9 %>% 
-  mutate(imp_rain_velletri = na_ma(Rainfall_Velletri, k = 1),
-         imp_rain_monteporzio = na_ma(Rainfall_Monteporzio, k = 1),
-         imp_temp_velletri = na_ma(Temperature_Velletri, k = 1, maxgap = 40),
-         imp_temp_monteporzio = na_ma(Temperature_Monteporzio, k = 1, maxgap = 40))
-
-summary(doganella11$imp_rain_monteporzio)
-summary(doganella11$imp_rain_velletri)
-summary(doganella11$imp_temp_monteporzio) # longer gaps than 40 rows still na
-summary(doganella11$imp_temp_velletri) # longer gaps than 40 rows still na
-
-#### need to look for meteo data to fill in these gaps!!!
 
 #### FILLING GAPS WITH METEO ####
 
@@ -460,10 +446,10 @@ temp_dog <- temp_dog_ls %>%
   select(Date, tmin, tmax) %>%
   mutate(Temperature_Velletri = rowMeans(subset(., select = c(tmin,tmax)),
                                          na.rm = T)) %>%
-  select(-tmin, -tmax)
+  select(-tmin, -tmax) %>%
+  arrange(Date)
 
 #summary(temp_dog)
-
 
   # visualising trend in newly added temperature 
 
@@ -473,47 +459,116 @@ temp_dog <- temp_dog_ls %>%
 
 #### temperature Monteporzio
 
+temp_monte_dog_ls <- list.files(path = "./data/DOGANELLA_MONTEPORZIO_3BMETEO/",
+                          pattern = "*.csv$", 
+                          full.names = T) %>%
+  map_df(~read_plus(.)) 
 
+## manipulating temp data 
+temp_monte_dog <- temp_monte_dog_ls %>% 
+  rename(date1 = filename) %>% 
+  mutate(date1 = gsub("./data/DOGANELLA_MONTEPORZIO_3BMETEO/", "", date1),
+         date1 = gsub(".csv", "", date1),
+         date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
+  separate(date, into = c("weekday", "day")) %>%
+  select(-weekday) %>%
+  unite(date_final, day,date1, sep = " ") %>%
+  mutate(date_final = str_replace(date_final,"ago","08"),
+         date_final = str_replace(date_final, "gen", "01"),
+         date_final = str_replace(date_final, "feb", "02"),
+         date_final = str_replace(date_final, "mar", "03"),
+         date_final = str_replace(date_final, "apr", "04"),
+         date_final = str_replace(date_final, "mag", "05"),
+         date_final = str_replace(date_final, "giu", "06"),
+         date_final = str_replace(date_final, "lug", "07"),
+         date_final = str_replace(date_final, "sett", "09"),
+         date_final = str_replace(date_final, "ott", "10"),
+         date_final = str_replace(date_final, "nov","11"),
+         date_final = str_replace(date_final, "dec", "12"),
+         date_final = gsub(" ", "/", date_final),
+         date_final = dmy(date_final)) %>%
+  rename(Date = date_final) %>%
+  select(Date, tmin, tmax) %>%
+  mutate(Temperature_Monteporzio = rowMeans(subset(., select = c(tmin,tmax)),
+                                         na.rm = T)) %>%
+  select(-tmin, -tmax)
 
+summary(temp_monte_dog)
+summary(temp_dog)
 
-### checking which years the data are still missing 
-missing_temp_velletri <- doganella11 %>% 
-  select(Date, imp_temp_velletri) %>%
-  filter(is.na(imp_temp_velletri))
+# vis of newly added temp data 
 
-min(missing_temp_velletri$Date) # 11th jan 2015
-max(missing_temp_velletri$Date)# 31st dec 2018
+(vis_new_temp_monte <- ggplot(temp_monte_dog, aes(Date, Temperature_Monteporzio))+
+    geom_line()+
+    theme_classic())
 
-# not imputed: min = 29th june 2012, max = 31st dec 2019
+#### adding new temp data to prev dataset ####
+
+View(doganella10)
+
+doganella_new <- doganella10 %>%
+  spread(temp_sensor, temp.C) %>%
+  spread(rain_sensor, rain.mm) 
+  
+doganella_new$Temperature_Velletri[is.na(doganella_new$Temperature_Velletri)] <- temp_dog$Temperature_Velletri[match(doganella_new$Date[is.na(doganella_new$Temperature_Velletri)],
+                                                                                                                     temp_dog$Date)]
+(filled_temp_velletri <- ggplot(doganella_new, aes(Date, Temperature_Velletri))+
+    geom_line()+
+    theme_classic())
+
+doganella_new$Temperature_Monteporzio[is.na(doganella_new$Temperature_Monteporzio)] <- temp_monte_dog$Temperature_Monteporzio[match(doganella_new$Date[is.na(doganella_new$Temperature_Monteporzio)],
+                                                                                                                                    temp_monte_dog$Date)]
+
+(filled_temp_monteporzio <- ggplot(doganella_new, aes(Date, Temperature_Monteporzio))+
+    geom_line()+
+    theme_classic())
+
+#### filled in the data!!
+statsNA(doganella_new$Temperature_Monteporzio) # still one na missing x9
+statsNA(doganella_new$Temperature_Velletri) # one row na missing x9
+
+## imputing those vars 
+
+doganella11 <- doganella_new %>% 
+  mutate(imp_rain_velletri = na_ma(Rainfall_Velletri, k = 1), # rain
+         imp_rain_monteporzio = na_ma(Rainfall_Monteporzio, k = 1)) # rain
+
+summary(doganella11$imp_rain_monteporzio)
+summary(doganella11$imp_rain_velletri)
+
+statsNA(doganella11$Temperature_Monteporzio)
+ggplot_na_distribution(doganella11$Temperature_Monteporzio)
+
+View(doganella11[is.na(doganella11$Temperature_Monteporzio),])# one day 
+
+doganella11$Temperature_Monteporzio <- na_ma(doganella11$Temperature_Monteporzio, k =1)
+
+doganella11$Temperature_Monteporzio[doganella$Date == "2019-12-31"] # ok
+
+statsNA(doganella11$Temperature_Monteporzio)
+
+View(doganella11[is.na(doganella11$Temperature_Velletri),])# one day 
+
+doganella11$Temperature_Velletri <- na_ma(doganella11$Temperature_Velletri, k = 1)
+doganella11$Temperature_Velletri[doganella$Date == "2019-12-31"] # ok
 
 ## vis distrib data with imputed vars 
 
-doganella12 <- doganella11 %>% 
-  select(Date, imp_rain_velletri, imp_rain_monteporzio, 
-         imp_temp_monteporzio, imp_temp_velletri) %>% 
-  gather(key = "temp", value = "temp.C", imp_temp_monteporzio, imp_temp_velletri) %>% 
-  gather(key = "rain", value = "rain.mm", imp_rain_velletri, imp_rain_monteporzio)
+ggplot(doganella11, aes(Date, Temperature_Monteporzio))+
+  geom_line()+
+  geom_line(data = doganella11, aes(Date, Temperature_Velletri,
+                                    color = "red"))+
+  theme_classic()
 
-(imp_temp_dog <- ggplot(doganella12, aes(Date, temp.C, color = temp))+
-    geom_line()+
-    theme_classic())# major gaps left 
+ggplot(doganella11, aes(Date, Rainfall_Monteporzio))+
+  geom_line()+
+  geom_line(data = doganella11, aes(Date, Rainfall_Velletri,
+                                    color = "red"))+
+  theme_classic()
 
-  # comparing to dataset before imputation
-(temp_dog <- ggplot(doganella10, aes(Date, temp.C, color = temp_sensor))+
-    geom_line()+
-    theme_classic())
+## perfettooooooo
 
-
-(imp_rain_dog <- ggplot(doganella12, aes(Date, rain.mm, color = rain))+
-    geom_line()+
-    theme_classic())
-
-  # comparing to dataset before imputation
-(rain_dog <- ggplot(doganella10, aes(Date, rain.mm, color = rain_sensor))+
-    geom_line()+
-    theme_classic())
-
-
+################################################################################
 #### looking at last feature: volume ####
 
 # volume is of the water pumped OUT from the drinking water plant 
@@ -560,7 +615,6 @@ str(doganella_vol)
 #### saving dataset as it is so far ####
 
 write.csv(doganella11,"processed_data/DOGANELLA_to_model.csv")
-
 
 
 #### LUPA WATER SPRING ####
