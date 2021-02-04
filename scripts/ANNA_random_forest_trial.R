@@ -53,7 +53,7 @@ lupa_test1 <- lupa[-lupa_train1,"imp_flow_rate"]
 rf_formula <- as.formula("imp_flow_rate ~.")
 lupa_rf <- randomForest(rf_formula, 
                         data = lupa_train,
-                        ntree = 500,
+                        ntree = 50,
                         importance = T,
                         replace = T)
 print(lupa_rf)
@@ -65,14 +65,17 @@ plot(lupa_rf)
 # Y - corresp MSE 
 # X - tree number 
 
-plot(lupa_rf)
-
-lupa_rf_margin <- as.numeric(predict(lupa_rf, newdata =lupa[-lupa_train1,]))
+lupa_rf_margin <- predict(lupa_rf, newdata =lupa[-lupa_train1,])
 
 mean((lupa_rf_margin - lupa_test1)^2) # MSE = 7.85
 
 importance(lupa_rf)
 varImpPlot(lupa_rf)
+
+#### 
+
+
+
 
 
 #### comparing with regression tree ####
