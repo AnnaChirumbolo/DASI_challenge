@@ -1,11 +1,13 @@
 ################################################################################
 ################################################################################
-######## MODELLING: RANDOM FOREST                         ######################
+######## 03 - MODELLING: RANDOM FOREST                         ######################
 ################################################################################
 ################################################################################
 
 #### libraries ####
 
+#install.packages("h2o")
+library(h2o)
 library(tidyverse)
 #install.packages("randomForest")
 library(randomForest)
@@ -15,17 +17,28 @@ library(tree)
 #install.packages("e1071")
 library(e1071)
 require(caTools)
-
+#install.packages("tsibble")
+library(tsibble)
+library(lubridate)
 #install.packages("gbm")
 library(gbm) # boosting
+library(forecast)
+
+?`h2o-package`
 
 
 #### let's start "easy": lupa water spring 
 
 lupa <- read.csv("processed_data/LUPA_to_model.csv") %>%
-  select(-X,-Date)
+  select(-X)
 
+lupa_base_val <- lupa %>% 
+  group_by(year) %>% 
+  summarise(mean_flow = mean(imp_flow_rate))
+  
 str(lupa)
+
+summary(lupa_base_val)
 
 # id col: X
 # date: date character
@@ -67,15 +80,14 @@ plot(lupa_rf)
 
 lupa_rf_margin <- predict(lupa_rf, newdata =lupa[-lupa_train1,])
 
-mean((lupa_rf_margin - lupa_test1)^2) # MSE = 7.85
+mean((lupa_rf_margin - lupa_test1)^2) # MSE = 7.85 / 8.51
+
+#var(lupa$imp_flow_rate)
 
 importance(lupa_rf)
 varImpPlot(lupa_rf)
 
 #### 
-
-
-
 
 
 #### comparing with regression tree ####
@@ -103,6 +115,43 @@ text(prune_lupa, pretty = 0)
 tree_lupa_margin <- predict(lupa_tree, newdata = lupa[-lupa_train1,])
 mean((tree_lupa_margin - lupa_test1)^2) # MSE = 99.82
 ## worse than random forest mse 
+
+
+#### time series forecasting with random forest ####
+
+# converting to ts format 
+
+lupa.ts <- ts(lupa, frequency = 12)
+
+(plot_lupa <- ggplot(lupa, aes(ymd(Date), imp_flow_rate,
+                               group = 1))+
+    geom_line()+
+    theme_minimal()+
+    scale_x_date(date_breaks = "1 year", date_labels =  "%Y"))
+
+lupa_ts_fc <- window(lupa.ts, end = c(2020,12))
+
+## estimate required order of differencing 
+
+n_diffs <- nsdiffs(lupa_ts_fc)
+  # non seasonal data... 
+
+
+
+## target var distribution over months, grouped by year 
+
+lupa$year <- format(as.Date(lupa$Date), format = "%Y")
+lupa$month <- format(as.Date(lupa$Date), format = "%m")
+(lupa_dist_year <- ggplot(lupa, aes(month, imp_flow_rate, color = year,
+                                    group = year))+
+    geom_line(size = 1)+
+    theme_classic())
+
+cor(lupa$imp_flow_rate, lupa$Rainfall_Terni) 
+
+## 2010-2019 to model 
+
+
 
 
 
