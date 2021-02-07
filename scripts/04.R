@@ -15,6 +15,7 @@ library(pracma)
 library(mFilter)
 library(tidyverse)
 library(lubridate)
+library(xts)
 
 
 #### lupa file ####
@@ -211,3 +212,102 @@ forecast_lupa8 <- forecast(fit_lupa8)
 plot(forecast_lupa8)
 
 
+################################################################################
+
+# doganella aquifer # 
+
+doganella <- read.csv("processed_data/DOGANELLA_to_model.csv") %>%
+  select(-X, -Rainfall_Velletri,-Rainfall_Monteporzio,-Temperature_Velletri,
+         -Temperature_Monteporzio,-Pozzo_1:-Pozzo_9) %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d")) %>%
+  spread(key = imp, value = depth_to_gw.m)
+
+# pozzo 1
+
+doganella_ts <- ts(doganella$imp1, frequency = 12,start= c(2012,6))
+
+doganella_decomp <- decompose(doganella_ts)
+
+plot(doganella_decomp, yax.flip= T)
+
+# removed trend
+
+doganella_d2 <- diff(doganella_ts, differences = 2)
+
+## plot the differenced data 
+plot(doganella_d2)
+
+# successfully removed trend in central years, but not at beginning nor end of time series ....
+
+## difference the differenced data (removing "seasonality")
+
+doganella_d12 <- diff(doganella_d2, lag = 12)
+
+plot(doganella_d12)
+
+### 
+
+acf(doganella_d12, type = "correlation", lag.max = 12)
+
+
+AIC <- SelectModel(as.numeric(doganella_ts),lag.max = 12, ARModel = "AR",
+                   Best = 1, Criterion = "AIC")
+AIC
+
+
+doganellaxts <- xts(doganella[,-1], order.by = doganella[,1])
+doganella1 = detrend(doganellaxts$imp1, tt = 'linear', bp = c()) 
+plot(doganella1)
+
+
+acf(doganella1, lag.max = 30, type = "correlation")
+
+AIC <- SelectModel(as.numeric(doganella1),
+                   lag.max = 12, ARModel = "AR",
+                   Best = 1, Criterion = "AIC")
+AIC
+
+
+fit_doganella8 <- arima(doganella1, order = c(8,0,0))
+fit_doganella8
+
+forecast_doganella <- forecast(fit_doganella8)
+plot(forecast_doganella)
+
+
+tsdiag(fit_doganella8)
+
+
+accuracy(fit_doganella8)
+
+
+seasonplot(doganella_ts)
+
+dec <- stl(doganella_ts, s.window =  "periodic")
+plot(dec)
+
+tsdisplay(doganella_ts)
+
+
+### SARIMA ###
+
+fit <- Arima(window(doganella_ts, end = 2019), order = c(2,0,0),
+             seasonal = list(order = c(2,0,0), period = 12))
+
+tsdisplay(residuals(fit))
+
+plot(forecast(fit, h = 12))
+lines(doganella_ts)
+
+## seasonal dummy 
+
+month <- seasonaldummy(window(doganella_ts, end = 2019))
+fit_s <- Arima(window(doganella_ts, end = 2019), order = c(2,0,0),
+               xreg = month)
+plot(forecast(fit_s, h = 12, xreg = month[3:13,]))
+lines(doganella_ts)
+
+
+accuracy(fit)
+
+accuracy(fit_s)
