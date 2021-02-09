@@ -21,11 +21,12 @@ library(Metrics)
 library(here)
 library(MASS)
 library(leaps)
+library(purrr)
 
 ## reading files 
 
 doganella <- read.csv("processed_data/DOGANELLA_to_model.csv") %>%
-  select(-X,-Rainfall_Velletri, -Rainfall_Monteporzio,
+  dplyr::select(-X,-Rainfall_Velletri, -Rainfall_Monteporzio,
          -Pozzo_1:-Pozzo_9) %>% 
   spread(key = imp, value = depth_to_gw.m) # in regression date doesnt really matter 
 str(doganella)
@@ -35,15 +36,15 @@ str(doganella)
 
 meteo <- c("rain","temp")
 
-pozzo1 <- doganella %>% select(., contains("1"), contains(meteo))
-pozzo2 <- doganella %>% select(., contains("2"), contains(meteo))
-pozzo3 <- doganella %>% select(., contains("3"), contains(meteo))
-pozzo4 <- doganella %>% select(., contains("4"), contains(meteo))
-pozzo5 <- doganella %>% select(., contains("5"), contains(meteo))
-pozzo6 <- doganella %>% select(., contains("6"), contains(meteo))
-pozzo7 <- doganella %>% select(., contains("7"), contains(meteo))
-pozzo8 <- doganella %>% select(., contains("8"), contains(meteo))
-pozzo9 <- doganella %>% select(., contains("9"), contains(meteo))
+pozzo1 <- doganella %>% dplyr::select(., Date,contains("1"), contains(meteo))
+pozzo2 <- doganella %>% dplyr::select(., contains("2"), contains(meteo))
+pozzo3 <- doganella %>% dplyr::select(., contains("3"), contains(meteo))
+pozzo4 <- doganella %>% dplyr::select(., contains("4"), contains(meteo))
+pozzo5 <- doganella %>% dplyr::select(., contains("5"), contains(meteo))
+pozzo6 <- doganella %>% dplyr::select(., contains("6"), contains(meteo))
+pozzo7 <- doganella %>% dplyr::select(., contains("7"), contains(meteo))
+pozzo8 <- doganella %>% dplyr::select(., contains("8"), contains(meteo))
+pozzo9 <- doganella %>% dplyr::select(., contains("9"), contains(meteo))
 
 #### computing stepwise regression for variable selection ####
   # creating function
@@ -58,12 +59,12 @@ step.wisef <- function(x, DATA){
   return(step.model)
 }
 
-
 #### pozzo 1 ####
 
 pozzo1_sw <- step.wisef("imp1", pozzo1)
-
-
+pozzo1_sw$bestTune
+pozzo1_sw$finalModel
+coef(pozzo1_sw$finalModel, 5)
 
 ### let's stick to three variables (?) ###
 ## question: model chooses the two temperatures even if they're highly correlated to one another...?
@@ -846,8 +847,48 @@ ggplot(p9.test) +
 
 #### XGBOOST ####
 
-install.packages("xgboost")
+#install.packages("xgboost")
 library(xgboost)
+library(lubridate)
+library(tibble)
 
-pozzo1
+View(pozzo1)
+max(pozzo1$Date)
+str(pozzo1)
+
+pozzo1_ext <- pozzo1 %>%
+  mutate(Date = as_date(Date)) %>%
+  bind_rows(tibble(Date = seq(start = as_date("2020-07-01"),
+                          from = as_date("2020-07-01"),
+                          by = "day", length.out = 31),
+               imp1 = rep(NA, 31)))
+tail(pozzo1_ext)
+
+pozzo1_xgb <- pozzo1_ext %>%
+  mutate(months = lubridate::month(Date),
+         years = lubridate::year(Date),
+         days = lubridate::day(Date))
+
+str(pozzo1_xgb)
+
+## split - train and prediction sets
+
+p1.xgb.train <- pozzo1_xgb[1:nrow(pozzo1),]
+p1.xgb.pred <- pozzo1_xgb[(nrow(pozzo1)+1):nrow(pozzo1_xgb),]
+
+p1.x_train <- xgboost::xgb.DMatrix(as.matrix(p1.xgb.train %>% 
+                                      dplyr::select(months, years)))
+p1.x_pred <- xgboost::xgb.DMatrix(as.matrix(p1.xgb.pred %>% 
+                                              dplyr::select(months, years)))
+p1.y_train <- p1.xgb.train$imp1
+
+
+p1.xgb_trcontrol <- caret::trainControl(
+  method ="cv",
+  number = 5,
+  
+)
+
+
+
 
