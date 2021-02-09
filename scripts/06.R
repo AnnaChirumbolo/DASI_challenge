@@ -31,12 +31,11 @@ doganella <- read.csv("processed_data/DOGANELLA_to_model.csv") %>%
   spread(key = imp, value = depth_to_gw.m) # in regression date doesnt really matter 
 str(doganella)
 
-
 ## prepping objects per target ##
 
 meteo <- c("rain","temp")
 
-pozzo1 <- doganella %>% dplyr::select(., Date,contains("1"), contains(meteo))
+pozzo1 <- doganella %>% dplyr::select(., contains("1"), contains(meteo))
 pozzo2 <- doganella %>% dplyr::select(., contains("2"), contains(meteo))
 pozzo3 <- doganella %>% dplyr::select(., contains("3"), contains(meteo))
 pozzo4 <- doganella %>% dplyr::select(., contains("4"), contains(meteo))
@@ -62,7 +61,7 @@ step.wisef <- function(x, DATA){
 #### pozzo 1 ####
 
 pozzo1_sw <- step.wisef("imp1", pozzo1)
-pozzo1_sw$bestTune
+pozzo1_sw$bestTune 
 pozzo1_sw$finalModel
 coef(pozzo1_sw$finalModel, 5)
 
