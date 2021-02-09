@@ -790,16 +790,17 @@ p9.split <- initial_split(pozzo9, prop = .7)
 p9.train <- training(p9.split)
 p9.test <- testing(p9.split)
 
-p9.fit1 <- gbm(imp9 ~ imp_rain_velletri, # in this case just one var
+p9.fit1 <- gbm(imp9 ~ imp_rain_velletri, # in this case just one var...
                data = pozzo9,
                verbose = 1,
                shrinkage = 0.01,
                interaction.depth = 3, 
                n.minobsinnode = 5,
                n.trees = 5000,
-               cv.folds = 10) #error- to check
+               cv.folds = 1) # can't go larger or i get error:
+                        # >1 nodes produced errors; first error: incorrect number of dimensions
 
-p9.fit1_perf <- gbm.perf(p9.fit1, method = "cv")
+p9.fit1_perf <- gbm.perf(p9.fit1)
 
 ## make predictions 
 
@@ -808,64 +809,45 @@ p9_pred1 <- stats::predict(object = p9.fit1,
                            n.trees = p9.fit1_perf)
 p9_rmse <- Metrics::rmse(actual = p9.test$imp9,
                          predicted = p9_pred1)
-print(p9_rmse) # 2.14
+print(p9_rmse) # 3.88
 
-gbm::plot.gbm(p9.fit1, i.var = 1)
+gbm::plot.gbm(p9.fit1, i.var = 1) # only the one var
 
-plot.gbm(p9.fit1, i.var = 2)
-
-plot.gbm(p3.fit1, i.var = 3)
-
-# ecc...
-
-## interactions of two features on the variable 
-
-gbm::plot.gbm(p9.fit1, i.var = c(1,3))
-plot.gbm(p.fit1, i.var = c(1,2))
-plot.gbm(p3.fit1, i.var = c(2,3))
+## interactions of two features on the variable not possible
 
 ### impact of different features on predicting depth to gw 
 
 # summarise model 
 
-p3.effects <- tibble::as_tibble(gbm::summary.gbm(p3.fit1,
+p9.effects <- tibble::as_tibble(gbm::summary.gbm(p9.fit1,
                                                  plotit = F))
-p3.effects %>% utils::head()
+p9.effects %>% utils::head() # 100 ... of course it's the only one 
 # this creates new dataset with var, factor variable with variables 
 # in our model, and rel.inf - relative influence each var has on model pred 
-
-# plot top 3 features
-p3.effects %>% 
-  arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
-  ggplot(aes(x = fct_reorder(.f = var,
-                             .x = rel.inf),
-             y = rel.inf,
-             fill = rel.inf))+
-  geom_col()+
-  coord_flip()+
-  scale_color_brewer(palette = "Dark2")
-
 
 ## vis distribution of predicted compared with actual target values 
 # by predicting these vals and plotting the difference 
 
 # predicted 
 
-p3.test$predicted <- as.integer(predict(p3.fit1,
-                                        newdata = p3.test,
-                                        n.trees = p3.fit1_perf))
+p9.test$predicted <- as.integer(predict(p9.fit1,
+                                        newdata = p9.test,
+                                        n.trees = p9.fit1_perf))
 
 # plot predicted vs actual
 
-ggplot(p3.test) +
+ggplot(p9.test) +
   geom_point(aes(x = predicted,
-                 y = imp3,
-                 color = predicted - imp3),
+                 y = imp9,
+                 color = predicted - imp9),
              alpha = .7, size = 1) +
   theme_fivethirtyeight()
 
 
+#### XGBOOST ####
 
+install.packages("xgboost")
+library(xgboost)
 
+pozzo1
 
