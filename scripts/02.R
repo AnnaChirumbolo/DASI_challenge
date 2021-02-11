@@ -1,6 +1,6 @@
 ################################################################################
 ################################################################################
-#######       we can use this script to prep the data for modelling         ####
+############ DATA PREP FOR MODELLING            ################################
 ################################################################################
 ################################################################################
 
@@ -972,5 +972,33 @@ canneto3 <- canneto2 %>%
 
 
 
+################################################################################
+################################################################################
+########################    FEATURE ENGINEERING             ####################
+################################################################################
+################################################################################
+
+#### doganella ####
+
+doganella <- read.csv("processed_data/DOGANELLA_to_model.csv")
+str(doganella)
+
+doganella_seas <- doganella %>% 
+  mutate(Date = as_date(Date),
+         Year = year(Date),
+         Month = month(Date),
+         Day = day(Date),
+         Month_day = paste0(Month,"-",Day)) %>% 
+  group_by(Year) %>% 
+  mutate(Spring = factor(ifelse(Month_day >= "3-21" & Month_day < "6-21",
+                         1,0)),
+         Summer = factor(ifelse(Month_day >="6-21" & Month_day < "9-21",
+                                1,0)),
+         Autumn = factor(ifelse(Month_day >= "9-21" & Month_day < "12-21",
+                                1,0)),
+         Winter = factor(ifelse(Month_day >= "12-21" & Month_day < "3-21",
+                                1,0))) %>%
+  dplyr::select(-X,-Pozzo_1:-Pozzo_9,-Rainfall_Monteporzio,-Rainfall_Velletri) %>% 
+  spread(key = imp, value=depth_to_gw.m)
 
 
