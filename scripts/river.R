@@ -36,6 +36,8 @@ library(forecast)
 library(xts)
 library(caTools)
 library(data.table)
+install.packages("metR")
+library(metR)
 
 
 
@@ -102,7 +104,7 @@ temp_firenze <- temp_firenze_ls %>%
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = stringr::str_replace(date_final,"ago","08"),
          date_final = stringr::str_replace(date_final, "gen", "01"),
@@ -119,10 +121,10 @@ temp_firenze <- temp_firenze_ls %>%
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
   rename(Date = date_final) %>%
-  select(Date, tmin, tmax) %>%
+  dplyr::select(Date, tmin, tmax) %>%
   mutate(Temperature_Firenze = rowMeans(subset(., select = c(tmin,tmax)),
                                          na.rm = T)) %>%
-  select(-tmin, -tmax) %>%
+  dplyr::select(-tmin, -tmax) %>%
   arrange(Date)
 
 summary(temp_firenze)
@@ -606,32 +608,29 @@ vis_dat(River_Arno_cut1)
 # 05-07-2007 al 01-01-2011
 cutdata_1 <- as.Date("2007-07-05")
 cutdata_2 <- as.Date("2011-01-01")
-River_Arno_cut1 <- River_Arno_cut[(River_Arno_cut$Date > cutdata_2 | River_Arno_cut$Date < cutdata_1  ), ]
-#River_Arno_cut1 e' il dataframe con ua interruzione temporale dal
-#2007 al 2011
+River_Arno_cut1 <- River_Arno_cut[(River_Arno_cut$Date > cutdata_2), ]
+#River_Arno_cut1 e' il dataframe con una interruzione temporale dal
+#2007 al 2011 e decido di prendere i dati solo dal 2011 in poi
 
-max(River_Arno_cut1$Date[is.na(River_Arno_cut1$Temperature_Firenze)])
-min(River_Arno_cut1$Date[is.na(River_Arno_cut1$Temperature_Firenze)])
-max(River_Arno_cut1$Date[is.na(River_Arno_cut1$Rainfall_Stia )])
+
 
 summary(River_Arno_cut1)
 statsNA(River_Arno_cut1$Rainfall_Stia)
-is.na(River_Arno_cut1$Temperature_Firenze)
-
-River_Arno_cut1$Temperature_Firenze[is.na(River_Arno_cut1$Temperature_Firenze)==TRUE]
 
 
 
+max(River_Arno_cut1$Date[is.na(River_Arno_cut1$Hydrometry_Nave_di_Rosano )])
+#ho un unico valore mancante nella variabile target Hydrometry_Nave_di_Rosano
 
 
-##gli altri valori mancanti vengono interpolati??? da decidere
+##interpolo il valore mancante
 # interpolation
-River_Arno_cut$Hydrometry_Nave_di_Rosano <-as.numeric(na.interp(River_Arno_cut$Hydrometry_Nave_di_Rosano))
+River_Arno_cut1$Hydrometry_Nave_di_Rosano <-as.numeric(na.interp(River_Arno_cut1$Hydrometry_Nave_di_Rosano))
 
 #TARGET: Hydrometry_Nave_di_Rosano
 #Il livello delle acque sotterranee rilevato dalla stazione idrometrica 
 #è stagionale, più elevato durante novembre-maggio
-df <- River_Arno_cut %>% select(Date, 
+df <- River_Arno_cut1 %>% dplyr::select(Date, 
                             Hydrometry_Nave_di_Rosano) %>%
   pivot_longer(., cols = c(Hydrometry_Nave_di_Rosano),
                names_to = "Var", values_to = "Val", values_drop_na = FALSE)
@@ -649,29 +648,34 @@ rm(df)
 
 
 # Correlation Matrix
-df <- River_Arno_cut
+df <- River_Arno_cut1
 df$Date <- NULL
 ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, 
        layout.exp = 4, label_size = 3)
 rm(df)
 
 
-
-# Rainfall analysis ???
-River_Arno$Rainfall_mean <- rowMeans(River_Arno[,c("Rainfall_Le_Croci", "Rainfall_Cavallina", 
+#### Rainfall analysis ####
+# Rainfall analysis per le localita' lungo l'affluente Sieve
+River_Arno_cut1$Rainfall_mean_Sieve <- rowMeans(River_Arno_cut1[,c("Rainfall_Le_Croci", "Rainfall_Cavallina", 
                                                    "Rainfall_S_Agata", "Rainfall_Mangona",
-                                                   "Rainfall_S_Piero","Rainfall_Vernio",
-                                                   "Rainfall_Incisa" )])
-df <- River_Arno
+                                                   "Rainfall_S_Piero","Rainfall_Vernio")])
 
 
+# Rainfall analysis per le localita' dalla sorgente dell'arno
+River_Arno_cut1$Rainfall_mean_Sorgente <- rowMeans(River_Arno_cut1[,c("Rainfall_Camaldoli", "Rainfall_Bibbiena", 
+                                                                   "Rainfall_Laterina", "Rainfall_S_Savino",
+                                                                   "Rainfall_Montevarchi","Rainfall_Consuma",
+                                                                   "Rainfall_Incisa", "Rainfall_Stia" )])
+df <- River_Arno_cut1
+rm(df)
 ################### 
-# Rainfall_Incisa, Rainfall_Vernio no values from 2015
-cutdate <- as.Date("2015-01-01")
-df <- df[(df$Date < cutdate), ]
-df$Rainfall_mean <- runmean(df$Rainfall_mean,30)
-df <- df %>% select(Date,  Rainfall_mean) %>%
-  pivot_longer(., cols = c( Rainfall_mean),
+
+#ho preso i dati da 3B meteo, dal 2011 reali
+#visualizzo le medie di pioggia divise in zone, lungo affluente Sieve
+#e lungo l'Arno, dalla sorgente
+df <- df %>% dplyr::select(Date,  Rainfall_mean_Sieve, Rainfall_mean_Sorgente) %>%
+  pivot_longer(., cols = c( Rainfall_mean_Sieve, Rainfall_mean_Sorgente),
                names_to = "Var", values_to = "Val", values_drop_na = FALSE)
 ggplot(df, aes(x = Date, y = Val, col = Var)) +
   geom_line() + ggtitle("Rainfall (mm) - River Arno") +
@@ -679,9 +683,11 @@ ggplot(df, aes(x = Date, y = Val, col = Var)) +
 rm(df)
 
 
-# Temperature: the temperature mean is 16.52 °C
-# Temperature analysis
-df <- River_Arno %>% select(Date, Temperature_Firenze ) %>%
+# Temperature: the temperature mean is 16.61 °C
+# Temperature analysis: ho riempito il dataset con le temperature
+#reali prese da 3bmeteo dal 2011
+mean(River_Arno_cut1$Temperature_Firenze)
+df <- River_Arno_cut1 %>% dplyr::select(Date, Temperature_Firenze ) %>%
   pivot_longer(., cols = c(Temperature_Firenze ),
                names_to = "Var", values_to = "Val")
 df <- df[complete.cases(df), ]
@@ -695,13 +701,22 @@ rm(df)
 
 
 
-####SECONDO METODO####
+####inserisco la variabile stagioni####
 ##inserisco le stagioni####
-River_Arno_cut <- River_Arno_cut %>%
+River_Arno_cut1 <- River_Arno_cut1 %>%
   mutate(Season = case_when(month(Date) %in% c(3,4,5) ~ "Spring",                      
                             month(Date) %in% c(6,7,8) ~ "Summer",
                             month(Date) %in% c(9,10,11) ~ "Autumn",
                             month(Date) %in% c(1,2,12) ~ "Winter"))
+River_Arno_cut1$Season<-factor(River_Arno_cut1$Season, 
+                             levels=c("Winter","Spring", "Summer", "Autumn"))
+
+
+ 
+
+#season(1, lang = "en")
+#season(as.Date("2017-01-01"))
+
 #### imposto tema ####
 theme_21 <- theme(legend.position = "bottom", legend.direction = "horizontal", axis.text = element_text(size = 14), 
                   plot.caption = element_text(color = "gray25", face = "bold", size = 8), legend.text = element_text(size = 15), 
@@ -710,7 +725,7 @@ theme_21 <- theme(legend.position = "bottom", legend.direction = "horizontal", a
 
 core_col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
 
-River_Arno_cut %>%
+River_Arno_cut1%>%
   select(Date, Hydrometry_Nave_di_Rosano) %>%
   melt(., id.vars = "Date") %>%
   ggplot(., aes(Date, value))+
