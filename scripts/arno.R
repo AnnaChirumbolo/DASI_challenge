@@ -1002,7 +1002,7 @@ ggplot(pred_River_Arno_Hydrometry_Nave_di_Rosano3, aes(real, pred, fill = above)
 
 
 
-
+#### conclusioni ####
 #conclusioni:
 # si osservano rare ma ampie fluttuazione del flusso d'acqua, fino
 #a zero, con rapida rislaita (dall'analisi dell idrometria).
