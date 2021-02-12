@@ -1,8 +1,12 @@
-# Bilancino Lake
+#### Bilancino Lake ####
+# analisi dati 
+
+####inizializzo i dati ####
 
 getwd()
 rm(list = ls(all=TRUE)) 
 
+#### carico le librerie ####
 library(reshape)
 library(stats)
 install.packages("factoextra")
@@ -64,7 +68,7 @@ library(scales)
 library(Metrics)
 library(mgcv)
 
-########## Imposto theme
+##### imposto il theme ####
 theme_21 <- theme(legend.position = "bottom", legend.direction = "horizontal", axis.text = element_text(size = 14), 
                      plot.caption = element_text(color = "gray25", face = "bold", size = 8), legend.text = element_text(size = 15), 
                      axis.title = element_text(size = 14.5, face = "bold", color = "gray25"), legend.title = element_text(size = 14), axis.line = element_line(size = 0.4), 
@@ -73,9 +77,6 @@ theme_21 <- theme(legend.position = "bottom", legend.direction = "horizontal", a
 core_col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
 
 
-
-##### prima prova prova prova
-bilancino<-read_csv("./acea-water-prediction/Lake_Bilancino.csv")
 #Trasformo la colonn data in data
 bilancino$Date<-as.Date(bilancino$Date, format = "%d/%m/%Y")
 str(bilancino) # visionare
@@ -84,29 +85,48 @@ summary(bilancino) #per avere una visione del dataframe
 
 visdat::vis_dat(bilancino)
 
-######## Secondo approccio
-Lake_Bilancino<-read_csv("./acea-water-prediction/Lake_Bilancino.csv")
+##### carico il dataset ####
+Lake_Bilancino<-read.csv("./data/Lake_Bilancino.csv")
 #Trasformo la colonn data in data
 Lake_Bilancino$Date<-as.Date(Lake_Bilancino$Date, format = "%d/%m/%Y")
 
-# raggruppo i mesi in stagioni
+str(Lake_Bilancino) # visiono il contenuto
+names(Lake_Bilancino) # guardo il nome delle variabili e della variabile trget
+summary(Lake_Bilancino) #per avere una visione del dataframe e dei valori nullu
+
+#### controllo i missing ####
+visdat::vis_dat(Lake_Bilancino)
+
+#### aggiungo la variabile season ####
+# raggruppo i mesi in stagioni utile per studiare la stagionalita'
 #Lake_Bilancino <- Lake_Bilancino %>%
  # mutate(Season = case_when(month(Date) %in% c(3,4,5) ~ "Spring",                      
 #                           month(Date) %in% c(6,7,8) ~ "Summer",
 #                            month(Date) %in% c(9,10,11) ~ "Autumn",
 #                           month(Date) %in% c(1,2,12) ~ "Winter"))
 
-####controllo i missing prima prova
-vis_dat(Lake_Bilancino)
+# noto i valori  mancanti delle variabili dall'inizio del dataset fino alla fine del 2003
+max(Lake_Bilancino$Date[is.na(Lake_Bilancino$Rainfall_S_Piero)])
+#2003-12-31"
 
 #### elimino i missing antecedenti al 2004
 cutdate <- as.Date("2004-01-01")
-Lake_Bilancino <- Lake_Bilancino[(Lake_Bilancino$Date > cutdate), ]
-summary(Lake_Bilancino)
-str(Lake_Bilancino)
-#is.na(Lake_Bilancino)
-dim(Lake_Bilancino)
-dim(na.omit(Lake_Bilancino)) #controllo di aver eliminato tutti i null
+Lake_Bilancino_cut <- Lake_Bilancino[(Lake_Bilancino$Date > cutdate), ]
+summary(Lake_Bilancino_cut)
+str(Lake_Bilancino_cut)
+
+dim(Lake_Bilancino_cut)
+dim(na.omit(Lake_Bilancino_cut)) #controllo di aver eliminato tutti i null
+
+
+#### aggiungo la variabile season ####
+# raggruppo i mesi in stagioni utile per studiare la stagionalita'
+#Lake_Bilancino <- Lake_Bilancino %>%
+# mutate(Season = case_when(month(Date) %in% c(3,4,5) ~ "Spring",                      
+#                           month(Date) %in% c(6,7,8) ~ "Summer",
+#                            month(Date) %in% c(9,10,11) ~ "Autumn",
+#                           month(Date) %in% c(1,2,12) ~ "Winter"))
+
 
 ## Le mie variabili TARGET sono: Lake_Level, Flow_Rate
 ##Sembra che ci siano alcuni picchi Flow_Rate a volte a gennaio, a volte in primavera,
