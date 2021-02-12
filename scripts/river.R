@@ -4,8 +4,13 @@ getwd()
 rm(list = ls(all=TRUE)) 
 
 #### carico le librerie ####
-library(reshape)
+#install.packages("recipes")
+#install.packages("fastDummies")
+#library(fastDummies)
+#library(reshape)
+library(reshape2)
 library(stats)
+install.packages("GGally")
 install.packages("factoextra")
 install.packages("tibble")
 install.packages("imputeTS")
@@ -36,8 +41,41 @@ library(forecast)
 library(xts)
 library(caTools)
 library(data.table)
-install.packages("metR")
-library(metR)
+library(dplyr)
+#install.packages("metR")
+#library(metR)
+library(zoo)
+library(ggthemes)
+library(forecast)
+library(tidyverse)
+library(scales)
+library(RColorBrewer)
+library(reshape2)
+library(lubridate)
+library(viridis)
+library(ggrepel)
+library(corrplot)
+library(caret)
+library(boot)
+library(class)
+library(adabag)
+library(randomForestSRC)
+library(scales)
+library(Metrics)
+library(mgcv)
+
+
+
+
+
+
+#### imposto tema ####
+theme_21 <- theme(legend.position = "bottom", legend.direction = "horizontal", axis.text = element_text(size = 14), 
+                  plot.caption = element_text(color = "gray25", face = "bold", size = 8), legend.text = element_text(size = 15), 
+                  axis.title = element_text(size = 14.5, face = "bold", color = "gray25"), legend.title = element_text(size = 14), axis.line = element_line(size = 0.4), 
+                  plot.title = element_text(size = 19), plot.subtitle = element_text(size = 14.5), strip.text = element_text(size = 14, face = "bold"))
+
+core_col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
 
 
 
@@ -100,13 +138,13 @@ temp_firenze_ls <- list.files(path = "./data/meteoFirenze/",
 ## manipulating temp data 
 temp_firenze <- temp_firenze_ls %>% 
   rename(date1 = filename) %>% 
-  mutate(date1 = gsub("./data/meteoFirenze/", "", date1),
+  dplyr::mutate(date1 = gsub("./data/meteoFirenze/", "", date1),
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
   dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
-  mutate(date_final = stringr::str_replace(date_final,"ago","08"),
+  dplyr::mutate(date_final = stringr::str_replace(date_final,"ago","08"),
          date_final = stringr::str_replace(date_final, "gen", "01"),
          date_final = stringr::str_replace(date_final, "feb", "02"),
          date_final = stringr::str_replace(date_final, "mar", "03"),
@@ -122,7 +160,7 @@ temp_firenze <- temp_firenze_ls %>%
          date_final = dmy(date_final)) %>% 
   rename(Date = date_final) %>%
   dplyr::select(Date, tmin, tmax) %>%
-  mutate(Temperature_Firenze = rowMeans(subset(., select = c(tmin,tmax)),
+  dplyr::mutate(Temperature_Firenze = rowMeans(subset(., select = c(tmin,tmax)),
                                          na.rm = T)) %>%
   dplyr::select(-tmin, -tmax) %>%
   arrange(Date)
@@ -603,7 +641,7 @@ River_Arno_cut$Rainfall_Vernio[is.na(River_Arno_cut$Rainfall_Vernio)] <-
 
 ####controllo ulteriori NA ####
 ### N/A Visualization
-vis_dat(River_Arno_cut1)
+visdat::vis_dat(River_Arno_cut)
 # delete rows with NA  non posso recuperare i dati dal
 # 05-07-2007 al 01-01-2011
 cutdata_1 <- as.Date("2007-07-05")
@@ -612,20 +650,25 @@ River_Arno_cut1 <- River_Arno_cut[(River_Arno_cut$Date > cutdata_2), ]
 #River_Arno_cut1 e' il dataframe con una interruzione temporale dal
 #2007 al 2011 e decido di prendere i dati solo dal 2011 in poi
 
-
+visdat::vis_dat(River_Arno_cut1)
 
 summary(River_Arno_cut1)
-statsNA(River_Arno_cut1$Rainfall_Stia)
+statsNA(River_Arno_cut1$Hydrometry_Nave_di_Rosano)
 
 
 
 max(River_Arno_cut1$Date[is.na(River_Arno_cut1$Hydrometry_Nave_di_Rosano )])
-#ho un unico valore mancante nella variabile target Hydrometry_Nave_di_Rosano
+#houn unico valore mancante nella variabile target Hydrometry_Nave_di_Rosano
+#"2020-05-05"
 
 
-##interpolo il valore mancante
+####interpolo il valore mancante####
 # interpolation
+River_Arno_cut1$Hydrometry_Nave_di_Rosano <-as.numeric(na.approx(River_Arno_cut1$Hydrometry_Nave_di_Rosano))
+
+#oppure
 River_Arno_cut1$Hydrometry_Nave_di_Rosano <-as.numeric(na.interp(River_Arno_cut1$Hydrometry_Nave_di_Rosano))
+
 
 #TARGET: Hydrometry_Nave_di_Rosano
 #Il livello delle acque sotterranee rilevato dalla stazione idrometrica 
@@ -647,16 +690,36 @@ rm(df)
 #il fiume Sieve che sono Vernio, S.Piero, MAngona, S_Agata Cavallina, Le Croci
 
 
-# Correlation Matrix
+#### Correlation Matrix ####
 df <- River_Arno_cut1
 df$Date <- NULL
 ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, 
        layout.exp = 4, label_size = 3)
 rm(df)
+#La matrice di correlazione mostra una serie di correlazioni 
+#positive tra precipitazioni e correlazioni negative tra 
+# la temperatura e precipitazioni.
+#L'idromertia e' inversament correlata  con la temperatura. 
+#Le precipitazioni possono essere suddivise in due categorie: 
+#la prima per le prime 6 variabili che sono le zone, attraverso cui
+#passa il principale affluente dell'arno, il fiume Sive.
+#La seconda categoria e' rappresetata dalle restanti 8 localita' 
+#che si trovano lungo l'Arno a partire della fonte. 
+#Le variabili sono fortemente correlate tra loro in gruppi, 
+#ma molto debolmente tra i gruppi, quindi per il modello finale, 
+#studieremo i gruppi diversi.
+
+###correlazione seconda tabella di visibilita' con il metodo di spearman
+River_Arno_cut1 %>%
+ select(!c("Date", "Season")) %>%
+ cor(., method = "spearman", use = "complete.obs") %>%
+corrplot(., method = "color", type = "upper", col = core_col(100),
+  tl.col = "black",tl.srt = 35, diag = T, tl.cex = 0.72)
 
 
 #### Rainfall analysis ####
-# Rainfall analysis per le localita' lungo l'affluente Sieve
+# Rainfall analysis per le localita' lungo l'affluente 
+# principale del fiume Arno, il Sieve
 River_Arno_cut1$Rainfall_mean_Sieve <- rowMeans(River_Arno_cut1[,c("Rainfall_Le_Croci", "Rainfall_Cavallina", 
                                                    "Rainfall_S_Agata", "Rainfall_Mangona",
                                                    "Rainfall_S_Piero","Rainfall_Vernio")])
@@ -668,7 +731,7 @@ River_Arno_cut1$Rainfall_mean_Sorgente <- rowMeans(River_Arno_cut1[,c("Rainfall_
                                                                    "Rainfall_Montevarchi","Rainfall_Consuma",
                                                                    "Rainfall_Incisa", "Rainfall_Stia" )])
 df <- River_Arno_cut1
-rm(df)
+##rm(df)
 ################### 
 
 #ho preso i dati da 3B meteo, dal 2011 reali
@@ -682,10 +745,34 @@ ggplot(df, aes(x = Date, y = Val, col = Var)) +
   ylab("Rainfall") +   xlab("Date")
 rm(df)
 
+#### visualizzo la pioggia per localita'####
+River_Arno_cut1 %>%
+  select(Date, Rainfall_Le_Croci, Rainfall_Cavallina, Rainfall_S_Agata, Rainfall_Mangona, Rainfall_S_Piero,
+         Rainfall_Vernio, Rainfall_Stia, Rainfall_Consuma, Rainfall_Incisa, Rainfall_Montevarchi,
+         Rainfall_S_Savino, Rainfall_Laterina, Rainfall_Bibbiena, Rainfall_Camaldoli) %>%
+  melt(., id.vars = "Date") %>%
+  ggplot(., aes(Date, value, col = variable))+
+  facet_wrap(variable~., ncol = 3)+
+  geom_line(size = 0.4, alpha = 1)+
+  scale_color_viridis_d(option = "inferno", begin = 0.15, end = 0.15)+
+  scale_x_date(date_labels = "%Y", date_breaks = "3 years", limits = as.Date(c("2011-01-01", "2020-06-30")))+
+  labs(x = "Date", y = "Quantity of rain-falling (in mm)", title = "Quantity of rain-falling depending on the region",
+       subtitle = "explanatory variables on river Arno (from 01-2011)") + 
+  theme_21+
+  theme(legend.position = "none")
+#abbiamo due gruppi (affluente Sieve e sorgente dell'arno) in cui le precipitazioni sono correlate tra loro, 
+#ma non sono correlate tra i gruppi.
+#nella  maggior parte dei casi non superano i 100 mm  di pioggia 
+#e a volte, in certe localita', raramente superano anche i 50 mm. 
+#Decidiamo di scegliere due variabili, una per ogni gruppo: 
+#dal primo gruppo scegliamo le precipitazioni da "Le Croci" 
+#e dal secondo "Stia" per la posizione geografica centrale, e per
+#altissima correlazione tra le altre componenti del proprio gruppo.
+
 
 # Temperature: the temperature mean is 16.61 °C
 # Temperature analysis: ho riempito il dataset con le temperature
-#reali prese da 3bmeteo dal 2011
+# reali prese da 3bmeteo dal 2011
 mean(River_Arno_cut1$Temperature_Firenze)
 df <- River_Arno_cut1 %>% dplyr::select(Date, Temperature_Firenze ) %>%
   pivot_longer(., cols = c(Temperature_Firenze ),
@@ -695,7 +782,10 @@ ggplot(df, aes(x = Date, y = Val, col = Var)) +
   geom_line() + ggtitle("Temperature (°C) -  River Arno") +
   ylab("Temperature") + xlab("Date")
 rm(df)
-
+#La temperatura della regione di Firenze è l'unica variabile 
+#sulla temperatura del dataset Arno. 
+#Ha una distribuzione stagionale e la maggior parte dei valori è 
+#compresa tra 0 e 30 gradi, in linea per una regione del centro Italia. 
 
 
 
@@ -712,19 +802,29 @@ River_Arno_cut1$Season<-factor(River_Arno_cut1$Season,
                              levels=c("Winter","Spring", "Summer", "Autumn"))
 
 
- 
+#analizzo la variabile target in base alla stagione:
 
-#season(1, lang = "en")
-#season(as.Date("2017-01-01"))
+River_Arno_cut1 %>%
+  select(Season, Hydrometry_Nave_di_Rosano) %>%
+  melt(., id.vars = "Season") %>%
+  ggplot(., aes(Season, value))+
+  facet_wrap(variable~., ncol = 1, scales = "free_y")+
+  geom_boxplot(outlier.size = 1.1, outlier.shape = 20, lwd = 0.5, fatten = 1.1, 
+               alpha = 0.95, width = 0.75, col = "gray10", fill = "#f8fc9d")+
+  scale_x_discrete(limit = c("Spring", "Summer", "Autumn", "Winter"))+
+  labs(x = "Season", y = "Value", title = "The distribution of the explained variables by season",
+       subtitle = "river Arno") + 
+  theme_21
+#valori superiori a 5, che rappresentano piogge intenze,
+#si vedono solo in autunno e in inverno.
+#le stagioni spiegano poco la variabile target: la mediana e' leggerment
+# piu' alta in primavera e in inverno.
 
-#### imposto tema ####
-theme_21 <- theme(legend.position = "bottom", legend.direction = "horizontal", axis.text = element_text(size = 14), 
-                  plot.caption = element_text(color = "gray25", face = "bold", size = 8), legend.text = element_text(size = 15), 
-                  axis.title = element_text(size = 14.5, face = "bold", color = "gray25"), legend.title = element_text(size = 14), axis.line = element_line(size = 0.4), 
-                  plot.title = element_text(size = 19), plot.subtitle = element_text(size = 14.5), strip.text = element_text(size = 14, face = "bold"))
 
-core_col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
 
+
+
+### andamento della variabile target####
 River_Arno_cut1%>%
   select(Date, Hydrometry_Nave_di_Rosano) %>%
   melt(., id.vars = "Date") %>%
@@ -732,7 +832,100 @@ River_Arno_cut1%>%
   facet_wrap(variable~., ncol = 1, scales = "free_y")+
   geom_line(size = 1.6, alpha = 0.8, col = "gray65")+
   geom_smooth(method = "loess", color = "firebrick3", size = 2.2, formula = y ~ x, fill = "firebrick4", alpha = 0.32)+
-  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2004-01-01", "2020-06-30")))+
+  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2011-01-01", "2020-06-30")))+
   labs(x = "Date", y = "Value", title = "The distribution of the explained variables (along with the loess curve)",
-       subtitle = "in river Arno (from 01-2004)") + 
+       subtitle = "in river Arno (from 01-2011)") + 
   theme_21
+#La variabile target esplicita  il livello del fiume espresso in metri 
+#misurato dalla stazione idrometrica "Nave_di_Rosano". 
+#I valori di questa variabile sono compresi tra 0 e 7 metri.
+#La maggioranza dei valori misurati è compresa tra 1 e 4 metri. 
+#Dopo qualche stagione irregolare, ci sono diversi cali 
+#fino a 0 nel 2013, 2014 e 2019, che tornano rapidamente alla normalità.
+
+
+#### RAndom Forest test ####
+
+River_Arno_Season <- dummyVars(~Season, data = River_Arno_cut1, fullRank = F)
+River_Arno_Season <- as.data.frame(predict(River_Arno_Season, newdata = River_Arno_cut1))
+
+River_Arno_cut2 <- River_Arno_cut1 %>%
+  select(Hydrometry_Nave_di_Rosano, Temperature_Firenze, Rainfall_Le_Croci, Rainfall_Stia)
+
+River_Arno_cut2 <- cbind(River_Arno_cut2, River_Arno_Season)
+
+River_Arno_cut2 <- River_Arno_cut2[complete.cases(River_Arno_cut2),]
+
+set.seed(2021)
+rand_River_Arno <- sample(nrow(River_Arno_cut2), nrow(River_Arno_cut2)* 1/3, replace = F)
+test_River_Arno <- River_Arno_cut2[rand_River_Arno,]
+train_River_Arno <- River_Arno_cut2[-rand_River_Arno,]
+
+cat("Number of rows in the training set:", nrow(train_River_Arno), "\n")
+cat("Number of rows in the test set:", nrow(test_River_Arno))
+#Ho diviso il dataset in training e tes, test 423 obs, train 847 obs
+
+rf_River_Arno_Hydrometry_Nave_di_Rosano <- 
+  rfsrc(Hydrometry_Nave_di_Rosano~Season.Autumn+Season.Spring+Season.Summer+Season.Winter+Temperature_Firenze+
+                                                   Rainfall_Le_Croci+Rainfall_Stia, 
+        data = train_River_Arno, block.size = 1, importance = T, samptype = "swr", var.used = "all.trees", ntree = 200)
+
+#procedo alla verifica del modello
+plot(rf_River_Arno_Hydrometry_Nave_di_Rosano, verbose = F)
+
+#L'errore diminuisce molto rapidamente aggiungendo più alberi,
+#la variabile che ha avuto piu' impatto e' la temperatura dell'aria
+#di Firenze. La pioggia a Stia influisce abbastanza, alla sorgente dell'arno
+# mentre lungo l'affluente
+#dell'Arno, il fiume Sieve, la pioggia alla
+#localita' Le Croci influisce molto poco
+#(daconfrontare con alre scele di variabili)
+
+
+#### rmse ####
+
+pred_rf_River_Arno_Hydrometry_Nave_di_Rosano <- predict(rf_River_Arno_Hydrometry_Nave_di_Rosano, newdata = test_River_Arno)
+pred_rf_River_Arno_Hydrometry_Nave_di_Rosano
+
+cat("RMSE Test:", round(rmse(pred_rf_River_Arno_Hydrometry_Nave_di_Rosano$predicted, test_River_Arno$Hydrometry_Nave_di_Rosano),2))
+#RMSE Test: 0.45
+#
+#L'RMSE sul set di prova è 0,45.
+#Si tratta di un risultato abbastanza buono che tiene conto 
+#di un piccolo numero di variabili esplicative. 
+#La varianza di questo modello è stata spiegata solo nel 34% dei casi
+
+
+pred_River_Arno_Hydrometry_Nave_di_Rosano <- data.frame(pred = pred_rf_River_Arno_Hydrometry_Nave_di_Rosano$predicted, 
+                                                        real = test_River_Arno$Hydrometry_Nave_di_Rosano)
+
+pred_River_Arno_Hydrometry_Nave_di_Rosano$above <- ifelse(pred_River_Arno_Hydrometry_Nave_di_Rosano$pred>pred_River_Arno_Hydrometry_Nave_di_Rosano$real,
+                                                          "Too high predict value", "Too low predict value")
+
+ggplot(pred_River_Arno_Hydrometry_Nave_di_Rosano, aes(real, pred, fill = above))+
+  geom_point(size = 4, shape = 21, alpha = 0.8)+ 
+  scale_fill_viridis_d(option = "inferno", begin = 0.25, end = 0.85, name = "")+
+  geom_abline(intercept = 0, slope = 1, col = "red1", size = 1.25)+
+  labs(x = "Real values in the test set", y = "Predicted values in the test set", 
+       title = "The predicted and true values on the test set", fill = "",
+       subtitle = "Random forest model for the Hydrometry_Nave_di_Rosano variable in Arno_river") + 
+  theme_21+
+  theme(legend.position = "bottom", legend.direction = "vertical")
+# Possiamo osservare che la maggioranza dei valorisi trova vicino alla linea 
+#di previsione e questo va bene dove ci sono errori#
+#piccoli. Tuttavia ci sono dei valori con errore piu' grande
+#conclusioni:
+# si osservano rare ma ampie fluttuazione del flusso d'acqua, fino
+#a zero, con rapida rislaita (dall'analisi dell idrometria).
+#Le variabili delle precipitazioni si dividono in due gruppi, 
+#non correlate tra loro ma internamente correlate.
+# il grruppo che influisce di maggiormente riguarda la sorgente (ma controlla)
+
+# La temperatura ha la maggiore influenza sul flusso d'acqua, tra le
+#variabili studiate
+#La variabile target differisce leggermente tra le stagioni,
+#Nonostante il contenuto numero di variabili si puo' 
+#ottenere un buon modello,
+#Il modello ha i maggiori problemi con valori fuori lo standard
+#(forti aumenti e diminuzioni che sottostima e sovrastima di conseguenza),
+#Il modello può essere migliorato quando vengono trovate più variabili esplicative o il periodo di raccolta è più lungo e più stabile.
