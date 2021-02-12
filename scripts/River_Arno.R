@@ -662,7 +662,7 @@ statsNA(River_Arno_cut1$Hydrometry_Nave_di_Rosano)
 
 
 max(River_Arno_cut1$Date[is.na(River_Arno_cut1$Hydrometry_Nave_di_Rosano )])
-#houn unico valore mancante nella variabile target Hydrometry_Nave_di_Rosano
+#ho un unico valore mancante nella variabile target Hydrometry_Nave_di_Rosano
 #"2020-05-05"
 
 
