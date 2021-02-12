@@ -15,7 +15,6 @@ library(class)
 library(jpeg)
 library(png)
 library(tibble)
-library("dplyr")
 library("corrplot")
 library("readxl")
 library("factoextra")
@@ -38,7 +37,6 @@ library("dbscan")
 library("dplyr")
 library("cluster")
 library("clValid")
-library(corrplot)
 library(tidyverse)
 library(ggplot2)
 library(GGally)
@@ -97,13 +95,6 @@ summary(Lake_Bilancino) #per avere una visione del dataframe e dei valori nullu
 #### controllo i missing ####
 visdat::vis_dat(Lake_Bilancino)
 
-#### aggiungo la variabile season ####
-# raggruppo i mesi in stagioni utile per studiare la stagionalita'
-#Lake_Bilancino <- Lake_Bilancino %>%
- # mutate(Season = case_when(month(Date) %in% c(3,4,5) ~ "Spring",                      
-#                           month(Date) %in% c(6,7,8) ~ "Summer",
-#                            month(Date) %in% c(9,10,11) ~ "Autumn",
-#                           month(Date) %in% c(1,2,12) ~ "Winter"))
 
 # noto i valori  mancanti delle variabili dall'inizio del dataset fino alla fine del 2003
 max(Lake_Bilancino$Date[is.na(Lake_Bilancino$Rainfall_S_Piero)])
@@ -117,7 +108,7 @@ str(Lake_Bilancino_cut)
 
 dim(Lake_Bilancino_cut)
 dim(na.omit(Lake_Bilancino_cut)) #controllo di aver eliminato tutti i null
-
+visdat::vis_dat(Lake_Bilancino_cut)
 
 #### aggiungo la variabile season ####
 # raggruppo i mesi in stagioni utile per studiare la stagionalita'
@@ -128,11 +119,12 @@ dim(na.omit(Lake_Bilancino_cut)) #controllo di aver eliminato tutti i null
 #                           month(Date) %in% c(1,2,12) ~ "Winter"))
 
 
+#### guardo le variabili target ####
 ## Le mie variabili TARGET sono: Lake_Level, Flow_Rate
 ##Sembra che ci siano alcuni picchi Flow_Rate a volte a gennaio, a volte in primavera,
 #non tutti gli anni. 
-
-df <- Lake_Bilancino %>% select(Date, 
+#### variabile target Flow_Rate ####
+df <- Lake_Bilancino_cut %>% select(Date, 
                                 Flow_Rate) %>%
   pivot_longer(., cols = c(Flow_Rate),
                names_to = "Var", values_to = "Val", values_drop_na = FALSE)
@@ -144,8 +136,21 @@ ggplot(df, aes(x = Date, y = Val, col = Var)) +
   xlab("Date")
 rm(df)
 
-#correlazione Correlation Matrix
-df <- Lake_Bilancino
+#### variabile target Lake_Level ####
+df <- Lake_Bilancino_cut %>% select(Date, 
+                                    Lake_Level) %>%
+  pivot_longer(., cols = c(Lake_Level),
+               names_to = "Var", values_to = "Val", values_drop_na = FALSE)
+df <- df[complete.cases(df), ]
+ggplot(df, aes(x = Date, y = Val, col = Var)) +
+  geom_line() +
+  ggtitle("Lake Bilancino: Lake_Level in m") +
+  ylab("Lake_Level in m") +
+  xlab("Date")
+rm(df)
+
+#### correlazione Correlation Matrix ####
+df <- Lake_Bilancino_cut
 df$Date <- NULL
 ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, layout.exp = 4, label_size = 3)
 rm(df)
