@@ -5,17 +5,19 @@
 ################################################################################
 
 
-### libraries
+#### libraries ####
 
 #install.packages("outliers")
 
 library(tidyverse)
-library(imputeTS)
+ library(imputeTS)
 library(ggplot2)
 library(zoo)
 library(data.table)
 library(lubridate)
 library(outliers)
+install.packages("tidyselect")
+library(tidyselect)
 
 ###############
 ##############
@@ -978,27 +980,69 @@ canneto3 <- canneto2 %>%
 ################################################################################
 ################################################################################
 
+add.seasons <- function(data) {
+  seasons <- data %>% 
+    mutate(Date = lubridate::as_date(Date),
+           Year = as.factor(lubridate::year(Date)),
+           Month = as.factor(lubridate::month(Date)),
+           Day = as.factor(lubridate::day(Date)),
+           Month_day = format(Date,format = "%m-%d")) %>% 
+    group_by(Year) %>%
+    mutate(Spring = factor(ifelse(Month_day >= "03-21" & Month_day < "06-21",
+                                  1,0)),
+           Summer = factor(ifelse(Month_day >="06-21" & Month_day < "09-21",
+                                  1,0)),
+           Autumn = factor(ifelse(Month_day >= "09-21" & Month_day < "12-21",
+                                  1,0)),
+           Winter = factor(ifelse(Month_day >= "12-21" & Month_day < "3-21",
+                                  1,0))) %>%
+    select(-Month_day) %>% 
+    ungroup()
+  return(seasons)
+}
+
+library(caret)
+
+
 #### doganella ####
 
 doganella <- read.csv("processed_data/DOGANELLA_to_model.csv")
-str(doganella)
 
-doganella_seas <- doganella %>% 
-  mutate(Date = as_date(Date),
-         Year = year(Date),
-         Month = month(Date),
-         Day = day(Date),
-         Month_day = paste0(Month,"-",Day)) %>% 
-  group_by(Year) %>% 
-  mutate(Spring = factor(ifelse(Month_day >= "3-21" & Month_day < "6-21",
-                         1,0)),
-         Summer = factor(ifelse(Month_day >="6-21" & Month_day < "9-21",
-                                1,0)),
-         Autumn = factor(ifelse(Month_day >= "9-21" & Month_day < "12-21",
-                                1,0)),
-         Winter = factor(ifelse(Month_day >= "12-21" & Month_day < "3-21",
-                                1,0))) %>%
+
+doganella_featured <- add.seasons(doganella) %>%
   dplyr::select(-X,-Pozzo_1:-Pozzo_9,-Rainfall_Monteporzio,-Rainfall_Velletri) %>% 
-  spread(key = imp, value=depth_to_gw.m)
+  spread(key = imp, value=depth_to_gw.m) %>% 
+  mutate(snow.yes = as.factor(ifelse(Temperature_Monteporzio <=0 | Temperature_Velletri <=0,1,0)),
+         snow.no = as.factor(ifelse(Temperature_Monteporzio > 0 | Temperature_Velletri >0, 1, 0))) %>% 
+  write.csv(., "processed_data/DOGANELLA_to_model.csv")
+  
+#### lupa ####
+
+lupa <- read.csv("processed_data/LUPA_to_model.csv")
+
+str(lupa)
+
+lupa_featured <- add.seasons(lupa) %>%
+  select(-X) %>% 
+  rename(fl_rate.Ls = imp_flow_rate) %>% ## there's only rainfall as feature - can't assume when 0 = snow 
+  write.csv(., "processed_data/LUPA_to_model.csv")
+
+#### canneto ####
+
+canneto <- read.csv("processed_data/MADONNA_DI_CANNETO_to_model.csv")
+
+str(canneto)
+canneto_featured <- add.seasons(canneto) %>%
+  select(-X) %>%
+  rename(fl_rate.Ls = imp_flow_rate) %>% 
+  mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <=0, 1,0)),
+         snow.no = as.factor(ifelse(Temperature_Settefrati >0,1,0))) %>% 
+  write.csv(., "processed_data/MADONNA_DI_CANNETO_to_model.csv")
+
+
+
+
+
+
 
 
