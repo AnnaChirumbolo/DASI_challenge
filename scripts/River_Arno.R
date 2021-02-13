@@ -766,7 +766,7 @@ River_Arno_cut1 %>%
 #Decidiamo di scegliere due variabili, una per ogni gruppo: 
 #dal primo gruppo, dell'affluente Sieve, scegliamo le precipitazioni da "Le Croci" 
 #e dal secondo gruppo, della sorgente dell'Arno, scelgo "Stia" per la posizione geografica centrale, e per
-#altissima correlazione tra le altre componenti del proprio gruppo.
+#alta correlazione tra le altre componenti del proprio gruppo.
 
 #poi, per fare un secondo test di forecast, possiam prendere
 # due diverse localita' com eesempio Cavallina (dal grupo dell'Affluente Sieve)
