@@ -1040,9 +1040,23 @@ canneto_featured <- add.seasons(canneto) %>%
   write.csv(., "processed_data/MADONNA_DI_CANNETO_to_model.csv")
 
 
-
-
-
-
+###
+# autoTS
+# regime shifts - script 
+# livello medio trimestre per trimestre, o mese per mese 
+# (non so se vale la pena) distinguere comportamento falda a seconda dell'anno (piovoso o siccitoso)
+###
+# filtro per livelli di pioggia - identificare livelli pioggia dura meno di un x giorni - cambio livello minimo a 0 
+# con cinque livelli diversi di pioggia --> creo cinque time series diverse
+# introduco un lag - traslo in avanti tutte le serie delle pioggie --> traslo a 4 gg in futuro
+# disallineamento tra falda acquifera e la pioggia
+# per cinque serie con livelli di pioggia minima creo altre cinque con il lag 
+# confrontare i modelli 
+# relazione monotona --> correl. spearman tra pioggia e acquifero
+# sulla base di quella selezionerei un primo set di features 
+# poi si runna il modello (autoML/xgboost)
+### 
+# temperatura - va bene divsione per stagioni, neve, ricarica
+# effetto maggiore su consumi
 
 
