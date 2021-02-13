@@ -1084,7 +1084,7 @@ canneto_months <- canneto %>%
          Quarters = quarter(Date, with_year = T),
          Trimonthly = as.factor(round_date(Y_m, unit = "3 months"))) %>% 
                       # date written is first day of the period
-  select(-Y_m) %>%
+ # dplyr::select(-Y_m) %>%
   group_by(Trimonthly) %>% 
   mutate(Fl_rate.Tri = mean(fl_rate.Ls)) %>% 
   ungroup() %>% 
@@ -1149,7 +1149,9 @@ canneto_rain7 <- canneto_months %>%
 #install.packages("Hmisc")
 library(Hmisc)
 
-canneto_rain.5.lag <- canneto_rain.5 %>% 
+
+
+canneto_rain0.5.lag <- canneto_rain.5 %>% 
   mutate(lag1 = Lag(rain1, +1),
          lag3 = Lag(rain1,+3),
          lag5 = Lag(rain1,+5),
