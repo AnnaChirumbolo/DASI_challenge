@@ -90,11 +90,24 @@ Lake_Bilancino$Date<-as.Date(Lake_Bilancino$Date, format = "%d/%m/%Y")
 
 str(Lake_Bilancino) # visiono il contenuto
 names(Lake_Bilancino) # guardo il nome delle variabili e della variabile trget
-summary(Lake_Bilancino) #per avere una visione del dataframe e dei valori nullu
+summary(Lake_Bilancino) # per avere una visione del dataframe e dei valori nullu
 
 #### controllo i missing ####
 visdat::vis_dat(Lake_Bilancino)
 
+#secondo metodo di visibilita' missing, ridondante cancellare
+#missinig
+Lake_Bilancino %>% 
+  is.na %>%
+  melt %>%
+  ggplot(data = .,aes(Var2, Var1))+
+  geom_raster(aes(fill = value))+
+  scale_fill_brewer(palette = "Reds", labels = c("Present","Missing"))+
+  theme(axis.text.x  = element_text(angle=45, vjust=0.5))+ 
+  coord_flip()+
+  labs(x = "Variable name", y = "Observations", title = "Missing values",  fill = "",
+       subtitle = "in the variables lake Bilancino") + 
+  theme_21
 
 # noto i valori  mancanti delle variabili dall'inizio del dataset fino alla fine del 2003
 max(Lake_Bilancino$Date[is.na(Lake_Bilancino$Rainfall_S_Piero)])
@@ -108,15 +121,15 @@ str(Lake_Bilancino_cut)
 
 dim(Lake_Bilancino_cut)
 dim(na.omit(Lake_Bilancino_cut)) #controllo di aver eliminato tutti i null
-visdat::vis_dat(Lake_Bilancino_cut)
+visdat::vis_dat(Lake_Bilancino_cut) #missing eliminati
 
 #### aggiungo la variabile season ####
 # raggruppo i mesi in stagioni utile per studiare la stagionalita'
-#Lake_Bilancino <- Lake_Bilancino %>%
-# mutate(Season = case_when(month(Date) %in% c(3,4,5) ~ "Spring",                      
-#                           month(Date) %in% c(6,7,8) ~ "Summer",
-#                            month(Date) %in% c(9,10,11) ~ "Autumn",
-#                           month(Date) %in% c(1,2,12) ~ "Winter"))
+Lake_Bilancino_cut <- Lake_Bilancino_cut  %>%
+ mutate(Season = case_when(month(Date) %in% c(3,4,5) ~ "Spring",                      
+                           month(Date) %in% c(6,7,8) ~ "Summer",
+                            month(Date) %in% c(9,10,11) ~ "Autumn",
+                           month(Date) %in% c(1,2,12) ~ "Winter"))
 
 
 #### guardo le variabili target ####
@@ -131,70 +144,64 @@ df <- Lake_Bilancino_cut %>% select(Date,
 df <- df[complete.cases(df), ]
 ggplot(df, aes(x = Date, y = Val, col = Var)) +
   geom_line() +
-  ggtitle("Lake Bilancino: Flow Rate (l/s)") +
+  ggtitle("Lake Bilancino: Flow Rate (m3/s)") +
   ylab("Flow_Rate") +
   xlab("Date")
 rm(df)
 
 #### variabile target Lake_Level ####
-df <- Lake_Bilancino_cut %>% select(Date, 
-                                    Lake_Level) %>%
-  pivot_longer(., cols = c(Lake_Level),
-               names_to = "Var", values_to = "Val", values_drop_na = FALSE)
-df <- df[complete.cases(df), ]
-ggplot(df, aes(x = Date, y = Val, col = Var)) +
-  geom_line() +
-  ggtitle("Lake Bilancino: Lake_Level in m") +
-  ylab("Lake_Level in m") +
-  xlab("Date")
-rm(df)
-
-#### correlazione Correlation Matrix ####
-df <- Lake_Bilancino_cut
-df$Date <- NULL
-ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, layout.exp = 4, label_size = 3)
-rm(df)
-
-
 #Il comportamento Lake Level è pressoché ricorrente 
 #(salvo alcuni anni) con un livello costante e 
-#con una diminuzione verso novembre. Un picco verso il basso c'e' stato nel 2012 
-#e deve ancora tornare ai livelli precedenti
-# il Lake_level ha una variabilità molto bassa, 
+#con una diminuzione verso novembre. Un picco verso il basso c'e' stato nel
+#2012 / 2013
+#ma e' risalito velocemente e si e' stabilizzato poco piu' in basso del livello precedente.
+#Il Lake_level ha una variabilità molto bassa, 
 #in quanto il livello dell'acqua è ancora compreso tra 243 e 253 m
-#nel corso di oltre 17 anni
+#nel corso di oltre 16 anni
 
-df <- Lake_Bilancino %>% select(Date, 
+df <- Lake_Bilancino_cut %>% select(Date, 
                                 Lake_Level) %>%
   pivot_longer(., cols = c(Lake_Level),
                names_to = "Var", values_to = "Val", values_drop_na = FALSE)
 df <- df[complete.cases(df), ]
 ggplot(df, aes(x = Date, y = Val, col = Var)) +
   geom_line() +
-  ggtitle("Lake Bilancino: Lake Level (meters)") +
-  ylab("Lake_Level") +
+  ggtitle("Lake Bilancino: Lake Level meters") +
+  ylab("Lake_Level m") +
   xlab("Date")
 rm(df)
 
-# Rainfall analysis
+
+#### Rainfall analysis ####
 #Rainfall: the rainfall mean is 2,86 mm, the month with typically less rain is July
-Lake_Bilancino$Rainfall_mean <- rowMeans(Lake_Bilancino[,c("Rainfall_S_Piero","Rainfall_Mangona",
+Lake_Bilancino_cut$Rainfall_mean <- rowMeans(Lake_Bilancino_cut[,c("Rainfall_S_Piero","Rainfall_Mangona",
                                                            "Rainfall_S_Agata","Rainfall_Cavallina",
                                                            "Rainfall_Le_Croci" )])
-df <- Lake_Bilancino
-df$Rainfall_mean <- runmean(df$Rainfall_mean,30)
-df <- df %>% select(Date,  Rainfall_mean) %>%
-  pivot_longer(., cols = c( Rainfall_mean),
-               names_to = "Var", values_to = "Val", values_drop_na = FALSE)
-ggplot(df, aes(x = Date, y = Val, col = Var)) +
-  geom_line() + ggtitle("Rainfall (mm) - Lake Bilancino") +
-  ylab("Rainfall") +   xlab("Date")
-rm(df)
+mean(Lake_Bilancino_cut$Rainfall_mean) # 2,86 mm
+min(Lake_Bilancino_cut$Rainfall_mean)# 0 quando non piove
+max(Lake_Bilancino_cut$Rainfall_mean) # 85,12 mm max
+day_max<-Lake_Bilancino_cut$Date[max(Lake_Bilancino_cut$Rainfall_mean)]
+day_max #"2004-03-26" giorno di picco con 85,12 mm di pioggia
 
+#df <- Lake_Bilancino_cut
+#df$Rainfall_mean <- runmean(df$Rainfall_mean,30)
+#df <- df %>% select(Date,  Rainfall_mean) %>%
+#  pivot_longer(., cols = c( Rainfall_mean),
+  #             names_to = "Var", values_to = "Val", values_drop_na = FALSE)
+#max(df$Val)
+#mean(df$Val)
 
+#ggplot(df, aes(x = Date, y = Val, col = Var)) +
+#  geom_line() + ggtitle("Rainfall - Lake Bilancino") +
+#  ylab("Rainfall") +   xlab("Date")
+#rm(df)
+# ricontrollare grafico - cancello grafico da df riga 186
 
+#### Temperature analysis ####
+mean(Lake_Bilancino_cut$Temperature_Le_Croci)
 ### Temperature: the temperature mean is 14.53 °C
-
+# La temperatura alla localita' Le_Croci e' stagionale, tipica di una regione
+#del centro Italia
 # Temperature analysis
 df <- Lake_Bilancino %>% select(Date, Temperature_Le_Croci ) %>%
   pivot_longer(., cols = c(Temperature_Le_Croci ),
@@ -205,16 +212,42 @@ ggplot(df, aes(x = Date, y = Val, col = Var)) +
   ylab("Temperature") + xlab("Date")
 rm(df)
 
+#### snow ####
+#Tomperature sotto lo zero / eventuale neve, da analizzare
 
-##Correlazione (Livello Lago - Precipitazioni): 
-#esiste una correlazione -0,070% tra la media delle precipitazioni
-#e il livello del Lago. Tuttavia, se guardiamo la trama notiamo che quando 
-#i livelli di pioggia sono alti il livello del lago è basso e viceversa, 
-#quindi il lago scende il livello nell'ultima parte dell'anno ma risale a 
-#cavallo di gennaio dopo le piogge ; possiamo considerare 5 mesi di ritardo 
+
+
+
+#### correlazione Correlation Matrix ####
+df <- Lake_Bilancino_cut
+df$Date <- NULL
+ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, layout.exp = 4, label_size = 3)
+rm(df)
+
+##correlazione metodo di spearman
+#si può notare che le variabili riguardanti le precipitazioni 
+#sono fortemente correlate positivamente tra loro, tra 0,8 e 0,9 per queste variabili, 
+#quindi si potra' fare una riduzione. Le restanti relazioni sono molto 
+#basse  
+#quindi la rimozione delle variabili riguarderà solo le precipitazioni.
+
+##Lake_Bilancino_cut %>% ## cancellare  e' doppia
+ # select(!c("Date", "Season")) %>%
+  #cor(., method = "spearman", use = "complete.obs") %>%
+  #corrplot(., method = "color", type = "upper", col = core_col(100), number.cex = 1, addCoef.col = "gray8",
+  #         tl.col = "black",tl.srt = 35, diag = T, tl.cex = 0.85)
+
+
+####Correlazione Livello Lago - Precipitazioni: ####
+#esiste una correlazione -0,03% tra la media delle precipitazioni
+#e il livello del Lago. Ma notiamo che quando 
+#i livelli di pioggia sono alti il livello del lago è basso e viceversa. 
+#Il Lake level scende soprattutto nell'ultima parte dell'anno ma risale a 
+#dopo gennaio, dopo le piogge; possiamo considerare 5 mesi di ritardo 
 #per ripristinare il livello dell'acqua
-# correlation Lake_level - Rainfall (compare plots)
-df <- Lake_Bilancino
+# correlation Lake_level - Rainfall (compare plots 1)
+
+df <- Lake_Bilancino_cut
 df$Rainfall_mean <- runmean(df$Rainfall_mean,30)
 df$Lake_Level <- df$Lake_Level/20
 df <- df %>% select(Date, Lake_Level, Rainfall_mean) %>%
@@ -225,21 +258,23 @@ ggplot(df, aes(x = Date, y = Val, col = Var)) +
   ylab("Lake Level - Rainfall") +   xlab("Date")
 rm(df)
 
-# correlation Lake_level - Rainfall (compare plots)
-df <- Lake_Bilancino
-cutdate <- as.Date("2015-01-01")
-df <- Lake_Bilancino[(Lake_Bilancino$Date > cutdate), ]
+# correlation Lake_level - Rainfall (compare plots 2) dal 2016 
+#guardo gli ultimi anni
+df <- Lake_Bilancino_cut
+cutdate <- as.Date("2016-01-01")
+df <- Lake_Bilancino_cut[(Lake_Bilancino_cut$Date > cutdate), ]
 df$Rainfall_mean <- runmean(df$Rainfall_mean,30)/10
 df$Lake_Level <- (df$Lake_Level/20)-12
 df <- df %>% select(Date, Lake_Level, Rainfall_mean) %>%
   pivot_longer(., cols = c(Lake_Level, Rainfall_mean ),
                names_to = "Var", values_to = "Val", values_drop_na = FALSE)
 ggplot(df, aes(x = Date, y = Val, col = Var)) +
-  geom_line() + ggtitle("Lake Level - Rainfall - Lake Bilancino") +
+  geom_line() + ggtitle("Lake Level - Rainfall - Lake Bilancino from 2016") +
   ylab("Lake Level - Rainfall") +   xlab("Date")
 rm(df)
 
-#Correlazione (Flow_Rate - Rainfall): esiste una correlazione dello 0,343% tra 
+####Correlazione Flow_Rate - Rainfall: ####
+#esiste una correlazione dello 0,343% tra ?
 #la media delle precipitazioni e il livello del lago
 # correlation Flow_Rate - Rainfall (compare plots)
 df <- Lake_Bilancino
@@ -254,38 +289,26 @@ ggplot(df, aes(x = Date, y = Val, col = Var)) +
 rm(df)
 
 # correlation Flow_Rate - Rainfall (ggpair)
-df <- Lake_Bilancino
+df <- Lake_Bilancino_cut
 df$Rainfall_mean <- runmean(df$Rainfall_mean,30)
 Pairvar <- c("Rainfall_mean", "Flow_Rate")
 Pairdf <- df[Pairvar]
 ggpairs(Pairdf,lower = list(continuous = wrap("smooth",color = "Green")), title = "Correlation Matrix")
 rm(df)
+# commento
 
-
-####controllo i missing terza prova ricarico il dataset + le stagioni
-Lake_Bilancino<-read_csv("./acea-water-prediction/Lake_Bilancino.csv")
-#Trasformo la colonn data in data
-Lake_Bilancino$Date<-as.Date(Lake_Bilancino$Date, format = "%d/%m/%Y")
+#### creo una nuova variabile Season ####
 # raggruppo i mesi in stagioni
-Lake_Bilancino <- Lake_Bilancino %>%
+Lake_Bilancino_cut <- Lake_Bilancino_cut %>%
  mutate(Season = case_when(month(Date) %in% c(3,4,5) ~ "Spring",                      
                            month(Date) %in% c(6,7,8) ~ "Summer",
                            month(Date) %in% c(9,10,11) ~ "Autumn",
                            month(Date) %in% c(1,2,12) ~ "Winter"))
-Lake_Bilancino$Season<-as.factor(Lake_Bilancino$Season)
+Lake_Bilancino_cut$Season<-factor(Lake_Bilancino_cut$Season,
+                                  levels=c("Winter","Spring", "Summer", "Autumn"))
 
-#missinig
-Lake_Bilancino %>% 
-  is.na %>%
-  melt %>%
-  ggplot(data = .,aes(Var2, Var1))+
-  geom_raster(aes(fill = value))+
-  scale_fill_brewer(palette = "Reds", labels = c("Present","Missing"))+
-  theme(axis.text.x  = element_text(angle=45, vjust=0.5))+ 
-  coord_flip()+
-  labs(x = "Variable name", y = "Observations", title = "Missing values",  fill = "",
-       subtitle = "in the variables describing lake Bilancino") + 
-  theme_21
+
+#### correlazione comparata ####
 #Il livello di flusso è solitamente molto basso - fino a 20 m3 / s, 
 #ma a volte aumenta bruscamente fino a 70 m3 al secondo nel 2014, 
 #quindi questo cambiamento è caratterizzato da una variazione maggiore 
@@ -299,7 +322,7 @@ Lake_Bilancino %>%
 #in quanto il livello dell'acqua è ancora compreso tra 243 e 253 m
 #nel corso di oltre 17 anni
 ###distribuzione comparata
-Lake_Bilancino %>%
+Lake_Bilancino_cut %>%
   select(Date, Lake_Level, Flow_Rate) %>%
   melt(., id.vars = "Date") %>%
   ggplot(., aes(Date, value))+
@@ -307,26 +330,14 @@ Lake_Bilancino %>%
   geom_line(size = 1.6, alpha = 0.8, col = "gray65")+
   geom_smooth(method = "loess", color = "firebrick3", size = 2.2, formula = y ~ x, fill = "firebrick4", alpha = 0.32)+
   scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2004-01-01", "2020-06-30")))+
-  labs(x = "Date", y = "Value", title = "The distribution of the explained variables (along with the loess curve)",
+  labs(x = "Date", y = "Value", title = "The distribution of the target variables (along with the loess curve)",
        subtitle = "in lake Bilancio (from 01-2004)") + 
   theme_21
 
-##correlazione
-#si può notare che le variabili riguardanti le precipitazioni 
-#sono fortemente correlate positivamente tra loro. Il coefficiente di c
-#orrelazione del rango di Spearman varia tra 0,8 e 0,9 per queste variabili, 
-#quindi sarà necessaria una riduzione. Le restanti relazioni sono molto 
-#basse o inesistenti (è la temperatura e le variabili dipendenti), 
-#quindi la rimozione delle variabili riguarderà solo le precipitazioni.
-
-Lake_Bilancino %>%
-  select(!c("Date", "Season")) %>%
-  cor(., method = "spearman", use = "complete.obs") %>%
-  corrplot(., method = "color", type = "upper", col = core_col(100), number.cex = 1, addCoef.col = "gray8",
-           tl.col = "black",tl.srt = 35, diag = T, tl.cex = 0.85)
 
 
-######### PRECIPITAIZIONI
+
+#### PRECIPITAIZIONI ####
 #Abbiamo precipitazioni da cinque diverse regioni e 
 #la loro quantità, varia da 0 a 125 mm. Gli aumenti rapidi si applicano
 #a tutte le variabili e I FENOMENI SONO FORTEMENTE CORRELATI. 
