@@ -16,7 +16,7 @@ library(zoo)
 library(data.table)
 library(lubridate)
 library(outliers)
-install.packages("tidyselect")
+#install.packages("tidyselect")
 library(tidyselect)
 
 ###############
@@ -1054,9 +1054,94 @@ canneto_featured <- add.seasons(canneto) %>%
 # confrontare i modelli 
 # relazione monotona --> correl. spearman tra pioggia e acquifero
 # sulla base di quella selezionerei un primo set di features 
-# poi si runna il modello (autoML/xgboost)
+# poi si runna il modello (autoTS/xgboost)
 ### 
 # temperatura - va bene divsione per stagioni, neve, ricarica
 # effetto maggiore su consumi
+
+
+#### concentrarsi su canneto + aiuto per lago 
+
+str(canneto)
+  # summary when rain isn't 0 
+summary(canneto$Rainfall_Settefrati[!canneto$Rainfall_Settefrati == 0])
+
+ggplot(canneto,aes(Date, fl_rate.Ls))+
+  geom_line() +
+  geom_line(data = canneto, aes(Date, Rainfall_Settefrati, color = "red"))
+
+ggplot(canneto,aes(Rainfall_Settefrati, fl_rate.Ls))+
+  geom_point()
+
+
+# creating quarters, semesters and trimonthly data 
+
+canneto_months <- canneto %>% 
+  mutate(Y_m = as.Date(Date, format ="%Y-%m"),
+         Semester = semester(Date, with_year = T),
+         Quarters = quarter(Date, with_year = T),
+         Trimonthly = as.factor(round_date(Y_m, unit = "3 months"))) %>% 
+                      # date written is first day of the period
+  select(-Y_m) %>%
+  group_by(Trimonthly) %>% 
+  mutate(Fl_rate.Tri = mean(fl_rate.Ls)) %>% 
+  ungroup() %>% 
+  group_by(Quarters) %>% 
+  mutate(Fl_rate.Quar = mean(fl_rate.Ls)) %>% 
+  ungroup() %>% 
+  group_by(Semester) %>% 
+  mutate(Fl_rate.Sem = mean(fl_rate.Ls)) %>% 
+  ungroup()
+
+unique(canneto_months$Trimonthly)
+
+min(canneto_months$Fl_rate.Tri)
+
+# vis trimesters
+ggplot(canneto_months, aes(Trimonthly, Fl_rate.Tri, fill = Year))+
+  geom_bar(stat = "identity")
+
+# vis quarters 
+ggplot(canneto_months, aes(Quarters, Fl_rate.Quar, fill = Year))+
+  geom_bar(stat = "identity")
+
+# vis semesters
+ggplot(canneto_months, aes(Semester, Fl_rate.Sem, fill = Year))+
+  geom_bar(stat = "identity")
+
+
+####
+### checking for rainfall ###
+## changing mm levels 
+
+#ggplot(canneto_rain, aes(y = Rainfall_Settefrati)) +
+#geom_boxplot()
+
+## 5 datasets with 5 levels of min rain changed to 0:
+
+canneto_rain1 <- canneto_months %>% 
+  mutate(rain1 = ifelse(Rainfall_Settefrati <= 0.5, 0, Rainfall_Settefrati),
+         seq.rain.val = sequence(rle(as.character(rain1))$lengths))
+
+canneto_rain2 <- canneto_months %>%  # whenever rain is lower than 1mm/day, = 0
+  mutate(rain2 = ifelse(Rainfall_Settefrati <= 1.5, 0, Rainfall_Settefrati),
+         seq.rain.val = sequence(rle(as.character(rain2))$lengths))
+
+canneto_rain3 <- canneto_months %>% 
+  mutate(rain3 = ifelse(Rainfall_Settefrati <= 3,0,Rainfall_Settefrati),
+         seq.rain.val = sequence(rle(as.character(rain3))$lengths))
+
+canneto_rain4 <- canneto_months %>% 
+  mutate(rain4 = ifelse(Rainfall_Settefrati <= 5, 0, Rainfall_Settefrati),
+         seq.rain.val = sequence(rle(as.character(rain4))$lengths))
+
+canneto_rain5 <- canneto_months %>% 
+  mutate(rain5 = ifelse(Rainfall_Settefrati <=7, 0, Rainfall_Settefrati),
+         seq.rain.val = sequence(rle(as.character(rain5))$lengths))
+
+
+## creating 5 new datasets per dataset...?
+
+
 
 
