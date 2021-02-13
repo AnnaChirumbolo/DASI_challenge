@@ -1039,7 +1039,6 @@ canneto_featured <- add.seasons(canneto) %>%
          snow.no = as.factor(ifelse(Temperature_Settefrati >0,1,0))) %>% 
   write.csv(., "processed_data/MADONNA_DI_CANNETO_to_model.csv")
 
-
 ###
 # autoTS
 # regime shifts - script 
@@ -1061,6 +1060,9 @@ canneto_featured <- add.seasons(canneto) %>%
 
 
 #### concentrarsi su canneto + aiuto per lago 
+
+## re-reading the file 
+canneto <- read.csv("processed_data/MADONNA_DI_CANNETO_to_model.csv")
 
 str(canneto)
   # summary when rain isn't 0 
@@ -1109,6 +1111,7 @@ ggplot(canneto_months, aes(Quarters, Fl_rate.Quar, fill = Year))+
 ggplot(canneto_months, aes(Semester, Fl_rate.Sem, fill = Year))+
   geom_bar(stat = "identity")
 
+write.csv(canneto_months, "processed_data/MADONNA_DI_CANNETO_to_model.csv")
 
 ####
 ### checking for rainfall ###
@@ -1119,11 +1122,11 @@ ggplot(canneto_months, aes(Semester, Fl_rate.Sem, fill = Year))+
 
 ## 5 datasets with 5 levels of min rain changed to 0:
 
-canneto_rain1 <- canneto_months %>% 
+canneto_rain.5 <- canneto_months %>% 
   mutate(rain1 = ifelse(Rainfall_Settefrati <= 0.5, 0, Rainfall_Settefrati),
          seq.rain.val = sequence(rle(as.character(rain1))$lengths))
 
-canneto_rain2 <- canneto_months %>%  # whenever rain is lower than 1mm/day, = 0
+canneto_rain1.5 <- canneto_months %>%  # whenever rain is lower than 1mm/day, = 0
   mutate(rain2 = ifelse(Rainfall_Settefrati <= 1.5, 0, Rainfall_Settefrati),
          seq.rain.val = sequence(rle(as.character(rain2))$lengths))
 
@@ -1131,17 +1134,76 @@ canneto_rain3 <- canneto_months %>%
   mutate(rain3 = ifelse(Rainfall_Settefrati <= 3,0,Rainfall_Settefrati),
          seq.rain.val = sequence(rle(as.character(rain3))$lengths))
 
-canneto_rain4 <- canneto_months %>% 
+canneto_rain5 <- canneto_months %>% 
   mutate(rain4 = ifelse(Rainfall_Settefrati <= 5, 0, Rainfall_Settefrati),
          seq.rain.val = sequence(rle(as.character(rain4))$lengths))
 
-canneto_rain5 <- canneto_months %>% 
+canneto_rain7 <- canneto_months %>% 
   mutate(rain5 = ifelse(Rainfall_Settefrati <=7, 0, Rainfall_Settefrati),
          seq.rain.val = sequence(rle(as.character(rain5))$lengths))
 
 
-## creating 5 new datasets per dataset...?
+## creating 5 new datasets per dataset...
+## ... or 5 new variables 
+
+#install.packages("Hmisc")
+library(Hmisc)
+
+canneto_rain.5.lag <- canneto_rain.5 %>% 
+  mutate(lag1 = Lag(rain1, +1),
+         lag3 = Lag(rain1,+3),
+         lag5 = Lag(rain1,+5),
+         lag7 = Lag(rain1,+7),
+         lag9 = Lag(rain1, +9)) %>%
+  write.csv(., "processed_data/canneto_rain0.5.csv")
+
+canneto_rain1.5.lag <- canneto_rain1.5 %>% 
+  mutate(lag1 = Lag(rain2, +1),
+         lag3 = Lag(rain2, +3),
+         lag5 = Lag(rain2, +5),
+         lag7 = Lag(rain2, +7),
+         lag9 = Lag(rain2, +9))%>% 
+  write.csv(., "processed_data/canneto_rain1.5.csv")
+
+canneto_rain3.lag <- canneto_rain3 %>% 
+  mutate(lag1 = Lag(rain3, +1),
+         lag3 = Lag(rain3, +3),
+         lag5 = Lag(rain3, +5),
+         lag7 = Lag(rain3, +7),
+         lag9 = Lag(rain3, +9)) %>% 
+  write.csv(., "processed_data/canneto_rain3.csv")
+
+canneto_rain5.lag <- canneto_rain5 %>% 
+  mutate(lag1 = Lag(rain4, +1),
+         lag3 = Lag(rain4, +3),
+         lag5 = Lag(rain4, +5),
+         lag7 = Lag(rain4, +7),
+         lag9 = Lag(rain4, +9)) %>% 
+  write.csv(., "processed_data/canneto_rain5.csv")
+
+canneto_rain7.lag <- canneto_rain7 %>% 
+  mutate(lag1 = Lag(rain5, +1),
+         lag3 = Lag(rain5, +3),
+         lag5 = Lag(rain5, +5),
+         lag7 = Lag(rain5, +7),
+         lag9 = Lag(rain5, +9)) %>% 
+  write.csv(., "processed_data/canneto_rain7.csv")
 
 
+#### spearman correlations ####
 
+## cannetorain1 ##
+
+#lag1 
+lag1 <- cor(canneto_rain1.lag$rain1,canneto_rain1.lag$fl_rate.Ls, method = "spearman")
+lag2 <- cor(canneto_rain1.lag$lag1, canneto_rain1.lag$fl_rate.Ls, method = "spearman",
+            use = "complete.obs")
+lag3 <- cor(canneto_rain1.lag$lag3, canneto_rain1.lag$fl_rate.Ls, method = "spearman",
+            use = "complete.obs")
+lag4 <- cor(canneto_rain1.lag$lag5, canneto_rain1.lag$fl_rate.Ls, method = "spearman",
+            use = "complete.obs")
+lag5 <- cor(canneto_rain1.lag$lag7, canneto_rain1.lag$fl_rate.Ls, method = "spearman",
+            use = "complete.obs")
+lag6 <- cor(canneto_rain1.lag$lag9, canneto_rain1.lag$fl_rate.Ls, method = "spearman",
+            use = "complete.obs")
 
