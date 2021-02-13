@@ -889,5 +889,15 @@ p1.xgb_trcontrol <- caret::trainControl(
 )
 
 
+#### canneto ####
+
+canneto <- read.csv("processed_data/MADONNA_DI_CANNETO_to_model.csv")
+canneto0.5 <- read.csv("processed_data/canneto_rain0.5.csv")
+canneto1.5 <- read.csv("processed_data/canneto_rain1.5.csv")
+canneto3 <- read.csv("processed_data/canneto_rain3.csv")
+canneto5 <- read.csv("processed_data/canneto_rain5.csv")
+canneto7 <- read.csv("processed_data/canneto_rain7.csv")
+# uploaded new datasets with new features 
+
 
 
