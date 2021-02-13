@@ -1093,9 +1093,14 @@ canneto_months <- canneto %>%
   ungroup() %>% 
   group_by(Semester) %>% 
   mutate(Fl_rate.Sem = mean(fl_rate.Ls)) %>% 
-  ungroup()
+  ungroup() %>% 
+  mutate(lag1 = Lag(Rainfall_Settefrati, +1),
+         lag3 = Lag(Rainfall_Settefrati,+3),
+         lag5 = Lag(Rainfall_Settefrati,+5),
+         lag7 = Lag(Rainfall_Settefrati,+7),
+         lag9 = Lag(Rainfall_Settefrati, +9))
 
-unique(canneto_months$Trimonthly)
+#unique(canneto_months$Trimonthly)
 
 min(canneto_months$Fl_rate.Tri)
 
