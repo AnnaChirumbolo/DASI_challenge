@@ -19,6 +19,16 @@ library(outliers)
 #install.packages("tidyselect")
 library(tidyselect)
 
+library(GGally)
+library(dplyr)
+library(naniar)
+library(visdat)
+library(forecast)
+library(xts)
+library(caTools)
+
+
+
 ###############
 ##############
 #### imposto tema ####
@@ -37,24 +47,41 @@ auser_original<-read.csv("data/Aquifer_Auser.csv")
 auser_original$Date<-as.Date(auser_original$Date, format = "%d/%m/%Y")
 #dal primo file 01-auser
 #noto valori totalmente mancanti dei dati, dall'inizio del dataset
-max(auser_original$Date[is.na(auser_original$Rainfall_Gallicano)]) # restituisce "2005-12-31"
+#max(auser_original$Date[is.na(auser_original$Rainfall_Gallicano)]) # restituisce "2005-12-31"
 #risulta il taglio da fare fino al giorno "2005-12-31"
-auser_cut<- auser_original %>%     
-  filter(Date >= "2006-01-01")
-visdat::vis_dat(auser_cut)
+#auser_cut<- auser_original %>%     
+#  filter(Date >= "2006-01-01")
+#visdat::vis_dat(auser_cut)
+
+
+
+#### osservo le variabili target ####
+
+# Target feature ridondante gia' fatto nel file 01-auser
+df <- auser_cut %>% select(Date, 
+                               Depth_to_Groundwater_LT2,Depth_to_Groundwater_SAL,
+                               Depth_to_Groundwater_PAG, Depth_to_Groundwater_DIEC,
+                               Depth_to_Groundwater_CoS) %>%
+  pivot_longer(., cols = c(Depth_to_Groundwater_LT2,Depth_to_Groundwater_SAL,
+                           Depth_to_Groundwater_PAG, Depth_to_Groundwater_DIEC,
+                           Depth_to_Groundwater_CoS),
+               names_to = "Var", values_to = "Val", values_drop_na = FALSE)
+df <- df[complete.cases(df), ]
+ggplot(df, aes(x = Date, y = Val, col = Var)) +
+  geom_line() +   ggtitle("Aquifer Auser: Depth_to_Groundwater meters") +
+  ylab("Depth_to_Groundwater") + xlab("Date")
+rm(df)
+
+#osservo che il pozzo LT2 ha un comportamento anomalo  improvviso
+# da marzo 2020
 
 #continuano ad esserci missing non recuperabili, soprattutto su
 #Depth_to_Groundwater_DIEC , CoS, LT2 fino a maggio 2011
 #decido di prendere i valori da giugno 2011 in poi
-auser_cut<- auser_cut %>%     
-  filter(Date >= "2011-06-01")
-visdat::vis_dat(auser_cut)
-
-
-
-
-
-
+#auser_cut<- auser_cut %>%     
+#  filter(Date >= "2011-06-01")
+#visdat::vis_dat(auser_cut)
+#######   #########
 
 
 
@@ -68,36 +95,62 @@ visdat::vis_dat(auser_cut)
 #leggo il dato gia' filtrato
 auser <- read.csv("processed_data/AUSER_filtered.csv")
 #Trasformo la colonna data in data
-auser$Date<-as.Date(auser$Date, format = "%Y/%m/%d")
-
-
+auser$Date<-as.Date(auser$Date, format = "%Y-%m-%d")
 
 auser1 <- auser %>% 
-  gather(key = "pozzi", value = "depth_to_gw.m", Depth_to_Groundwater_LT2 : Depth_to_Groundwater_DIEC) %>%
+  select(-X) %>%
+  gather(key = "pozzi", value = "depth_to_gw.m",
+         CoS:SAL) %>% 
   mutate(depth_to_gw.m = abs(depth_to_gw.m))
 
 auser <- auser1 %>% 
   spread(key = "pozzi", value = "depth_to_gw.m")
 
-
-
 # overall view of depth to gw changes by well type 
 (depth_to_gw <- ggplot(auser1, aes(Date, depth_to_gw.m,
                                        color = pozzi, group = pozzi))+
-    geom_line(size = 2)+
+    geom_line(size = 1)+
     theme_classic())
 
 
 ### vis well by well, to fill in gaps 
 
-## pozzo 1
+## pozzo 1 = CoS
 
-
-(doganella_p1 <- ggplot(doganella, aes(Date, Pozzo_1, group = 1))+
+(auser_p1 <- ggplot(auser, aes(Date, CoS, group = 1))+
     geom_line(size = 1)+
     theme_classic())
 
-## if i wanted to count how many nas following in a row?
+## pozzo 2 = DIEC
+
+(auser_p2 <- ggplot(auser, aes(Date, DIEC, group = 2))+
+    geom_line(size = 1)+
+    theme_classic())
+
+## pozzo 3 = LT2
+
+(auser_p3 <- ggplot(auser, aes(Date, LT2, group = 3))+
+    geom_line(size = 1)+
+    theme_classic())
+
+## pozzo 4 = PAG
+
+(auser_p4 <- ggplot(auser, aes(Date, PAG, group = 4))+
+    geom_line(size = 1)+
+    theme_classic())
+
+## pozzo 5 = SAL
+
+(auser_p5 <- ggplot(auser, aes(Date, SAL, group = 5))+
+    geom_line(size = 1)+
+    theme_classic())
+
+
+
+
+
+
+####FUNCTION if i wanted to count how many nas following in a row?####
 
 group.na <- function(x){
   group <- if_else(is.na(x), 1, 0)
@@ -128,56 +181,84 @@ count.na <- function(x){
 
 ## imputeTS
 
-ggplot_na_distribution(doganella$Pozzo_1)+
+ggplot_na_distribution(auser$CoS)+
+  theme_classic()
+ggplot_na_distribution(auser$DIEC)+
+  theme_classic()
+ggplot_na_distribution(auser$LT2)+
+  theme_classic()
+ggplot_na_distribution(auser$PAG)+
+  theme_classic()
+ggplot_na_distribution(auser$SAL)+
   theme_classic()
 
-statsNA(doganella$Pozzo_1)
+statsNA(auser$CoS)
+statsNA(auser$DIEC)
+statsNA(auser$LT2)
+statsNA(auser$PAG)
+statsNA(auser$SAL)
 
-ggplot_na_intervals(doganella$Pozzo_1)
 
-ggplot_na_gapsize(doganella$Pozzo_1)
+ggplot_na_intervals(auser$CoS)
+ggplot_na_intervals(auser$DIEC)
+ggplot_na_intervals(auser$LT2)
+ggplot_na_intervals(auser$PAG)
+ggplot_na_intervals(auser$SAL)
+
+ggplot_na_gapsize(auser$CoS)
+ggplot_na_gapsize(auser$DIEC)
+ggplot_na_gapsize(auser$LT2)
+ggplot_na_gapsize(auser$PAG)
+ggplot_na_gapsize(auser$SAL)
 
 
-## linear interpolation 
+#### linear interpolation ####
 
-doganella4 <- data.frame(doganella, lapply(doganella[,14:22], na.approx))
+auser4 <- auser
 
+auser4$CoS <-as.numeric(na.interp(auser4$CoS))
+auser4$DIEC <-as.numeric(na.interp(auser4$DIEC))
+auser4$LT2 <-as.numeric(na.interp(auser4$LT2))
+auser4$PAG <-as.numeric(na.interp(auser4$PAG))
+auser4$SAL <-as.numeric(na.interp(auser4$SAL))
 
 
 #### FINAL ####
 
 ## using na.ma from imputeTS
 
-doganella5 <- data.frame(doganella, lapply(doganella[,14:22], 
+auser5 <- data.frame(auser, lapply(auser[,23:27], 
                                            function(x) na_ma(x, k=1)))
 
-doganella6 <-setnames(doganella5, old = colnames(doganella5[,23:31]),
+auser6 <-setnames(auser5, old = colnames(auser5[,28:32]),
                       new = c("imp1","imp2",
                               "imp3","imp4",
-                              "imp5","imp6",
-                              "imp7","imp8",
-                              "imp9"))
+                              "imp5"))
 
 
-rm(doganella7)
+#rm(auser7)
 
-doganella7 <- doganella6 %>% 
-  gather(key="imp", value = "imputed_depth_to_gw.m",23:31) %>%
+auser7 <- auser6 %>% 
+  gather(key="imp", value = "imputed_depth_to_gw.m",28:32) %>%
   mutate(Date = ymd(Date))
 
-str(doganella7)
+str(auser7)
 
-
+#imp1=CoS
+#imp2=DIEC
+#imp3=LT2
+#imp4=PAG
+#imp5=SAL
 ## vis with imputation 
 
-(imp_vis <- ggplot(doganella7, aes(Date, imputed_depth_to_gw.m, color = imp,
+(imp_vis <- ggplot(auser7, aes(Date, imputed_depth_to_gw.m, color = imp,
                                    group = imp))+
     geom_line()+
     theme_classic()+
     scale_x_date(date_breaks = "1 year", date_labels = "%Y"))
 
 
-statsNA(doganella7$imputed_depth_to_gw.m)
+statsNA(auser7$imputed_depth_to_gw.m)
 ## cleaned up - no more missing data 
 
 
@@ -185,14 +266,14 @@ statsNA(doganella7$imputed_depth_to_gw.m)
 
 ## summary
 
-doganella8 <- doganella7 %>% 
+auser8 <- auser7 %>% 
   spread(key = "imp", value = "imputed_depth_to_gw.m") 
 
-summary(doganella8[,23:31])
+summary(auser8[,28:32])
 
 ## hist 
 
-(hist_doganella <- ggplot(doganella7, aes(imputed_depth_to_gw.m))+
+(hist_auser <- ggplot(auser7, aes(imputed_depth_to_gw.m))+
     geom_histogram()+
     theme_classic()+
     facet_wrap(vars(imp)))
@@ -201,115 +282,146 @@ summary(doganella8[,23:31])
 ## boxplots
 
 # target var 
-(hist_target_doganella <- ggplot(doganella7,
+(hist_target_auser <- ggplot(auser7,
                                  aes(y = imputed_depth_to_gw.m,
                                      color = imp))+
     geom_boxplot()+
     theme_classic())#+
 #facet_wrap(vars(imp)))
 # saving
-ggsave("img/hist_doganella_target.jpg", dpi = 500, width = 10, height=7)
+ggsave("img/hist_auser_target.jpg", dpi = 500, width = 10, height=7)
 
 #### checking singularly 
 
-(imp2_doganella <- ggplot(doganella7, aes(y = Pozzo_2))+
+(imp1_auser <- ggplot(auser8, aes(y = imp1))+
+    geom_boxplot()+
+    theme_classic())
+#(imp1_auser <- ggplot(auser7, aes(y = CoS))+
+#    geom_boxplot()+
+#    theme_classic())
+
+#(imp2_auser <- ggplot(auser7, aes(y = DIEC))+
+#   geom_boxplot()+
+#    theme_classic())
+(imp2_auser <- ggplot(auser8, aes(y = imp2))+
     geom_boxplot()+
     theme_classic())
 
-(imp4_doganella <- ggplot(doganella7, aes(y = Pozzo_4))+
+#(imp3_auser <- ggplot(auser7, aes(y = LT2))+
+#    geom_boxplot()+
+#    theme_classic())
+(imp3_auser <- ggplot(auser8, aes(y = imp3))+
     geom_boxplot()+
     theme_classic())
 
-(imp8_doganella <- ggplot(doganella7, aes(y = Pozzo_8))+
+#(imp4_auser <- ggplot(auser7, aes(y = PAG))+
+#    geom_boxplot()+
+#    theme_classic())
+(imp4_auser <- ggplot(auser8, aes(y = imp4))+
+    geom_boxplot()+
+    theme_classic())
+
+#(imp5_auser <- ggplot(auser7, aes(y = SAL))+
+#    geom_boxplot()+
+#    theme_classic())
+(imp5_auser <- ggplot(auser8, aes(y = imp5))+
     geom_boxplot()+
     theme_classic())
 
 ## extracting vals of potential outliers 
 
-# for pozzo 2
-out2_dog <- boxplot.stats(doganella8$imp2)$out # 112.5 (repeated x4)
-out2_ind_dog <- which(doganella8$imp2 %in% c(out))
-out2_ind_dog # rows where outliers are found
+# for pozzo 1 CoS
+out1_auser <- boxplot.stats(auser8$imp1)$out # 0 (repeated x4)
+out1_auser
+out1_ind_auser <- which(auser8$imp1 %in% c(out1_auser))
+out1_ind_auser # rows where outliers are found
 
-upper_bound <- quantile(doganella8$imp2, 0.975)
-upper_bound # 101.49
+under_bound <- quantile(auser8$imp1, 0.025)
+under_bound # 4.32
 
-upper_bound99 <- quantile(doganella8$imp2, 0.99)
-upper_bound99 # 101.67
+under_bound99 <- quantile(auser8$imp1, 0.01)
+under_bound99 # 4.22 
 
 ## checking stats to verify it's an outlier
 # grubbs test
-test2 <- grubbs.test(doganella8$imp2)
-test2 # 112.5 is an outlier (at 5% significance level)
+test1 <- grubbs.test(auser8$imp1)
+test1 # 0 is an outlier (at 5% significance level)
 
-## substituting with q3 value 
-doganella8$imp2[doganella8$imp2 == 112.5] <- 99.21
-summary(doganella8$imp2)
+## substituting with q1 value 
+auser8$imp1[auser8$imp1 == 0] <- 4.32
+summary(auser8$imp1)
 
-# for pozzo 4
-out4_dog <- boxplot.stats(doganella8$imp4) # 108.66
-out4_dog
-out4_ind_dog <- which(doganella8$imp4 %in% c(out4_dog))
-out4_ind_dog # line 158
+# for pozzo 2 DIEC ok non ho outliers
+out2_auser <- boxplot.stats(auser8$imp2)$out # non ci sono valore critici
+out2_auser
+
+# for pozzo 3 LT2
+out3_auser <- boxplot.stats(auser8$imp3)$out # 0 (repeated x2)
+out3_auser
+out3_ind_auser <- which(auser8$imp3 %in% c(out3_auser))
+out3_ind_auser # rows where outliers are found
+
+under_bound <- quantile(auser8$imp3, 0.025)
+under_bound # 11.85
+
+under_bound99 <- quantile(auser8$imp3, 0.01)
+under_bound99 # 11.78 
+
+## checking stats to verify it's an outlier
+# grubbs test
+test3 <- grubbs.test(auser8$imp3)
+test3 # 0 is an outlier 
+
+## substituting with q1 value 
+auser8$imp3[auser8$imp3 == 0] <- 11.85
+summary(auser8$imp3)
+
+
+# for pozzo 4 PAG
+out4_auser <- boxplot.stats(auser8$imp4)$out # non ci sono valore critici
+out4_auser
+
+
+# for pozzo 5 SAL
+out5_auser <- boxplot.stats(auser8$imp5) # 
+out5_auser
+out5_ind_auser <- which(auser8$imp5 %in% c(out5_auser))
+out5_ind_auser # 
+
+under_bound_5 <- quantile(auser8$imp5, 0.025)
+under_bound_5 # 4.28
 
 # grubbs test 
-test4 <- grubbs.test(doganella8$imp4)
-test4 # it is an outlier, 5% significance
+test5 <- grubbs.test(auser8$imp5)
+test5 # 0 it is an outlier, 8% significance
 
 # substituting 
-doganella8$imp4[doganella8$imp4 == 108.66] <- 100.52
-summary(doganella8$imp4)
-
-# for pozzo 8
-out8_dog <- boxplot.stats(doganella8$imp8) # 107.5 (rep x2)
-out8_dog
-
-# grubbs test 
-test8 <- grubbs.test(doganella8$imp8)
-test8 # it is an outlier 
-
-# subst 
-doganella8$imp8[doganella8$imp8 == 107.5] <- 97.96
-summary(doganella8$imp8)
+auser8$imp5[auser8$imp5 == 0] <- 4.28
+summary(auser8$imp5)
 
 
-## pozzo 6 e 9
+boxplot.stats(auser8$imp5)
 
-out6 <- boxplot.stats(doganella8$imp6)$out
-out6_ind <- which(doganella8$imp6 %in% c(out6))
-out6_ind
+out5 <- boxplot.stats(auser8$imp5)$out
+out5 
+out5_ind <- which(auser8$imp6 %in% c(out5))
+out5_ind
 
-data6 <- doganella8[out6_ind,]
+data5 <- auser8[out5_ind,]
 
 (data6_vis <- ggplot(data6, aes(y = imp6))+
     geom_boxplot()+
     theme_classic())
 
-(data6_vis <- ggplot(data6, aes(Date, imp6))+
-    geom_point()+
-    theme_classic())
 
-
-boxplot.stats(doganella8$imp9)
-
-
-out9 <- boxplot.stats(doganella8$imp9)$out
-out9_ind <- which(doganella8$imp9 %in% c(out9))
-out9_ind
-
-data9 <- doganella8[out9_ind,]
-
-(data9_vis <- ggplot(data9, aes(Date, imp9))+
-    geom_point()+
-    theme_classic())
 
 ####################
 
-doganella9 <- doganella8 %>% 
-  gather(key = "imp", value = "depth_to_gw.m", 23:31)
-View(doganella9)
+auser9 <- auser8 %>% 
+  gather(key = "imp", value = "depth_to_gw.m", 28:32)
+View(auser9)
 
-(doganella_noout <- ggplot(doganella9, aes(y=depth_to_gw.m,color = imp))+
+(auser_noout <- ggplot(auser9, aes(y=depth_to_gw.m,color = imp))+
     geom_boxplot()+
     theme_classic())
 
