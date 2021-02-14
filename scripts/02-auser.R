@@ -409,9 +409,6 @@ out5_ind
 
 data5 <- auser8[out5_ind,]
 
-(data6_vis <- ggplot(data6, aes(y = imp6))+
-    geom_boxplot()+
-    theme_classic())
 
 
 
@@ -427,38 +424,41 @@ View(auser9)
 
 # saving 
 
-ggsave("img/doganella_boxplot.jpg", dpi = 500, width = 10, height = 7)
+ggsave("img/auser_boxplot.jpg", dpi = 500, width = 10, height = 7)
 
 
 
-### keeping outliers for pozzi 6 and 9 - from most recent years, and there's 100+ according to the boxplot
+### keeping outliers for pozzo 5 - 
+
 
 ### checking outliers for feature variables 
 
-# doganella9
+# auser9
 
-str(doganella9)
+str(auser9)
 
 
-doganella10 <- doganella9 %>% 
-  gather(key = "temp_sensor", value = "temp.C", Temperature_Monteporzio, 
-         Temperature_Velletri) %>%
-  gather(key = "rain_sensor", value = "rain.mm", Rainfall_Monteporzio,
-         Rainfall_Velletri)
+auser10 <- auser9 %>% 
+  gather(key = "temp_sensor", value = "temp.C", Temperature_Monte_Serra, 
+         Temperature_Orentano, Temperature_Ponte_a_Moriano, Temperature_Lucca_Orto_Botanico) %>%
+  gather(key = "rain_sensor", value = "rain.mm", Rainfall_Monte_Serra,
+         Rainfall_Orentano, Rainfall_Gallicano, Rainfall_Borgo_a_Mozzano, 
+         Rainfall_Fabbriche_di_Vallico, Rainfall_Piaggione, Rainfall_Calavorno,
+        Rainfall_Croce_Arcana, Rainfall_Tereglio_Coreglia_Antelminelli)
 
 
 ## vis hist
 
 # temp
 
-(temp_hist_dog <- ggplot(doganella10, aes(temp.C))+
+(temp_hist_auser <- ggplot(auser10, aes(temp.C))+
     geom_histogram()+
     theme_classic()+
     facet_wrap(vars(temp_sensor)))
 # pretty similar distribution
 
 # rain
-(rain_hist_dog <- ggplot(doganella10, aes(rain.mm))+
+(rain_hist_dog <- ggplot(auser10, aes(rain.mm))+
     geom_histogram()+
     theme_classic()+
     facet_wrap(vars(rain_sensor)))
@@ -468,70 +468,217 @@ doganella10 <- doganella9 %>%
 ## vis boxplot
 
 # temp 
-(temp_box_dog <- ggplot(doganella10, aes(y=temp.C, color = temp_sensor))+
+(temp_box_auser <- ggplot(auser10, aes(y=temp.C, color = temp_sensor))+
     geom_boxplot()+
     theme_classic())
 # no outliers 
 
 # rain 
-(rain_box_dog <- ggplot(doganella10, aes(y = rain.mm, color = rain_sensor))+
+(rain_box_auser <- ggplot(auser10, aes(y = rain.mm, color = rain_sensor))+
     geom_boxplot()+
     theme_classic())
-# like in histogram, there's a long tail, which the plot recognises as outliers 
+# like in histogram, there's a long tail, 
+#which the plot recognises as outliers 
 
 
 ### let's check it statistically 
 
-out_tempv_dog <- boxplot.stats(doganella9$Temperature_Velletri)
-out_tempv_dog
-# confirmed no outliers for temp velletri 
+out_tempor_auser <- boxplot.stats(auser9$Temperature_Orentano)
+out_tempv_auser
+# confirmed no outliers for temp Orentano 
 
-out_tempm_dog <- boxplot.stats(doganella9$Temperature_Monteporzio)
-out_tempm_dog
-# no outliers for temp monteporzio
+out_tempms_auser <- boxplot.stats(auser9$Temperature_Monte_Serra)
+out_tempms_auser
+# no outliers for temp Temperature_Monte_Serra
 
-out_rainv_dog <- boxplot.stats(doganella9$Rainfall_Velletri)$out
-out_rainv_dog
+out_tempam_auser <- boxplot.stats(auser9$Temperature_Ponte_a_Moriano)
+out_tempam_auser
+# no outliers for temp Ponte_a_Moriano
+
+out_templu_auser <- boxplot.stats(auser9$Temperature_Lucca_Orto_Botanico)
+out_templu_auser
+# no outliers for temp Lucca_Orto_Botanico
+
+
+
+
+out_rainb_auser <- boxplot.stats(auser9$Rainfall_Borgo_a_Mozzano)$out
+out_rainb_auser
 # more than 900 outliers... 
 
-out_rainm_dog <- boxplot.stats(doganella9$Rainfall_Monteporzio)$out
-out_rainm_dog
+
+out_rainca_auser <- boxplot.stats(auser9$Rainfall_Calavorno)$out
+out_rainca_auser
 # same here 
+
+out_raincr_auser <- boxplot.stats(auser9$Rainfall_Croce_Arcana)$out
+out_raincr_auser
+# same here 
+
+out_rainf_auser <- boxplot.stats(auser9$Rainfall_Fabbriche_di_Vallico)$out
+out_rainf_auser
+# same here 
+
+out_rainca_auser <- boxplot.stats(auser9$Rainfall_Calavorno)$out
+out_rainca_auser
+# same here 
+
+out_raing_auser <- boxplot.stats(auser9$Rainfall_Gallicano)$out
+out_raing_auser
+# same here 
+
+out_raino_auser <- boxplot.stats(auser9$Rainfall_Orentano)$out
+out_raino_auser
+# same here 
+
+out_rainms_auser <- boxplot.stats(auser9$Rainfall_Monte_Serra)$out
+out_rainms_auser
+# same here 
+
+out_rainp_auser <- boxplot.stats(auser9$Rainfall_Piaggione)$out
+out_rainp_auser
+# same here 
+
+out_raint_auser <- boxplot.stats(auser9$Rainfall_Tereglio_Coreglia_Antelminelli)$out
+out_raint_auser
+# same here 
+
 
 ## let's check where these "outliers" occur in time (rain)
 
-# monteporzio
-out_rainm_dog_ind <- which(doganella9$Rainfall_Monteporzio %in% c(out_rainm_dog))
-out_rainm_dog_ind
+# Borgo a Mozzano
+out_rainb_auser_ind <- which(auser9$Rainfall_Borgo_a_Mozzano %in% c(out_rainb_auser))
+out_rainb_auser_ind
 
-df_rainm_out <- doganella9[out_rainm_dog_ind,]
-df_rainm_out
+df_rainb_out <- auser9[out_rainb_auser_ind,]
+df_rainb_out
 
 # plotting it over time 
-(plot_rainm_out <- ggplot(df_rainm_out, aes(Date, Rainfall_Monteporzio))+
+(plot_rainb_out <- ggplot(df_rainb_out, aes(Date, Rainfall_Borgo_a_Mozzano))+
     geom_point()+
-    geom_line(data = doganella9, aes(Date, Rainfall_Monteporzio, color = "red"))+
+    geom_line(data = auser9, aes(Date, Rainfall_Borgo_a_Mozzano, color = "red"))+
     theme_classic())
 # it occurs throughout - from 2012 through to 2020
 
 
-# velletri 
-out_rainv_dog_ind <- which(doganella9$Rainfall_Velletri %in% c(out_rainv_dog))
-out_rainv_dog_ind
-length(out_rainv_dog_ind)
+#### rainfall Calavorno ####
+out_rainc_auser_ind <- which(auser9$Rainfall_Calavorno %in% c(out_rainca_auser))
+out_rainc_auser_ind
+length(out_rainc_auser_ind)
 
-df_rainv_dog <- doganella9[out_rainv_dog_ind,]
-View(df_rainv_dog)
+df_rainc_auser <- auser9[out_rainc_auser_ind,]
+View(df_rainc_auser)
 
 # plotting over time 
-(plot_rainv_dog <- ggplot(doganella9, aes(Date, Rainfall_Velletri))+
+(plot_rainc_auser <- ggplot(auser9, aes(Date, Rainfall_Calavorno))+
     geom_line(color = "red")+
-    geom_point(data = df_rainv_dog, aes(Date, Rainfall_Velletri))+
+    geom_point(data = df_rainc_auser, aes(Date, Rainfall_Calavorno))+
     theme_classic())
 
-(plot_rainv_dog <- ggplot(df_rainv_dog, aes(Date, Rainfall_Velletri))+
-    geom_point()+
+#(plot_rainc_auser <- ggplot(df_rainc_auser, aes(Date, Rainfall_Calavorno))+
+#    geom_point()+
+#    theme_classic())
+
+#### rainfall Croce_Arcana ####
+out_raincr_auser_ind <- which(auser9$Rainfall_Croce_Arcana %in% c(out_raincr_auser))
+out_raincr_auser_ind
+length(out_raincr_auser_ind)
+
+df_raincr_auser <- auser9[out_raincr_auser_ind,]
+View(df_raincr_auser)
+
+# plotting over time 
+(plot_raincr_auser <- ggplot(auser9, aes(Date, Rainfall_Croce_Arcana))+
+    geom_line(color = "red")+
+    geom_point(data = df_rainc_auser, aes(Date, Rainfall_Croce_Arcana))+
     theme_classic())
+
+#### rainfall Fabbriche_di_Vallico ####
+out_rainf_auser_ind <- which(auser9$Rainfall_Fabbriche_di_Vallico %in% c(out_rainf_auser))
+out_rainf_auser_ind
+length(out_rainf_auser_ind)
+
+df_rainf_auser <- auser9[out_rainf_auser_ind,]
+View(df_rainf_auser)
+
+# plotting over time 
+(plot_rainf_auser <- ggplot(auser9, aes(Date, Rainfall_Fabbriche_di_Vallico))+
+    geom_line(color = "red")+
+    geom_point(data = df_rainc_auser, aes(Date, Rainfall_Fabbriche_di_Vallico))+
+    theme_classic())
+
+#### rainfall Gallicano ####
+out_raing_auser_ind <- which(auser9$Rainfall_Gallicano %in% c(out_raing_auser))
+out_raing_auser_ind
+length(out_raing_auser_ind)
+
+df_raing_auser <- auser9[out_raing_auser_ind,]
+View(df_raing_auser)
+
+# plotting over time 
+(plot_raing_auser <- ggplot(auser9, aes(Date, Rainfall_Gallicano))+
+    geom_line(color = "red")+
+    geom_point(data = df_raing_auser, aes(Date, Rainfall_Gallicano))+
+    theme_classic())
+
+
+#### rainfall Monte_Serra ####
+out_rainms_auser_ind <- which(auser9$Rainfall_Monte_Serra %in% c(out_rainms_auser))
+out_rainms_auser_ind
+length(out_rainms_auser_ind)
+
+df_rainms_auser <- auser9[out_rainms_auser_ind,]
+View(df_rainms_auser)
+
+# plotting over time 
+(plot_rainms_auser <- ggplot(auser9, aes(Date, Rainfall_Monte_Serra))+
+    geom_line(color = "red")+
+    geom_point(data = df_rainms_auser, aes(Date, Rainfall_Monte_Serra))+
+    theme_classic())
+
+#### rainfall Orentano ####
+out_raino_auser_ind <- which(auser9$Rainfall_Orentano %in% c(out_raino_auser))
+out_raino_auser_ind
+length(out_raino_auser_ind)
+
+df_raino_auser <- auser9[out_raino_auser_ind,]
+View(df_raino_auser)
+
+# plotting over time 
+(plot_raino_auser <- ggplot(auser9, aes(Date, Rainfall_Orentano))+
+    geom_line(color = "red")+
+    geom_point(data = df_rainms_auser, aes(Date, Rainfall_Orentano))+
+    theme_classic())
+
+#### rainfall Piaggione ####
+out_rainp_auser_ind <- which(auser9$Rainfall_Piaggione %in% c(out_rainp_auser))
+out_rainp_auser_ind
+length(out_rainp_auser_ind)
+
+df_rainp_auser <- auser9[out_rainp_auser_ind,]
+View(df_rainp_auser)
+
+# plotting over time 
+(plot_rainp_auser <- ggplot(auser9, aes(Date, Rainfall_Piaggione))+
+    geom_line(color = "red")+
+    geom_point(data = df_rainp_auser, aes(Date, Rainfall_Piaggione))+
+    theme_classic())
+
+#### rainfall Tereglio_Coreglia_Antelminelli ####
+out_raint_auser_ind <- which(auser9$Rainfall_Tereglio_Coreglia_Antelminelli %in% c(out_raint_auser))
+out_raint_auser_ind
+length(out_raint_auser_ind)
+
+df_raint_auser <- auser9[out_raint_auser_ind,]
+View(df_raint_auser)
+
+# plotting over time 
+(plot_rainms_auser <- ggplot(auser9, aes(Date, Rainfall_Tereglio_Coreglia_Antelminelli))+
+    geom_line(color = "red")+
+    geom_point(data = df_rainms_auser, aes(Date, Rainfall_Tereglio_Coreglia_Antelminelli))+
+    theme_classic())
+
+
 
 #### decision to leave them as such 
 
@@ -539,29 +686,68 @@ View(df_rainv_dog)
 #### checking out for missing - rain and temp ####
 
 # rain
-statsNA(doganella9$Rainfall_Monteporzio)
+statsNA(auser9$Rainfall_Borgo_a_Mozzano) #no missing
+ggplot_na_distribution(auser9$Rainfall_Borgo_a_Mozzano)
 
-ggplot_na_distribution(doganella9$Rainfall_Monteporzio)
+statsNA(auser9$Rainfall_Calavorno) #no missing
+ggplot_na_distribution(auser9$Rainfall_Calavorno)
 
-statsNA(doganella9$Rainfall_Velletri)
+statsNA(auser9$Rainfall_Croce_Arcana) #no missing
+ggplot_na_distribution(auser9$Rainfall_Croce_Arcana)
 
-ggplot_na_distribution(doganalla9$Rainfall_Velletri)
+statsNA(auser9$Rainfall_Fabbriche_di_Vallico) #no missing
+ggplot_na_distribution(auser9$Rainfall_Fabbriche_di_Vallico)
 
-(rain_dog <- ggplot(doganella10, aes(Date, rain.mm, color = rain_sensor))+
+statsNA(auser9$Rainfall_Gallicano) #no missing
+ggplot_na_distribution(auser9$Rainfall_Gallicano)
+
+statsNA(auser9$Rainfall_Monte_Serra) # 30 missing
+ggplot_na_distribution(auser9$Rainfall_Monte_Serra)
+
+statsNA(auser9$Rainfall_Orentano) #no missing
+ggplot_na_distribution(auser9$Rainfall_Orentano)
+
+statsNA(auser9$Rainfall_Piaggione) # 1825 missing
+ggplot_na_distribution(auser9$Rainfall_Piaggione)
+
+statsNA(auser9$Rainfall_Tereglio_Coreglia_Antelminelli) # no missing
+ggplot_na_distribution(auser9$Rainfall_Tereglio_Coreglia_Antelminelli)
+
+
+(rain_auser <- ggplot(auser10, aes(Date, rain.mm, color = rain_sensor))+
     geom_line()+
     theme_classic())
 
 # temp 
-statsNA(doganella9$Temperature_Monteporzio)
+statsNA(auser9$Temperature_Orentano) #no missing
+ggplot_na_distribution(auser9$Temperature_Orentano)
 
-ggplot_na_distribution(doganella9$Temperature_Monteporzio)
+statsNA(auser9$Temperature_Monte_Serra)# no missing
+ggplot_na_distribution(auser9$Temperature_Monte_Serra)
 
-statsNA(doganella9$Temperature_Velletri)
+statsNA(auser9$Temperature_Ponte_a_Moriano)# no missing
+ggplot_na_distribution(auser9$Temperature_Ponte_a_Moriano)
 
-ggplot_na_distribution(doganella9$Temperature_Velletri)
+statsNA(auser9$Temperature_Lucca_Orto_Botanico)# no missing
+ggplot_na_distribution(auser9$Temperature_Lucca_Orto_Botanico)
+
 
 
 #### FILLING GAPS WITH METEO ####
 
-#### temperature Velletri
+####  Rainfall_Monte_Serra
 
+
+
+####  Rainfall_Piaggione
+
+
+
+
+
+####
+#### Correlation Matrix ####
+df <- auser
+df$Date <- NULL
+ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, layout.exp = 4, label_size = 3)
+rm(df)

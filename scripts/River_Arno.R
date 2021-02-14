@@ -107,21 +107,53 @@ visdat::vis_dat(River_Arno_cut)
 
 #### missing seconda parte ####
 statsNA(River_Arno_cut$Rainfall_Le_Croci) #ok non ci sono missing
+ggplot_na_distribution(River_Arno_cut$Rainfall_Le_Croci)
+
 statsNA(River_Arno_cut$Rainfall_Cavallina) #ok non ci sono missing
+ggplot_na_distribution(River_Arno_cut$Rainfall_Cavallina)
+
 statsNA(River_Arno_cut$Rainfall_S_Agata) #ok non ci sono missing
+ggplot_na_distribution(River_Arno_cut$Rainfall_S_Agata)
+
 statsNA(River_Arno_cut$Rainfall_Mangona) #ok non ci sono missing
+ggplot_na_distribution(River_Arno_cut$Rainfall_Mangona)
+
 statsNA(River_Arno_cut$Rainfall_S_Piero) #ok non ci sono missing
-statsNA(River_Arno_cut$Rainfall_Vernio) # richiede intervento 1743 mising
+ggplot_na_distribution(River_Arno_cut$Rainfall_S_Piero)
+
+statsNA(River_Arno_cut$Rainfall_Vernio)# richiede intervento 1743 mising
+ggplot_na_distribution(River_Arno_cut$Rainfall_Vernio)
+
 statsNA(River_Arno_cut$Rainfall_Stia) # richiede intervento 4742 missing
+ggplot_na_distribution(River_Arno_cut$Rainfall_Stia)
+
 statsNA(River_Arno_cut$Rainfall_Consuma) # richiede intervento 4743 missing
+ggplot_na_distribution(River_Arno_cut$Rainfall_Consuma)
+
 statsNA(River_Arno_cut$Rainfall_Incisa) # richiede intervento 1457 missing
+ggplot_na_distribution(River_Arno_cut$Rainfall_Incisa)
+
 statsNA(River_Arno_cut$Rainfall_Montevarchi) # richiede intervento 4378 missing
+ggplot_na_distribution(River_Arno_cut$Rainfall_Montevarchi)
+
 statsNA(River_Arno_cut$Rainfall_S_Savino) # richiede intervento 4743 missing
+ggplot_na_distribution(River_Arno_cut$Rainfall_S_Savino)
+
 statsNA(River_Arno_cut$Rainfall_Laterina) # richiede intervento 4743 missing
+ggplot_na_distribution(River_Arno_cut$Rainfall_Laterina)
+
 statsNA(River_Arno_cut$Rainfall_Bibbiena) # richiede intervento 3648 missing
+ggplot_na_distribution(River_Arno_cut$Rainfall_Bibbiena)
+
 statsNA(River_Arno_cut$Rainfall_Camaldoli) # richiede intervento 4743 missing
+ggplot_na_distribution(River_Arno_cut$Rainfall_Camaldoli)
+
 statsNA(River_Arno_cut$Temperature_Firenze) # richiede intervento 1062 missing
+ggplot_na_distribution(River_Arno_cut$Temperature_Firenze)
+
 statsNA(River_Arno_cut$Hydrometry_Nave_di_Rosano)# ok
+ggplot_na_distribution(River_Arno_cut$Hydrometry_Nave_di_Rosano)
+
 # scarico i dati dal 2011 al 2020 su 3bmeteo
 
 
