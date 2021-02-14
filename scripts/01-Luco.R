@@ -196,6 +196,7 @@ View(luco_filtered)
 # saving 
 
 write.csv(luco_filtered, "processed_data/luco_filtered.csv")
+write.csv(luco_finish, "processed_data/luco_finish.csv")
 
 ################################################################################
 ################################################################################
