@@ -212,7 +212,7 @@ Lake_Bilancino_cut %>%
   scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2004-01-01", "2020-06-30")))+
   labs(x = "Date", y = "Value", title = "Distribution of the target variables (along with the loess curve)",
        subtitle = "lake Bilancio from 01-2004") + 
-  theme_21
+  _21
 
 
 #### Flow_rate e Lake_Level in relazione alle stagioni####
@@ -227,7 +227,7 @@ Lake_Bilancino_cut %>%
   scale_x_discrete(limit = c("Spring", "Summer", "Autumn", "Winter"))+
   labs(x = "Season", y = "Value", title = "Distribution of the explained variables by season",
        subtitle = "in lake Bilancino") + 
-  theme_21
+  theme_classic()
 
 #ci sono differenze tra le stagioni e le variabili dipendenti.
 #Il livello del lago è più basso in autunno,

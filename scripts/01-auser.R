@@ -76,6 +76,17 @@ auser_cut<- auser %>%
   filter(Date >= "2006-01-01")
 visdat::vis_dat(auser_cut)
 
+#continuano ad eserci missing non recuperabili, soprattutto su
+#Depth_to_Groundwater_DIEC , CoS, LT2 fino a maggio 2011
+#decido di prendere i valori da giugno 2011 in poi
+#auser_cut<- auser_cut %>%     
+#  filter(Date >= "2011-06-01")
+#visdat::vis_dat(auser_cut) # questo lo riporto nello script 02-auser
+
+
+
+
+
 auser_filtered <- auser1 %>%     
   filter(Date >= "2006-01-01")
 
@@ -301,6 +312,15 @@ auser_filtered_save <- auser_filtered %>%
 # saving 
 
 write.csv(auser_filtered_save, "processed_data/AUSER_filtered.csv")
+
+
+
+
+
+
+
+
+
 
 ################################################################################
 ################################################################################
