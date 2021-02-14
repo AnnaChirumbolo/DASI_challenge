@@ -18,6 +18,9 @@ library(lubridate)
 library(outliers)
 #install.packages("tidyselect")
 library(tidyselect)
+#install.packages("Hmisc")
+library(Hmisc)
+library(caret)
 
 ###############
 ##############
@@ -744,7 +747,7 @@ str(canneto)
 canneto1 <- canneto %>% 
   mutate(Date = ymd(Date),
          flow_rate = abs(Flow_Rate_Madonna_di_Canneto)) %>%
-  select(-X, -Flow_Rate_Madonna_di_Canneto)
+  dplyr::select(-X, -Flow_Rate_Madonna_di_Canneto)
 
 
 str(canneto1)
@@ -798,7 +801,7 @@ rain_canneto <- meteo_canneto %>%
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = str_replace(date_final,"ago","08"),
          date_final = str_replace(date_final, "gen", "01"),
@@ -816,7 +819,7 @@ rain_canneto <- meteo_canneto %>%
          date_final = dmy(date_final)) %>%
   rename(Date = date_final,
          Rainfall_Settefrati = prec) %>%
-  select(Date, Rainfall_Settefrati)
+  dplyr::select(Date, Rainfall_Settefrati)
 
 temp_canneto <- meteo_canneto %>% 
   rename(date1 = filename) %>% 
@@ -824,7 +827,7 @@ temp_canneto <- meteo_canneto %>%
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = str_replace(date_final,"ago","08"),
          date_final = str_replace(date_final, "gen", "01"),
@@ -841,15 +844,16 @@ temp_canneto <- meteo_canneto %>%
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>%
   rename(Date = date_final) %>%
-  select(Date, tmin, tmax) %>%
+  dplyr::select(Date, tmin, tmax) %>%
   mutate(Temperature_Settefrati = rowMeans(subset(., select = c(tmin,tmax)),
                                             na.rm = T)) %>%
-  select(-tmin, -tmax)
+  dplyr::select(-tmin, -tmax)
 
 #### fixing missing data for target ####
 
 canneto2 <- canneto1 %>% 
-  mutate(imp_flow_rate = na_ma(flow_rate))
+  mutate(imp_flow_rate = na_ma(flow_rate)) %>% 
+  select(-flow_rate)
 summary(canneto2)
 
 (imp_canneto <- ggplot(canneto2, aes(Date, imp_flow_rate))+
@@ -965,79 +969,12 @@ outt_canneto
 testt_canneto <- grubbs.test(canneto2$Temperature_Settefrati)
 testt_canneto # confirmed stats - no out 
 
-
-#### saving (so far) ####
-
-canneto3 <- canneto2 %>% 
-  select(-flow_rate) %>%
-  write.csv("processed_data/MADONNA_DI_CANNETO_to_model.csv")
-
-
-
 ################################################################################
 ################################################################################
 ########################    FEATURE ENGINEERING             ####################
 ################################################################################
 ################################################################################
 
-add.seasons <- function(data) {
-  seasons <- data %>% 
-    mutate(Date = lubridate::as_date(Date),
-           Year = as.factor(lubridate::year(Date)),
-           Month = as.factor(lubridate::month(Date)),
-           Day = as.factor(lubridate::day(Date)),
-           Month_day = format(Date,format = "%m-%d")) %>% 
-    group_by(Year) %>%
-    mutate(Spring = factor(ifelse(Month_day >= "03-21" & Month_day < "06-21",
-                                  1,0)),
-           Summer = factor(ifelse(Month_day >="06-21" & Month_day < "09-21",
-                                  1,0)),
-           Autumn = factor(ifelse(Month_day >= "09-21" & Month_day < "12-21",
-                                  1,0)),
-           Winter = factor(ifelse(Month_day >= "12-21" & Month_day < "3-21",
-                                  1,0))) %>%
-    select(-Month_day) %>% 
-    ungroup()
-  return(seasons)
-}
-
-library(caret)
-
-
-#### doganella ####
-
-doganella <- read.csv("processed_data/DOGANELLA_to_model.csv")
-
-
-doganella_featured <- add.seasons(doganella) %>%
-  dplyr::select(-X,-Pozzo_1:-Pozzo_9,-Rainfall_Monteporzio,-Rainfall_Velletri) %>% 
-  spread(key = imp, value=depth_to_gw.m) %>% 
-  mutate(snow.yes = as.factor(ifelse(Temperature_Monteporzio <=0 | Temperature_Velletri <=0,1,0)),
-         snow.no = as.factor(ifelse(Temperature_Monteporzio > 0 | Temperature_Velletri >0, 1, 0))) %>% 
-  write.csv(., "processed_data/DOGANELLA_to_model.csv")
-  
-#### lupa ####
-
-lupa <- read.csv("processed_data/LUPA_to_model.csv")
-
-str(lupa)
-
-lupa_featured <- add.seasons(lupa) %>%
-  select(-X) %>% 
-  rename(fl_rate.Ls = imp_flow_rate) %>% ## there's only rainfall as feature - can't assume when 0 = snow 
-  write.csv(., "processed_data/LUPA_to_model.csv")
-
-#### canneto ####
-
-canneto <- read.csv("processed_data/MADONNA_DI_CANNETO_to_model.csv")
-
-str(canneto)
-canneto_featured <- add.seasons(canneto) %>%
-  select(-X) %>%
-  rename(fl_rate.Ls = imp_flow_rate) %>% 
-  mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <=0, 1,0)),
-         snow.no = as.factor(ifelse(Temperature_Settefrati >0,1,0))) %>% 
-  write.csv(., "processed_data/MADONNA_DI_CANNETO_to_model.csv")
 
 ###
 # autoTS
@@ -1059,14 +996,36 @@ canneto_featured <- add.seasons(canneto) %>%
 # effetto maggiore su consumi
 
 
-#### concentrarsi su canneto + aiuto per lago 
+## funzione - aggiunta divisione categorica (dummy) per stagioni
 
-## re-reading the file 
-canneto <- read.csv("processed_data/MADONNA_DI_CANNETO_to_model.csv")
+add.seasons <- function(data) {
+  seasons <- data %>% 
+    mutate(Date = lubridate::as_date(Date),
+           Year = as.factor(lubridate::year(Date)),
+           Month = as.factor(lubridate::month(Date)),
+           Day = as.factor(lubridate::day(Date)),
+           Month_day = format(Date,format = "%m-%d")) %>% 
+    group_by(Year) %>%
+    mutate(Spring = factor(ifelse(Month_day >= "03-21" & Month_day < "06-21",
+                                  1,0)),
+           Summer = factor(ifelse(Month_day >="06-21" & Month_day < "09-21",
+                                  1,0)),
+           Autumn = factor(ifelse(Month_day >= "09-21" & Month_day < "12-21",
+                                  1,0)),
+           Winter = factor(ifelse(Month_day >= "12-21" & Month_day < "03-21",
+                                  1,0))) %>%
+    dplyr::select(-Month_day) %>% 
+    ungroup()
+  return(seasons)
+}
+
+#### canneto ####
 
 str(canneto)
-  # summary when rain isn't 0 
-summary(canneto$Rainfall_Settefrati[!canneto$Rainfall_Settefrati == 0])
+canneto_featured <- add.seasons(canneto2) %>%
+  rename(fl_rate.Ls = imp_flow_rate) %>% 
+  mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <=0 & Rainfall_Settefrati > 0, 1,0)),
+         snow.no = as.factor(ifelse(Temperature_Settefrati >0,1,0))) 
 
 ggplot(canneto,aes(Date, fl_rate.Ls))+
   geom_line() +
@@ -1078,7 +1037,7 @@ ggplot(canneto,aes(Rainfall_Settefrati, fl_rate.Ls))+
 
 # creating quarters, semesters and trimonthly data 
 
-canneto_months <- canneto %>% 
+canneto_months <- canneto_featured %>% 
   mutate(Y_m = as.Date(Date, format ="%Y-%m"),
          Semester = semester(Date, with_year = T),
          Quarters = quarter(Date, with_year = T),
@@ -1116,7 +1075,7 @@ ggplot(canneto_months, aes(Quarters, Fl_rate.Quar, fill = Year))+
 ggplot(canneto_months, aes(Semester, Fl_rate.Sem, fill = Year))+
   geom_bar(stat = "identity")
 
-write.csv(canneto_months, "processed_data/MADONNA_DI_CANNETO_to_model.csv")
+write.csv(canneto_months, "processed_data/MADONNA_DI_CANNETO_to_model+lags.csv")
 
 ####
 ### checking for rainfall ###
@@ -1129,7 +1088,7 @@ write.csv(canneto_months, "processed_data/MADONNA_DI_CANNETO_to_model.csv")
 
 canneto_rain.5 <- canneto_months %>% 
   mutate(rain1 = ifelse(Rainfall_Settefrati <= 0.5, 0, Rainfall_Settefrati),
-         seq.rain.val = sequence(rle(as.character(rain1))$lengths))
+         seq.rain.val = sequence(rle(as.character(rain1))$lengths)) 
 
 canneto_rain1.5 <- canneto_months %>%  # whenever rain is lower than 1mm/day, = 0
   mutate(rain2 = ifelse(Rainfall_Settefrati <= 1.5, 0, Rainfall_Settefrati),
@@ -1150,11 +1109,6 @@ canneto_rain7 <- canneto_months %>%
 
 ## creating 5 new datasets per dataset...
 ## ... or 5 new variables 
-
-#install.packages("Hmisc")
-library(Hmisc)
-
-
 
 canneto_rain0.5.lag <- canneto_rain.5 %>% 
   mutate(lag1 = Lag(rain1, +1),
@@ -1195,22 +1149,4 @@ canneto_rain7.lag <- canneto_rain7 %>%
          lag7 = Lag(rain5, +7),
          lag9 = Lag(rain5, +9)) %>% 
   write.csv(., "processed_data/canneto_rain7.csv")
-
-
-#### spearman correlations ####
-
-## cannetorain1 ##
-
-#lag1 
-lag1 <- cor(canneto_rain1.lag$rain1,canneto_rain1.lag$fl_rate.Ls, method = "spearman")
-lag2 <- cor(canneto_rain1.lag$lag1, canneto_rain1.lag$fl_rate.Ls, method = "spearman",
-            use = "complete.obs")
-lag3 <- cor(canneto_rain1.lag$lag3, canneto_rain1.lag$fl_rate.Ls, method = "spearman",
-            use = "complete.obs")
-lag4 <- cor(canneto_rain1.lag$lag5, canneto_rain1.lag$fl_rate.Ls, method = "spearman",
-            use = "complete.obs")
-lag5 <- cor(canneto_rain1.lag$lag7, canneto_rain1.lag$fl_rate.Ls, method = "spearman",
-            use = "complete.obs")
-lag6 <- cor(canneto_rain1.lag$lag9, canneto_rain1.lag$fl_rate.Ls, method = "spearman",
-            use = "complete.obs")
 
