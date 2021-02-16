@@ -100,7 +100,7 @@ Lake_Bilancino %>%
   coord_flip()+
   labs(x = "Variable name", y = "Observations", title = "Missing values",  fill = "",
        subtitle = "in the variables lake Bilancino") + 
-  theme_21
+  theme_classic()
 
 # noto i valori  mancanti delle variabili dall'inizio del dataset fino alla fine del 2003
 max(Lake_Bilancino$Date[is.na(Lake_Bilancino$Rainfall_S_Piero)])
@@ -212,7 +212,7 @@ Lake_Bilancino_cut %>%
   scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2004-01-01", "2020-06-30")))+
   labs(x = "Date", y = "Value", title = "Distribution of the target variables (along with the loess curve)",
        subtitle = "lake Bilancio from 01-2004") + 
-  _21
+  theme_classic()
 
 
 #### Flow_rate e Lake_Level in relazione alle stagioni####
@@ -231,9 +231,9 @@ Lake_Bilancino_cut %>%
 
 #ci sono differenze tra le stagioni e le variabili dipendenti.
 #Il livello del lago è più basso in autunno,
-#mentre il più alto è in primavera. 
+#mentre e' più alto in primavera. 
 #In estate e in inverno la mediana è di circa 250 metri. 
-#Per il Floe_rate, le differenze non molte. 
+#Per il Flow_rate, le differenze non molte. 
 #Gli outlayers si trovano principalmente in primavera e in inverno.
 
 
@@ -316,7 +316,7 @@ Lake_Bilancino_cut %>%
   scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2004-01-01", "2020-06-30")))+
   labs(x = "Date", y = "Temperature in C", title = "Temperature region Le Croci",
        subtitle = "explanatory variables on lake Bilancino from 01-2004") + 
-  theme_21+
+  theme_classic()+
   theme(legend.position = "none")
 
 #posso pensare di analizzare i casi sotto allo zero, per vedere se sono collegati
@@ -324,7 +324,68 @@ Lake_Bilancino_cut %>%
 
 
 #### snow ####
-#Tomperature sotto lo zero / eventuale neve, da analizzare
+#Temperature sotto lo zero / eventuale pioggia/neve, da analizzare
+str(Lake_Bilancino_cut)
+bilancino_featured <- Lake_Bilancino_cut %>%
+  mutate(snow.yes = as.factor(ifelse(Temperature_Le_Croci <=0 & Rainfall_Le_Croci > 0, 1,0)),
+         snow.no = as.factor(ifelse(Temperature_Le_Croci >0,1,0))) 
+
+ggplot(Lake_Bilancino_cut,aes(Date, Flow_Rate))+
+  geom_line() +
+  geom_line(data = Lake_Bilancino_cut, aes(Date, Rainfall_Le_Croci, color = "red"))
+
+ggplot(Lake_Bilancino_cut,aes(Rainfall_Le_Croci, Flow_Rate))+
+  geom_point()
+
+# creating quarters, semesters and trimonthly data 
+
+bilancino_months <- bilancino_featured %>% 
+         mutate(Y_m = as.Date(Date, format ="%Y-%m"),
+         Semester = semester(Date, with_year = T),
+         Quarters = quarter(Date),#, with_year = T),
+         Trimonthly = as.factor(round_date(Y_m, unit = "3 months"))) %>% 
+  # date written is first day of the period
+  # dplyr::select(-Y_m) %>%
+  group_by(Trimonthly) %>% 
+  mutate(Fl_rate.Tri = mean(Flow_Rate)) %>% 
+  ungroup() %>% 
+  #group_by(Quarters) %>% 
+  mutate(Fl_rate.Quar = mean(Flow_Rate)) %>% 
+  ungroup() %>% 
+  group_by(Semester) %>% 
+  mutate(Fl_rate.Sem = mean(Flow_Rate)) %>% 
+  ungroup() %>% 
+  mutate(lag1 = lag(Rainfall_Le_Croci, +1),
+         lag3 = lag(Rainfall_Le_Croci,+3),
+         lag5 = lag(Rainfall_Le_Croci,+5),
+         lag7 = lag(Rainfall_Le_Croci,+7),
+         lag9 = lag(Rainfall_Le_Croci, +9))
+
+#unique(bilancino_months$Trimonthly)
+
+min(bilancino_months$Fl_rate.Tri)
+
+# vis trimesters
+ggplot(bilancino_months, aes(Trimonthly, Fl_rate.Tri))+
+  geom_bar(stat = "identity")
+
+# vis quarters 
+ggplot(bilancino_months, aes(Quarters, Fl_rate.Quar))+
+  geom_bar(stat = "identity")
+
+# vis semesters
+ggplot(bilancino_months, aes(Semester, Fl_rate.Sem))+
+  geom_bar(stat = "identity")
+
+#### voglio rendere trascurabile le pioggie esigue, divido i livelli di pioggia in 3 ###
+min(bilancino_months$Rainfall_mean)
+mean(bilancino_months$Rainfall_mean)
+max(bilancino_months$Rainfall_mean)
+
+
+
+
+
 
 
 

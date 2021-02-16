@@ -18,7 +18,7 @@ library(lubridate)
 library(outliers)
 #install.packages("tidyselect")
 library(tidyselect)
-
+library(tidyr)
 library(GGally)
 library(dplyr)
 library(naniar)
@@ -26,6 +26,7 @@ library(visdat)
 library(forecast)
 library(xts)
 library(caTools)
+library(reshape2)
 
 
 
@@ -58,19 +59,19 @@ auser_original$Date<-as.Date(auser_original$Date, format = "%d/%m/%Y")
 #### osservo le variabili target ####
 
 # Target feature ridondante gia' fatto nel file 01-auser
-df <- auser_cut %>% select(Date, 
-                               Depth_to_Groundwater_LT2,Depth_to_Groundwater_SAL,
-                               Depth_to_Groundwater_PAG, Depth_to_Groundwater_DIEC,
-                               Depth_to_Groundwater_CoS) %>%
-  pivot_longer(., cols = c(Depth_to_Groundwater_LT2,Depth_to_Groundwater_SAL,
-                           Depth_to_Groundwater_PAG, Depth_to_Groundwater_DIEC,
-                           Depth_to_Groundwater_CoS),
-               names_to = "Var", values_to = "Val", values_drop_na = FALSE)
-df <- df[complete.cases(df), ]
-ggplot(df, aes(x = Date, y = Val, col = Var)) +
-  geom_line() +   ggtitle("Aquifer Auser: Depth_to_Groundwater meters") +
-  ylab("Depth_to_Groundwater") + xlab("Date")
-rm(df)
+#df <- auser_cut %>% select(Date, 
+  #                             Depth_to_Groundwater_PAG, Depth_to_Groundwater_DIEC,
+ #                              Depth_to_Groundwater_LT2,Depth_to_Groundwater_SAL,
+   #                            Depth_to_Groundwater_CoS) %>%
+ # pivot_longer(., cols = c(Depth_to_Groundwater_LT2,Depth_to_Groundwater_SAL,
+#                           Depth_to_Groundwater_PAG, Depth_to_Groundwater_DIEC,
+#                           Depth_to_Groundwater_CoS),
+ #              names_to = "Var", values_to = "Val", values_drop_na = FALSE)
+#df <- df[complete.cases(df), ]
+#ggplot(df, aes(x = Date, y = Val, col = Var)) +
+#  geom_line() +   ggtitle("Aquifer Auser: Depth_to_Groundwater meters") +
+ # ylab("Depth_to_Groundwater") + xlab("Date")
+#rm(df)
 
 #osservo che il pozzo LT2 ha un comportamento anomalo  improvviso
 # da marzo 2020
@@ -686,32 +687,32 @@ View(df_raint_auser)
 #### checking out for missing - rain and temp ####
 
 # rain
-statsNA(auser9$Rainfall_Borgo_a_Mozzano) #no missing
-ggplot_na_distribution(auser9$Rainfall_Borgo_a_Mozzano)
+statsNA(auser8$Rainfall_Borgo_a_Mozzano) #no missing
+ggplot_na_distribution(auser8$Rainfall_Borgo_a_Mozzano)
 
-statsNA(auser9$Rainfall_Calavorno) #no missing
-ggplot_na_distribution(auser9$Rainfall_Calavorno)
+statsNA(auser8$Rainfall_Calavorno) #no missing
+ggplot_na_distribution(auser8$Rainfall_Calavorno)
 
-statsNA(auser9$Rainfall_Croce_Arcana) #no missing
-ggplot_na_distribution(auser9$Rainfall_Croce_Arcana)
+statsNA(auser8$Rainfall_Croce_Arcana) #no missing
+ggplot_na_distribution(auser8$Rainfall_Croce_Arcana)
 
-statsNA(auser9$Rainfall_Fabbriche_di_Vallico) #no missing
-ggplot_na_distribution(auser9$Rainfall_Fabbriche_di_Vallico)
+statsNA(auser8$Rainfall_Fabbriche_di_Vallico) #no missing
+ggplot_na_distribution(auser8$Rainfall_Fabbriche_di_Vallico)
 
-statsNA(auser9$Rainfall_Gallicano) #no missing
-ggplot_na_distribution(auser9$Rainfall_Gallicano)
+statsNA(auser8$Rainfall_Gallicano) #no missing
+ggplot_na_distribution(auser8$Rainfall_Gallicano)
 
-statsNA(auser9$Rainfall_Monte_Serra) # 30 missing
-ggplot_na_distribution(auser9$Rainfall_Monte_Serra)
+statsNA(auser8$Rainfall_Monte_Serra) # 6 missing
+ggplot_na_distribution(auser8$Rainfall_Monte_Serra)
 
-statsNA(auser9$Rainfall_Orentano) #no missing
-ggplot_na_distribution(auser9$Rainfall_Orentano)
+statsNA(auser8$Rainfall_Orentano) #no missing
+ggplot_na_distribution(auser8$Rainfall_Orentano)
 
-statsNA(auser9$Rainfall_Piaggione) # 1825 missing
-ggplot_na_distribution(auser9$Rainfall_Piaggione)
+statsNA(auser8$Rainfall_Piaggione) # 6 missing
+ggplot_na_distribution(auser8$Rainfall_Piaggione)
 
-statsNA(auser9$Rainfall_Tereglio_Coreglia_Antelminelli) # no missing
-ggplot_na_distribution(auser9$Rainfall_Tereglio_Coreglia_Antelminelli)
+statsNA(auser8$Rainfall_Tereglio_Coreglia_Antelminelli) # no missing
+ggplot_na_distribution(auser8$Rainfall_Tereglio_Coreglia_Antelminelli)
 
 
 (rain_auser <- ggplot(auser10, aes(Date, rain.mm, color = rain_sensor))+
@@ -736,10 +737,96 @@ ggplot_na_distribution(auser9$Temperature_Lucca_Orto_Botanico)
 #### FILLING GAPS WITH METEO ####
 
 ####  Rainfall_Monte_Serra
+min(auser9$Date[is.na(auser8$Rainfall_Monte_Serra )])
+max(auser9$Date[is.na(auser8$Rainfall_Monte_Serra )])
+visdat::vis_dat(auser8)
 
+read_plus <- function(flnm) {
+  read_csv(flnm) %>% 
+    mutate(filename = flnm)
+}
+
+rf_monteserra_ms <- list.files(path = "./data/meteoMonteSerra/",
+                          pattern = "*.csv$", 
+                          full.names = T) %>%
+  map_df(~read_plus(.)) 
+
+## manipulating temp data 
+rf_monteserra <- rf_monteserra_ms %>% 
+  dplyr::rename(date1 = filename) %>% 
+  mutate(date1 = gsub("./data/meteoMonteSerra/", "", date1),
+         date1 = gsub(".csv", "", date1),
+         date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
+  separate(date, into = c("weekday", "day")) %>%
+  select(-weekday) %>%
+  unite(date_final, day,date1, sep = " ") %>%
+  mutate(date_final = str_replace(date_final,"ago","08"),
+         date_final = str_replace(date_final, "gen", "01"),
+         date_final = str_replace(date_final, "feb", "02"),
+         date_final = str_replace(date_final, "mar", "03"),
+         date_final = str_replace(date_final, "apr", "04"),
+         date_final = str_replace(date_final, "mag", "05"),
+         date_final = str_replace(date_final, "giu", "06"),
+         date_final = str_replace(date_final, "lug", "07"),
+         date_final = str_replace(date_final, "sett", "09"),
+         date_final = str_replace(date_final, "ott", "10"),
+         date_final = str_replace(date_final, "nov","11"),
+         date_final = str_replace(date_final, "dec", "12"),
+         date_final = gsub(" ", "/", date_final),
+         date_final = dmy(date_final)) %>%
+  dplyr::rename(Date = date_final) %>%
+  select(Date, prec) %>%
+  arrange(Date)
+
+summary(rf_monteserra)
+
+#### adding new data to prev dataset auser ####
+auser8$Rainfall_Monte_Serra[is.na(auser8$Rainfall_Monte_Serra)] <- 
+  rf_monteserra$prec[match(auser8$Date[is.na(auser8$Rainfall_Monte_Serra)],
+                           rf_monteserra$Date)]
 
 
 ####  Rainfall_Piaggione
+min(auser8$Date[is.na(auser8$Rainfall_Piaggione )])
+max(auser8$Date[is.na(auser8$Rainfall_Piaggione )])
+#osservo che i dati mancanti di Rainfal Piaggione riguardano tutto l'anno 2009
+#non recuperabile da 3b meteo
+#decido di tagliare il dataset fino al 31/12/2009
+
+auser8<- auser8 %>%     
+  filter(Date >= "2010-01-01")
+visdat::vis_dat(auser8)
+#######   #########
+#controlla i missing che prima avevo interpolato
+#ripeto interpolazione su auser8
+#### linear interpolation ####
+
+auser8$CoS <-as.numeric(na.interp(auser8$CoS))
+auser8$DIEC <-as.numeric(na.interp(auser8$DIEC))
+auser8$LT2 <-as.numeric(na.interp(auser8$LT2))
+auser8$PAG <-as.numeric(na.interp(auser8$PAG))
+auser8$SAL <-as.numeric(na.interp(auser8$SAL))
+auser8$Hydrometry_Piaggione <-as.numeric(na.interp(auser8$Hydrometry_Piaggione))
+auser8$Hydrometry_Monte_S_Quirico <-as.numeric(na.interp(auser8$Hydrometry_Monte_S_Quirico))
+visdat::vis_dat(auser8)
+
+####variabile stagione####
+####inserisco la variabile stagioni####
+##inserisco le stagioni####
+auser8 <- auser8 %>%
+  mutate(Season = case_when(month(Date) %in% c(3,4,5) ~ "Spring",                      
+                            month(Date) %in% c(6,7,8) ~ "Summer",
+                            month(Date) %in% c(9,10,11) ~ "Autumn",
+                            month(Date) %in% c(1,2,12) ~ "Winter"))
+auser8$Season<-factor(auser8$Season, 
+                               levels=c("Winter","Spring", "Summer", "Autumn"))
+
+
+
+
+#### write ####
+# salvo il mio dataset auser8 ripulito con le stagioni:
+write.csv(auser8,"processed_data/AUSER_to_model.csv")
 
 
 
@@ -747,7 +834,7 @@ ggplot_na_distribution(auser9$Temperature_Lucca_Orto_Botanico)
 
 ####
 #### Correlation Matrix ####
-df <- auser
+df <- auser8
 df$Date <- NULL
 ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, layout.exp = 4, label_size = 3)
 rm(df)
