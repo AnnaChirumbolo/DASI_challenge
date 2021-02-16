@@ -18,7 +18,7 @@ library(lubridate)
 library(outliers)
 #install.packages("tidyselect")
 library(tidyselect)
-
+library(tidyr)
 library(GGally)
 library(dplyr)
 library(naniar)
@@ -26,6 +26,7 @@ library(visdat)
 library(forecast)
 library(xts)
 library(caTools)
+library(reshape2)
 
 
 
@@ -736,18 +737,83 @@ ggplot_na_distribution(auser9$Temperature_Lucca_Orto_Botanico)
 #### FILLING GAPS WITH METEO ####
 
 ####  Rainfall_Monte_Serra
+min(auser9$Date[is.na(auser9$Rainfall_Monte_Serra )])
+max(auser9$Date[is.na(auser9$Rainfall_Monte_Serra )])
+visdat::vis_dat(auser9)
 
+read_plus <- function(flnm) {
+  read_csv(flnm) %>% 
+    mutate(filename = flnm)
+}
+
+rf_monteserra_ms <- list.files(path = "./data/meteoMonteSerra/",
+                          pattern = "*.csv$", 
+                          full.names = T) %>%
+  map_df(~read_plus(.)) 
+
+## manipulating temp data 
+rf_monteserra <- rf_monteserra_ms %>% 
+  dplyr::rename(date1 = filename) %>% 
+  mutate(date1 = gsub("./data/meteoMonteSerra/", "", date1),
+         date1 = gsub(".csv", "", date1),
+         date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
+  separate(date, into = c("weekday", "day")) %>%
+  select(-weekday) %>%
+  unite(date_final, day,date1, sep = " ") %>%
+  mutate(date_final = str_replace(date_final,"ago","08"),
+         date_final = str_replace(date_final, "gen", "01"),
+         date_final = str_replace(date_final, "feb", "02"),
+         date_final = str_replace(date_final, "mar", "03"),
+         date_final = str_replace(date_final, "apr", "04"),
+         date_final = str_replace(date_final, "mag", "05"),
+         date_final = str_replace(date_final, "giu", "06"),
+         date_final = str_replace(date_final, "lug", "07"),
+         date_final = str_replace(date_final, "sett", "09"),
+         date_final = str_replace(date_final, "ott", "10"),
+         date_final = str_replace(date_final, "nov","11"),
+         date_final = str_replace(date_final, "dec", "12"),
+         date_final = gsub(" ", "/", date_final),
+         date_final = dmy(date_final)) %>%
+  dplyr::rename(Date = date_final) %>%
+  select(Date, prec) %>%
+  arrange(Date)
+
+summary(rf_monteserra)
+
+#### adding new data to prev dataset auser ####
+auser9$Rainfall_Monte_Serra[is.na(auser9$Rainfall_Monte_Serra)] <- 
+  rf_monteserra$prec[match(auser9$Date[is.na(auser9$Rainfall_Monte_Serra)],
+                           rf_monteserra$Date)]
 
 
 ####  Rainfall_Piaggione
+min(auser9$Date[is.na(auser9$Rainfall_Piaggione )])
+max(auser9$Date[is.na(auser9$Rainfall_Piaggione )])
+#osservo che i dati mancanti di Rainfal Piaggione riguardano tutto l'anno 2009
+#non recuperabile da 3b meteo
+#decido di tagliare il dataset fino al 31/12/2009
 
+auser9<- auser9 %>%     
+  filter(Date >= "2010-01-01")
+visdat::vis_dat(auser9)
+#######   #########
+#controlla i missing che prima avevo interpolato
+#ripeto interpolazione su auser9
+#### linear interpolation ####
 
-
+auser9$CoS <-as.numeric(na.interp(auser9$CoS))
+auser9$DIEC <-as.numeric(na.interp(auser9$DIEC))
+auser9$LT2 <-as.numeric(na.interp(auser9$LT2))
+auser9$PAG <-as.numeric(na.interp(auser9$PAG))
+auser9$SAL <-as.numeric(na.interp(auser9$SAL))
+auser9$Hydrometry_Piaggione <-as.numeric(na.interp(auser9$Hydrometry_Piaggione))
+auser9$Hydrometry_Monte_S_Quirico <-as.numeric(na.interp(auser9$Hydrometry_Monte_S_Quirico))
+visdat::vis_dat(auser9)
 
 
 ####
 #### Correlation Matrix ####
-df <- auser
+df <- auser9
 df$Date <- NULL
 ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, layout.exp = 4, label_size = 3)
 rm(df)

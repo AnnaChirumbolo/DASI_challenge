@@ -1025,7 +1025,7 @@ str(canneto)
 canneto_featured <- add.seasons(canneto2) %>%
   rename(fl_rate.Ls = imp_flow_rate) %>% 
   mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <=0 & Rainfall_Settefrati > 0, 1,0)),
-         snow.no = as.factor(ifelse(Temperature_Settefrati >0,1,0))) 
+         snow.no = as.factor(ifelse(Temperature_Settefrati >0 & Rainfall_Settefrati > 0,1,0))) 
 
 ggplot(canneto,aes(Date, fl_rate.Ls))+
   geom_line() +
