@@ -702,4 +702,6 @@ luco_rain7.lag <- luco_rain_mensano7 %>%
          lag9 = Lag(rain5, +9)) %>% 
   write.csv(., "processed_data/luco_rain7.csv")
 
+write.csv(luco_featured, "processed_data/luco_featured.csv")
+
 ##passo poi a 03-luco.R per proseguire l'analisi
