@@ -322,6 +322,9 @@ Lake_Bilancino_cut %>%
 #posso pensare di analizzare i casi sotto allo zero, per vedere se sono collegati
 #a precipitazioni nevose
 
+# salvo il mio dataset Lake_Bilancino_cut ripulito con le stagioni:
+write.csv(Lake_Bilancino_cut,"processed_data/BILANCINO_to_model.csv")
+
 
 #### snow ####
 #Temperature sotto lo zero / eventuale pioggia/neve, da analizzare
