@@ -116,31 +116,31 @@ auser <- auser1 %>%
 
 ### vis well by well, to fill in gaps 
 
-## pozzo 1 = CoS
+## pozzo 1 = CoS target
 
 (auser_p1 <- ggplot(auser, aes(Date, CoS, group = 1))+
     geom_line(size = 1)+
     theme_classic())
 
-## pozzo 2 = DIEC
+## pozzo 2 = DIEC non target
 
 (auser_p2 <- ggplot(auser, aes(Date, DIEC, group = 2))+
     geom_line(size = 1)+
     theme_classic())
 
-## pozzo 3 = LT2
+## pozzo 3 = LT2 target
 
 (auser_p3 <- ggplot(auser, aes(Date, LT2, group = 3))+
     geom_line(size = 1)+
     theme_classic())
 
-## pozzo 4 = PAG
+## pozzo 4 = PAG non target
 
 (auser_p4 <- ggplot(auser, aes(Date, PAG, group = 4))+
     geom_line(size = 1)+
     theme_classic())
 
-## pozzo 5 = SAL
+## pozzo 5 = SAL target
 
 (auser_p5 <- ggplot(auser, aes(Date, SAL, group = 5))+
     geom_line(size = 1)+
