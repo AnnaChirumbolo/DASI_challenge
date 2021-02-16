@@ -719,7 +719,7 @@ ggplot_na_distribution(auser8$Rainfall_Tereglio_Coreglia_Antelminelli)
     geom_line()+
     theme_classic())
 
-# temp 
+#### temp  ####
 statsNA(auser9$Temperature_Orentano) #no missing
 ggplot_na_distribution(auser9$Temperature_Orentano)
 
@@ -852,3 +852,60 @@ df <- auser8
 df$Date <- NULL
 ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, layout.exp = 4, label_size = 3)
 rm(df)
+
+
+#### temperature ####
+auser8 %>%
+  dplyr::select(Date, Temperature_Orentano, Temperature_Monte_Serra, Temperature_Ponte_a_Moriano, Temperature_Lucca_Orto_Botanico) %>%
+  melt(., id.vars = "Date") %>%
+  ggplot(., aes(Date, value, col = variable))+
+  geom_line(size = 0.6, alpha = 1)+
+  scale_color_viridis_d(option = "inferno", begin = 0.15, end = 0.85, name = "")+
+  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2010-01-01", "2020-06-30")))+
+  labs(x = "Date", y = "Temperature C", title = "Temperature depending on the region",
+       subtitle = "explanatory variables on aquifer Auser from 2010") + 
+  theme_classic()+
+  theme(legend.position = "bottom", legend.direction = "vertical")
+
+
+
+#### Volume ####
+
+auser8 %>%
+  dplyr::select(Date, Volume_POL, Volume_CC1, Volume_CC2, Volume_CSA, Volume_CSAL) %>%
+  melt(., id.vars = "Date") %>%
+  ggplot(., aes(Date, value, col = variable))+
+  facet_wrap(variable~., ncol = 2)+
+  geom_line(size = 0.7, alpha = 1)+
+  scale_color_viridis_d(option = "inferno", begin = 0.45, end = 0.45, name = "")+
+  scale_y_continuous(trans = "pseudo_log", breaks = c(0,-100, -10000, -1000000, - 20000000))+
+  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2010-01-01", "2020-06-30")))+
+  labs(x = "Date", y = "The amount of water", title = "The amount of water depending on the station",
+       subtitle = "explanatory variables on aquifer Auser from 01-2010") + 
+  theme_21+
+  theme(legend.position = "none")
+
+#pseudoLog <- function(x) { asinh(x/2)/log(10) }
+
+#auser8$pl_Volume_POL <- pseudoLog(auser8$Volume_POL)
+#auser8$pl_Volume_CC2 <- pseudoLog(auser8$Volume_CC2)
+#auser8$pl_Volume_CSAL <- pseudoLog(auser8$Volume_CSAL
+
+#commento
+
+
+#### hydrometry ####
+
+auser8 %>%
+  dplyr:: select(Date, Hydrometry_Monte_S_Quirico, Hydrometry_Piaggione) %>%
+  melt(., id.vars = "Date") %>%
+  ggplot(., aes(Date, value, col = variable))+
+  facet_wrap(variable~., ncol = 1)+
+  geom_line(size = 0.6, alpha = 1)+
+  scale_color_viridis_d(option = "inferno", begin = 0.55, end = 0.55, name = "")+
+  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2010-01-01", "2020-06-30")))+
+  labs(x = "Date", y = "Groundwater level meters", title = "Groundwater level depending on the station",
+       subtitle = "exp variables on aquifer Auser from 01-2010") + 
+  theme_21+
+  theme(legend.position = "none")
+##commento
