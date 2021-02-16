@@ -377,6 +377,14 @@ ggplot(bilancino_months, aes(Quarters, Fl_rate.Quar))+
 ggplot(bilancino_months, aes(Semester, Fl_rate.Sem))+
   geom_bar(stat = "identity")
 
+#### voglio rendere trascurabile le pioggie esigue, divido i livelli di pioggia in 3 ###
+min(bilancino_months$Rainfall_mean)
+mean(bilancino_months$Rainfall_mean)
+max(bilancino_months$Rainfall_mean)
+
+
+
+
 
 
 
