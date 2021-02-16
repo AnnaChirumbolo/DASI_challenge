@@ -127,6 +127,30 @@ Lake_Bilancino_cut$Season<-factor(Lake_Bilancino_cut$Season,
                                   levels=c("Winter","Spring", "Summer", "Autumn"))
 
 
+## funzione - aggiunta divisione categorica (dummy) per stagioni
+
+add.seasons <- function(data) {
+  seasons <- data %>% 
+    mutate(Date = lubridate::as_date(Date),
+           Year = as.factor(lubridate::year(Date)),
+           Month = as.factor(lubridate::month(Date)),
+           Day = as.factor(lubridate::day(Date)),
+           Month_day = format(Date,format = "%m-%d")) %>% 
+    mutate(Spring = factor(ifelse(Month_day >= "03-21" & Month_day < "06-21",
+                                  1,0)),
+           Summer = factor(ifelse(Month_day >="06-21" & Month_day < "09-21",
+                                  1,0)),
+           Autumn = factor(ifelse(Month_day >= "09-21" & Month_day < "12-21",
+                                  1,0)),
+           Winter = factor(ifelse(Month_day >= "12-21" & Month_day <= "12-31",
+                                  1, 
+                                  ifelse(Month_day >= "01-01" & Month_day < "03-21",
+                                         1, 0)))) %>%
+    dplyr::select(-Month_day)
+  return(seasons)
+}
+
+
 
 #### guardo le variabili target ####
 ## Le mie variabili TARGET sono: Lake_Level, Flow_Rate
@@ -329,9 +353,13 @@ write.csv(Lake_Bilancino_cut,"processed_data/BILANCINO_to_model.csv")
 #### snow ####
 #Temperature sotto lo zero / eventuale pioggia/neve, da analizzare
 str(Lake_Bilancino_cut)
-bilancino_featured <- Lake_Bilancino_cut %>%
+
+bilancino_featured <- add.seasons(Lake_Bilancino_cut) %>%
   mutate(snow.yes = as.factor(ifelse(Temperature_Le_Croci <=0 & Rainfall_Le_Croci > 0, 1,0)),
-         snow.no = as.factor(ifelse(Temperature_Le_Croci >0,1,0))) 
+         snow.no = as.factor(ifelse(Temperature_Le_Croci > 0 & Rainfall_Le_Croci <= 0,1,0))) 
+str(bilancino_featured)
+
+
 
 ggplot(Lake_Bilancino_cut,aes(Date, Flow_Rate))+
   geom_line() +
@@ -340,7 +368,7 @@ ggplot(Lake_Bilancino_cut,aes(Date, Flow_Rate))+
 ggplot(Lake_Bilancino_cut,aes(Rainfall_Le_Croci, Flow_Rate))+
   geom_point()
 
-# creating quarters, semesters and trimonthly data 
+#### creating quarters, semesters and trimonthly data  ####
 
 bilancino_months <- bilancino_featured %>% 
          mutate(Y_m = as.Date(Date, format ="%Y-%m"),
@@ -364,6 +392,30 @@ bilancino_months <- bilancino_featured %>%
          lag7 = lag(Rainfall_Le_Croci,+7),
          lag9 = lag(Rainfall_Le_Croci, +9))
 
+
+#bilancino_months <- bilancino_featured %>% 
+ # dplyr::mutate(Y_m = as.Date(Date, format ="%Y-%m"),
+ #        Semester = semester(Date, with_year = T),
+#         Quarters = quarter(Date, with_year = T),
+#         Trimonthly = as.factor(round_date(Y_m, unit = "3 months"))) %>% 
+  # date written is first day of the period
+  # dplyr::select(-Y_m) %>%
+ # group_by(Trimonthly) %>% 
+#  dplyr::mutate(Fl_rate.Tri = mean(fl_rate)) %>% 
+#  ungroup() %>% 
+#  group_by(Quarters) %>% 
+#  mutate(Fl_rate.Quar = mean(fl_rate)) %>% 
+#  ungroup() %>% 
+#  group_by(Semester) %>% 
+#  mutate(Fl_rate.Sem = mean(fl_rate)) %>% 
+#  ungroup() %>% 
+#  mutate(lag1 = Lag(Rainfall_Le_Croci, +1),
+ #        lag3 = Lag(Rainfall_Le_Croci,+3),
+#         lag5 = Lag(Rainfall_Le_Croci,+5),
+#         lag7 = Lag(Rainfall_Le_Croci,+7),
+ #        lag9 = Lag(Rainfall_Le_Croci, +9))
+#mi da un errore
+
 #unique(bilancino_months$Trimonthly)
 
 min(bilancino_months$Fl_rate.Tri)
@@ -380,12 +432,74 @@ ggplot(bilancino_months, aes(Quarters, Fl_rate.Quar))+
 ggplot(bilancino_months, aes(Semester, Fl_rate.Sem))+
   geom_bar(stat = "identity")
 
+write.csv(bilancino_months, "processed_data/BILANCINO_to_model+lags.csv")
+
+
 #### voglio rendere trascurabile le pioggie esigue, divido i livelli di pioggia in 3 ###
 min(bilancino_months$Rainfall_mean)
 mean(bilancino_months$Rainfall_mean)
 max(bilancino_months$Rainfall_mean)
 
 
+####
+### checking for rainfall ###
+## changing mm levels 
+
+#ggplot(canneto_rain, aes(y = Rainfall_B)) +
+#geom_boxplot()
+
+## 5 datasets with 5 levels of min rain changed to 0:
+
+bilancino_rain.5 <- bilancino_months %>% 
+  mutate(rain1 = ifelse(Rainfall_Le_Croci <= 0.5, 0, Rainfall_Le_Croci),
+         seq.rain.val = sequence(rle(as.character(rain1))$lengths)) 
+
+bilancino_rain1.5 <- bilancino_months %>%  # whenever rain is lower than 1mm/day, = 0
+  mutate(rain2 = ifelse(Rainfall_Le_Croci <= 1.5, 0, Rainfall_Le_Croci),
+         seq.rain.val = sequence(rle(as.character(rain2))$lengths))
+
+bilancino_rain3 <- bilancino_months %>% 
+  mutate(rain3 = ifelse(Rainfall_Le_Croci <= 3,0,Rainfall_Le_Croci),
+         seq.rain.val = sequence(rle(as.character(rain3))$lengths))
+
+bilancino_rain5 <- bilancino_months %>% 
+  mutate(rain4 = ifelse(Rainfall_Le_Croci <= 5, 0, Rainfall_Le_Croci),
+         seq.rain.val = sequence(rle(as.character(rain4))$lengths))
+
+## creating 5 new datasets per dataset...
+## ... or 5 new variables 
+
+bilancino_rain0.5.lag <- bilancino_rain.5 %>% 
+  dplyr::mutate(lag1 = lag(rain1, +1),
+         lag3 = lag(rain1,+3),
+         lag5 = lag(rain1,+5),
+         lag7 = lag(rain1,+7),
+         lag9 = lag(rain1, +9)) %>%
+  write.csv(., "processed_data/bilancino_rain0.5.csv")
+
+bilancino_rain1.5.lag <- bilancino_rain1.5 %>% 
+  mutate(lag1 = lag(rain2, +1),
+         lag3 = lag(rain2, +3),
+         lag5 = lag(rain2, +5),
+         lag7 = lag(rain2, +7),
+         lag9 = lag(rain2, +9))%>% 
+  write.csv(., "processed_data/bilancino_rain1.5.csv")
+
+bilancino_rain3.lag <- bilancino_rain3 %>% 
+  dplyr::mutate(lag1 = lag(rain3, +1),
+         lag3 = lag(rain3, +3),
+         lag5 = lag(rain3, +5),
+         lag7 = lag(rain3, +7),
+         lag9 = lag(rain3, +9)) %>% 
+  write.csv(., "processed_data/bilancino_rain3.csv")
+
+bilancino_rain5.lag <- bilancino_rain5 %>% 
+  dplyr::mutate(lag1 = lag(rain4, +1),
+         lag3 = lag(rain4, +3),
+         lag5 = lag(rain4, +5),
+         lag7 = lag(rain4, +7),
+         lag9 = lag(rain4, +9)) %>% 
+  write.csv(., "processed_data/bilancino_rain5.csv")
 
 
 
