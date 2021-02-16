@@ -173,7 +173,7 @@ temp_firenze_ls <- list.files(path = "./data/meteoFirenze/",
 
 ## manipulating temp data 
 temp_firenze <- temp_firenze_ls %>% 
-  rename(date1 = filename) %>% 
+  dplyr::rename(date1 = filename) %>% 
   dplyr::mutate(date1 = gsub("./data/meteoFirenze/", "", date1),
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
@@ -194,7 +194,7 @@ temp_firenze <- temp_firenze_ls %>%
          date_final = stringr::str_replace(date_final, "dec", "12"),
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
-  rename(Date = date_final) %>%
+  dplyr::rename(Date = date_final) %>%
   dplyr::select(Date, tmin, tmax) %>%
   dplyr::mutate(Temperature_Firenze = rowMeans(subset(., select = c(tmin,tmax)),
                                          na.rm = T)) %>%
@@ -223,7 +223,7 @@ rf_bibbiena_ls <- list.files(path = "./data/meteoBibbiena/",
 
 ## manipulating rain_fall data  Bibbiena
 rf_bibbiena <- rf_bibbiena_ls %>% 
-  rename(date1 = filename) %>% 
+  dplyr::rename(date1 = filename) %>% 
   mutate(date1 = gsub("./data/meteoBibbiena/", "", date1),
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
@@ -244,7 +244,7 @@ rf_bibbiena <- rf_bibbiena_ls %>%
          date_final = stringr::str_replace(date_final, "dec", "12"),
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
-  rename(Date = date_final) %>%
+  dplyr::rename(Date = date_final) %>%
   select(Date, prec) %>%
   arrange(Date)
 
@@ -270,7 +270,7 @@ rf_camaldoli_ls <- list.files(path = "./data/meteoCamaldoli/",
 
 ## manipulating rain_fall data  Camaldoli
 rf_camaldoli <- rf_camaldoli_ls %>% 
-  rename(date1 = filename) %>% 
+  dplyr::rename(date1 = filename) %>% 
   mutate(date1 = gsub("./data/meteoCamaldoli/", "", date1),
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
@@ -291,7 +291,7 @@ rf_camaldoli <- rf_camaldoli_ls %>%
          date_final = stringr::str_replace(date_final, "dec", "12"),
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
-  rename(Date = date_final) %>%
+  dplyr::rename(Date = date_final) %>%
   select(Date, prec) %>%
   arrange(Date)
 
@@ -317,7 +317,7 @@ rf_consuma_ls <- list.files(path = "./data/meteoConsuma/",
 
 ## manipulating rain_fall data  Consuma
 rf_consuma <- rf_consuma_ls %>% 
-  rename(date1 = filename) %>% 
+  dplyr::rename(date1 = filename) %>% 
   mutate(date1 = gsub("./data/meteoConsuma/", "", date1),
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
@@ -338,7 +338,7 @@ rf_consuma <- rf_consuma_ls %>%
          date_final = stringr::str_replace(date_final, "dec", "12"),
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
-  rename(Date = date_final) %>%
+  dplyr::rename(Date = date_final) %>%
   select(Date, prec) %>%
   arrange(Date)
 
@@ -364,7 +364,7 @@ rf_incisa_ls <- list.files(path = "./data/meteoIncisa/",
 
 ## manipulating rain_fall data Incisa
 rf_incisa <- rf_incisa_ls %>% 
-  rename(date1 = filename) %>% 
+  dplyr::rename(date1 = filename) %>% 
   mutate(date1 = gsub("./data/meteoIncisa/", "", date1),
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
@@ -385,7 +385,7 @@ rf_incisa <- rf_incisa_ls %>%
          date_final = stringr::str_replace(date_final, "dec", "12"),
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
-  rename(Date = date_final) %>%
+  dplyr::rename(Date = date_final) %>%
   select(Date, prec) %>%
   arrange(Date)
 
@@ -411,7 +411,7 @@ rf_laterina_ls <- list.files(path = "./data/meteoLaterina/",
 
 ## manipulating rain_fall data  LAterina
 rf_laterina <- rf_laterina_ls %>% 
-  rename(date1 = filename) %>% 
+  dplyr::rename(date1 = filename) %>% 
   mutate(date1 = gsub("./data/meteoLaterina/", "", date1),
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
@@ -432,7 +432,7 @@ rf_laterina <- rf_laterina_ls %>%
          date_final = stringr::str_replace(date_final, "dec", "12"),
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
-  rename(Date = date_final) %>%
+  dplyr::rename(Date = date_final) %>%
   select(Date, prec) %>%
   arrange(Date)
 
@@ -458,7 +458,7 @@ rf_montevarchi_ls <- list.files(path = "./data/meteoMontevarchi/",
 
 ## manipulating rain_fall data  Montevarchi
 rf_montevarchi <- rf_montevarchi_ls %>% 
-  rename(date1 = filename) %>% 
+  dplyr::rename(date1 = filename) %>% 
   mutate(date1 = gsub("./data/meteoMontevarchi/", "", date1),
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
@@ -479,7 +479,7 @@ rf_montevarchi <- rf_montevarchi_ls %>%
          date_final = stringr::str_replace(date_final, "dec", "12"),
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
-  rename(Date = date_final) %>%
+  dplyr::rename(Date = date_final) %>%
   select(Date, prec) %>%
   arrange(Date)
 
@@ -505,7 +505,7 @@ rf_ssavino_ls <- list.files(path = "./data/meteoSSavino/",
 
 ## manipulating rain_fall data  San Savino
 rf_ssavino <- rf_ssavino_ls %>% 
-  rename(date1 = filename) %>% 
+  dplyr::rename(date1 = filename) %>% 
   mutate(date1 = gsub("./data/meteoSSavino/", "", date1),
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
@@ -526,7 +526,7 @@ rf_ssavino <- rf_ssavino_ls %>%
          date_final = stringr::str_replace(date_final, "dec", "12"),
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
-  rename(Date = date_final) %>%
+  dplyr::rename(Date = date_final) %>%
   select(Date, prec) %>%
   arrange(Date)
 
@@ -552,7 +552,7 @@ rf_stia_ls <- list.files(path = "./data/meteoStia/",
 
 ## manipulating rain_fall data  Stia
 rf_stia <- rf_stia_ls %>% 
-  rename(date1 = filename) %>% 
+  dplyr::rename(date1 = filename) %>% 
   mutate(date1 = gsub("./data/meteoStia/", "", date1),
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
@@ -573,7 +573,7 @@ rf_stia <- rf_stia_ls %>%
          date_final = stringr::str_replace(date_final, "dec", "12"),
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
-  rename(Date = date_final) %>%
+  dplyr:: rename(Date = date_final) %>%
   select(Date, prec) %>%
   arrange(Date)
 
@@ -599,7 +599,7 @@ rf_vernio_ls <- list.files(path = "./data/meteoVernio/",
 
 ## manipulating rain_fall data  Vernio
 rf_vernio <- rf_vernio_ls %>% 
-  rename(date1 = filename) %>% 
+  dplyr::rename(date1 = filename) %>% 
   mutate(date1 = gsub("./data/meteoVernio/", "", date1),
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
@@ -620,7 +620,7 @@ rf_vernio <- rf_vernio_ls %>%
          date_final = stringr::str_replace(date_final, "dec", "12"),
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
-  rename(Date = date_final) %>%
+  dplyr::rename(Date = date_final) %>%
   select(Date, prec) %>%
   arrange(Date)
 
@@ -704,6 +704,7 @@ River_Arno_cut1$Hydrometry_Nave_di_Rosano <-as.numeric(na.approx(River_Arno_cut1
 
 #oppure
 River_Arno_cut1$Hydrometry_Nave_di_Rosano <-as.numeric(na.interp(River_Arno_cut1$Hydrometry_Nave_di_Rosano))
+
 
 
 #TARGET: Hydrometry_Nave_di_Rosano
@@ -835,6 +836,9 @@ River_Arno_cut1 <- River_Arno_cut1 %>%
                             month(Date) %in% c(1,2,12) ~ "Winter"))
 River_Arno_cut1$Season<-factor(River_Arno_cut1$Season, 
                              levels=c("Winter","Spring", "Summer", "Autumn"))
+
+# salvo il mio dataset River_Arno_cut1 ripulito con le stagioni:
+write.csv(River_Arno_cut1,"processed_data/ARNO_to_model.csv")
 
 ###correlazione seconda tabella di visibilita' con il metodo di spearman 
 #+ le stagioni
