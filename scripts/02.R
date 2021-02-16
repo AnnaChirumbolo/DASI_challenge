@@ -1005,17 +1005,17 @@ add.seasons <- function(data) {
            Month = as.factor(lubridate::month(Date)),
            Day = as.factor(lubridate::day(Date)),
            Month_day = format(Date,format = "%m-%d")) %>% 
-    group_by(Year) %>%
     mutate(Spring = factor(ifelse(Month_day >= "03-21" & Month_day < "06-21",
                                   1,0)),
            Summer = factor(ifelse(Month_day >="06-21" & Month_day < "09-21",
                                   1,0)),
            Autumn = factor(ifelse(Month_day >= "09-21" & Month_day < "12-21",
                                   1,0)),
-           Winter = factor(ifelse(Month_day >= "12-21" & Month_day < "03-21",
-                                  1,0))) %>%
-    dplyr::select(-Month_day) %>% 
-    ungroup()
+           Winter = factor(ifelse(Month_day >= "12-21" & Month_day <= "12-31",
+                                  1, 
+                                  ifelse(Month_day >= "01-01" & Month_day < "03-21",
+                                         1, 0)))) %>%
+   dplyr::select(-Month_day)
   return(seasons)
 }
 
@@ -1024,14 +1024,15 @@ add.seasons <- function(data) {
 str(canneto)
 canneto_featured <- add.seasons(canneto2) %>%
   rename(fl_rate.Ls = imp_flow_rate) %>% 
-  mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <=0 & Rainfall_Settefrati > 0, 1,0)),
-         snow.no = as.factor(ifelse(Temperature_Settefrati >0 & Rainfall_Settefrati > 0,1,0))) 
+  mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <= 0 & Rainfall_Settefrati > 0, 1,0)),
+         snow.no = as.factor(ifelse(Temperature_Settefrati > 0 & Rainfall_Settefrati <= 0,1,0))) 
+str(canneto_featured)
 
-ggplot(canneto,aes(Date, fl_rate.Ls))+
+ggplot(canneto_featured,aes(Date, fl_rate.Ls))+
   geom_line() +
-  geom_line(data = canneto, aes(Date, Rainfall_Settefrati, color = "red"))
+  geom_line(data = canneto_featured, aes(Date, Rainfall_Settefrati, color = "red"))
 
-ggplot(canneto,aes(Rainfall_Settefrati, fl_rate.Ls))+
+ggplot(canneto_featured,aes(Rainfall_Settefrati, fl_rate.Ls))+
   geom_point()
 
 
@@ -1102,11 +1103,6 @@ canneto_rain5 <- canneto_months %>%
   mutate(rain4 = ifelse(Rainfall_Settefrati <= 5, 0, Rainfall_Settefrati),
          seq.rain.val = sequence(rle(as.character(rain4))$lengths))
 
-canneto_rain7 <- canneto_months %>% 
-  mutate(rain5 = ifelse(Rainfall_Settefrati <=7, 0, Rainfall_Settefrati),
-         seq.rain.val = sequence(rle(as.character(rain5))$lengths))
-
-
 ## creating 5 new datasets per dataset...
 ## ... or 5 new variables 
 
@@ -1141,12 +1137,3 @@ canneto_rain5.lag <- canneto_rain5 %>%
          lag7 = Lag(rain4, +7),
          lag9 = Lag(rain4, +9)) %>% 
   write.csv(., "processed_data/canneto_rain5.csv")
-
-canneto_rain7.lag <- canneto_rain7 %>% 
-  mutate(lag1 = Lag(rain5, +1),
-         lag3 = Lag(rain5, +3),
-         lag5 = Lag(rain5, +5),
-         lag7 = Lag(rain5, +7),
-         lag9 = Lag(rain5, +9)) %>% 
-  write.csv(., "processed_data/canneto_rain7.csv")
-

@@ -211,10 +211,7 @@ summary(temp_firenze)
 
 #### Rain_fall Bibbiena aggiungo i dati scaricati da 3bmeteo dal 2011
 
-read_plus <- function(flnm) {
-  read_csv(flnm) %>% 
-    mutate(filename = flnm)
-}
+
 
 rf_bibbiena_ls <- list.files(path = "./data/meteoBibbiena/",
                               pattern = "*.csv$", 
@@ -258,10 +255,7 @@ summary(rf_bibbiena)
 
 #### Rain_fall Camaldoli aggiungo i dati scaricati da 3bmeteo dal 2011
 
-read_plus <- function(flnm) {
-  read_csv(flnm) %>% 
-    mutate(filename = flnm)
-}
+
 
 rf_camaldoli_ls <- list.files(path = "./data/meteoCamaldoli/",
                              pattern = "*.csv$", 
@@ -305,10 +299,7 @@ summary(rf_camaldoli)
 
 #### Rain_fall Consuma aggiungo i dati scaricati da 3bmeteo dal 2011
 
-read_plus <- function(flnm) {
-  read_csv(flnm) %>% 
-    mutate(filename = flnm)
-}
+
 
 rf_consuma_ls <- list.files(path = "./data/meteoConsuma/",
                               pattern = "*.csv$", 
@@ -352,10 +343,7 @@ summary(rf_consuma)
 
 #### Rain_fall Incisa aggiungo i dati scaricati da 3bmeteo dal 2016
 
-read_plus <- function(flnm) {
-  read_csv(flnm) %>% 
-    mutate(filename = flnm)
-}
+
 
 rf_incisa_ls <- list.files(path = "./data/meteoIncisa/",
                               pattern = "*.csv$", 
@@ -399,10 +387,7 @@ summary(rf_incisa)
 
 #### Rain_fall Laterina aggiungo i dati scaricati da 3bmeteo dal 2011
 
-read_plus <- function(flnm) {
-  read_csv(flnm) %>% 
-    mutate(filename = flnm)
-}
+
 
 rf_laterina_ls <- list.files(path = "./data/meteoLaterina/",
                               pattern = "*.csv$", 
@@ -446,10 +431,7 @@ summary(rf_laterina)
 
 #### Rain_fall Montevarchi aggiungo i dati scaricati da 3bmeteo dal 2011
 
-read_plus <- function(flnm) {
-  read_csv(flnm) %>% 
-    mutate(filename = flnm)
-}
+
 
 rf_montevarchi_ls <- list.files(path = "./data/meteoMontevarchi/",
                               pattern = "*.csv$", 
@@ -493,10 +475,7 @@ summary(rf_montevarchi)
 
 #### Rain_fall San Savino aggiungo i dati scaricati da 3bmeteo dal 2011
 
-read_plus <- function(flnm) {
-  read_csv(flnm) %>% 
-    mutate(filename = flnm)
-}
+
 
 rf_ssavino_ls <- list.files(path = "./data/meteoSSavino/",
                               pattern = "*.csv$", 
@@ -540,10 +519,7 @@ summary(rf_ssavino)
 
 #### Rain_fall Stia aggiungo i dati scaricati da 3bmeteo dal 2011
 
-read_plus <- function(flnm) {
-  read_csv(flnm) %>% 
-    mutate(filename = flnm)
-}
+
 
 rf_stia_ls <- list.files(path = "./data/meteoStia/",
                               pattern = "*.csv$", 

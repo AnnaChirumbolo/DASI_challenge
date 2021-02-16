@@ -827,8 +827,22 @@ auser8$Season<-factor(auser8$Season,
 #### write ####
 # salvo il mio dataset auser8 ripulito con le stagioni:
 write.csv(auser8,"processed_data/AUSER_to_model.csv")
+#str(auser8)
+#visdat::vis_dat(auser8)
+#summary(auser8)
 
-
+#### visualizo ancamento delle variabili target ####
+auser8 %>%
+  select(Date, SAL, CoS, LT2) %>%
+  melt(., id.vars = "Date") %>%
+  ggplot(., aes(Date, value))+
+  facet_wrap(variable~., ncol = 1, scales = "free_y")+
+  geom_line(size = 1.6, alpha = 0.8, col = "gray65")+
+  geom_smooth(method = "loess", color = "firebrick3", size = 2.2, formula = y ~ x, fill = "firebrick4", alpha = 0.32)+
+  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2006-05-01", "2020-06-30")))+
+  labs(x = "Date", y = "Value", title = "The distribution of the explained variables (along with the loess curve)",
+       subtitle = "in aquifer Auser from 05-2006") + 
+  theme_21
 
 
 
