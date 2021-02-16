@@ -810,9 +810,9 @@ auser8$Hydrometry_Piaggione <-as.numeric(na.interp(auser8$Hydrometry_Piaggione))
 auser8$Hydrometry_Monte_S_Quirico <-as.numeric(na.interp(auser8$Hydrometry_Monte_S_Quirico))
 visdat::vis_dat(auser8)
 
-####variabile stagione####
+
 ####inserisco la variabile stagioni####
-##inserisco le stagioni####
+##inserisco le stagioni###
 auser8 <- auser8 %>%
   mutate(Season = case_when(month(Date) %in% c(3,4,5) ~ "Spring",                      
                             month(Date) %in% c(6,7,8) ~ "Summer",
@@ -820,6 +820,46 @@ auser8 <- auser8 %>%
                             month(Date) %in% c(1,2,12) ~ "Winter"))
 auser8$Season<-factor(auser8$Season, 
                                levels=c("Winter","Spring", "Summer", "Autumn"))
+
+#### funzione season
+## funzione - aggiunta divisione categorica (dummy) per stagioni
+
+add.seasons <- function(data) {
+  seasons <- data %>% 
+    mutate(Date = lubridate::as_date(Date),
+           Year = as.factor(lubridate::year(Date)),
+           Month = as.factor(lubridate::month(Date)),
+           Day = as.factor(lubridate::day(Date)),
+           Month_day = format(Date,format = "%m-%d")) %>% 
+    mutate(Spring = factor(ifelse(Month_day >= "03-21" & Month_day < "06-21",
+                                  1,0)),
+           Summer = factor(ifelse(Month_day >="06-21" & Month_day < "09-21",
+                                  1,0)),
+           Autumn = factor(ifelse(Month_day >= "09-21" & Month_day < "12-21",
+                                  1,0)),
+           Winter = factor(ifelse(Month_day >= "12-21" & Month_day <= "12-31",
+                                  1, 
+                                  ifelse(Month_day >= "01-01" & Month_day < "03-21",
+                                         1, 0)))) %>%
+    dplyr::select(-Month_day)
+  return(seasons)
+}
+
+#### snow ####
+str(auser8)
+auser_featured <- add.seasons(auser8) %>%
+  mutate(snow.yes.MS = as.factor(ifelse(Temperature_Monte_Serra <= 0 & Rainfall_Monte_Serra > 0, 1,0)),
+         snow.no.MS = as.factor(ifelse(Temperature_Monte_Serra > 0 & Rainfall_Monte_Serra <= 0,1,0)))  %>% 
+  mutate(snow.yes.Or = as.factor(ifelse(Temperature_Orentano <= 0 & Rainfall_Orentano > 0, 1,0)),
+         snow.no.Or = as.factor(ifelse(Temperature_Orentano > 0 & Rainfall_Orentano <= 0,1,0))) 
+str(auser_featured)
+
+
+
+
+
+
+
 
 
 
@@ -866,7 +906,8 @@ auser8 %>%
        subtitle = "explanatory variables on aquifer Auser from 2010") + 
   theme_classic()+
   theme(legend.position = "bottom", legend.direction = "vertical")
-
+## si notano le temperature di Monte  a Moriano a zero da giugno 2017
+# si presume un difetto nel sensore
 
 
 #### Volume ####
@@ -885,13 +926,12 @@ auser8 %>%
   theme_21+
   theme(legend.position = "none")
 
-#pseudoLog <- function(x) { asinh(x/2)/log(10) }
 
-#auser8$pl_Volume_POL <- pseudoLog(auser8$Volume_POL)
-#auser8$pl_Volume_CC2 <- pseudoLog(auser8$Volume_CC2)
-#auser8$pl_Volume_CSAL <- pseudoLog(auser8$Volume_CSAL
-
-#commento
+#commento:I valori di queste variabili 
+#sono negativi in quanto riguardano la quantità di acqua 
+#prelevata dal luogo indicato.
+# si puo' pensare di di escludere le variabili che descrivono i 
+#serbatoi CC1 e CSA per la loro correlazione con altre variabili, e di scegliere le variabili CC2 e CSAL per la maggiore varianza
 
 
 #### hydrometry ####
@@ -908,4 +948,31 @@ auser8 %>%
        subtitle = "exp variables on aquifer Auser from 01-2010") + 
   theme_21+
   theme(legend.position = "none")
-##commento
+##commento: guardando piaggione ha avuto assenza di dati prima del 2011,
+#nel modello si puo' pensare di rimuovere questa variabile anche perche'
+#molto correlata con altre, guardano la matrice di correlazione
+
+
+
+
+
+####The distribution of the target variables by season####
+
+auser_featured %>%
+  dplyr::select(Season, SAL, CoS, LT2) %>%
+  melt(., id.vars = "Season") %>%
+  ggplot(., aes(Season, value))+
+  facet_wrap(variable~., ncol = 1, scales = "free_y")+
+  geom_boxplot(outlier.size = 1.1, outlier.shape = 20, lwd = 0.5, fatten = 1.1, 
+               alpha = 0.90, width = 0.70, col = "gray10", fill = "#f8fc9d")+
+  scale_x_discrete(limit = c("Spring", "Summer", "Autumn", "Winter"))+
+  labs(x = "Season", y = "Value", title = "The distribution of the target variables by season",
+       subtitle = "in aq Auser") + 
+  theme_classic()
+#commento
+# per LT2 non ci sono differenze per staioni
+# per CoS e per Sal i pozzi sono piu' profondi in estate e autunno
+# ricordo che abbiamo preso il valore assoluto (i valori sono negativi)
+
+
+
