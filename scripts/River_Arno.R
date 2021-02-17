@@ -885,7 +885,7 @@ River_Arno_cut1%>%
 
 ### changing effect of rain on target, and lagging the effect 
 #of rain on the target ###
-
+#cancella
 arno_orig_LagSieve <- River_Arno_cut1 %>% 
   mutate(lag1 = lag(Rainfall_mean_Sieve, +1),
          lag3 = lag(Rainfall_mean_Sieve,+3),
@@ -895,7 +895,7 @@ arno_orig_LagSieve <- River_Arno_cut1 %>%
 arno_orig_LagSieve1 <- arno_orig_LagSieve %>% 
   dplyr::select(-Date)
 
-
+#cancella
 arno_orig_LagSorgente <- River_Arno_cut1 %>% 
   mutate(lag1 = lag(Rainfall_mean_Sorgente, +1),
          lag3 = lag(Rainfall_mean_Sorgente,+3),
@@ -904,6 +904,50 @@ arno_orig_LagSorgente <- River_Arno_cut1 %>%
 
 arno_orig_LagSorgente1 <- arno_orig_LagSorgente %>% 
   dplyr::select(-Date)
+
+#Le_Croci
+arno_orig_LagLC <- River_Arno_cut1 %>% 
+  mutate(lag1 = lag(Rainfall_Le_Croci, +1),
+         lag3 = lag(Rainfall_Le_Croci,+3),
+         lag5 = lag(Rainfall_Le_Croci,+5),
+         lag7 = lag(Rainfall_Le_Croci,+7)) 
+
+arno_orig_LagLC1 <- arno_orig_LagLC %>% 
+  dplyr::select(-Date)
+
+#Cavallina
+arno_orig_LagCA <- River_Arno_cut1 %>% 
+  mutate(lag1 = lag(Rainfall_Cavallina, +1),
+         lag3 = lag(Rainfall_Cavallina,+3),
+         lag5 = lag(Rainfall_Cavallina,+5),
+         lag7 = lag(Rainfall_Cavallina,+7)) 
+
+arno_orig_LagCA1 <- arno_orig_LagCA %>% 
+  dplyr::select(-Date)
+
+#Bibbiena
+arno_orig_LagB <- River_Arno_cut1 %>% 
+  mutate(lag1 = lag(Rainfall_Bibbiena, +1),
+         lag3 = lag(Rainfall_Bibbiena,+3),
+         lag5 = lag(Rainfall_Bibbiena,+5),
+         lag7 = lag(Rainfall_Bibbiena,+7)) 
+
+arno_orig_LagB1 <- arno_orig_LagB %>% 
+  dplyr::select(-Date)
+
+#Stia
+arno_orig_LagS <- River_Arno_cut1 %>% 
+  mutate(lag1 = lag(Rainfall_Stia, +1),
+         lag3 = lag(Rainfall_Stia,+3),
+         lag5 = lag(Rainfall_Stia,+5),
+         lag7 = lag(Rainfall_Stia,+7)) 
+
+arno_orig_LagS1 <- arno_orig_LagS %>% 
+  dplyr::select(-Date)
+
+
+
+
 
 ## creating 5 new datasets Sieve with different min rainfall levels 
 ## and with new time lags (trying to represent true effect of rain over target)
@@ -1007,6 +1051,223 @@ arno5_Sorgente <- arno_orig_LagSorgente %>%
   dplyr::select(-Rainfall_mean_Sorgente)
 
 arno5_Sorgente5_1 <- arno5_Sorgente %>%   dplyr::select(-Date)
+
+## creating 5 new datasets Sieve with different min rainfall levels 
+## and with new time lags (trying to represent true effect of rain over target)
+#Le_Croci
+arno0.5_LC <- arno_orig_LagLC %>% 
+  mutate(rain0.5 = ifelse(Rainfall_Le_Croci <= 0.5, 0, 
+                          Rainfall_Le_Croci),
+         lag1 = lag(rain0.5, +1),
+         lag3 = lag(rain0.5,+3),
+         lag5 = lag(rain0.5,+5),
+         lag7 = lag(rain0.5,+7),
+         lag9 = lag(rain0.5, +9)) %>% 
+  dplyr::select(-Rainfall_Le_Croci)
+
+arno0.5_LC_1 <- arno0.5_LC %>%  dplyr::select(-Date)
+
+arno1.5_LC <- arno_orig_LagLC %>% 
+  mutate(rain1.5 = ifelse(Rainfall_Le_Croci <= 1.5, 0, 
+                          Rainfall_Le_Croci),
+         lag1 = lag(rain1.5, +1),
+         lag3 = lag(rain1.5, +3),
+         lag5 = lag(rain1.5, +5),
+         lag7 = lag(rain1.5, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_Le_Croci)
+
+arno1.5_LC_1 <- arno1.5_LC %>%   dplyr::select(-Date)
+
+arno3_LC <- arno_orig_LagLC %>% 
+  mutate(rain3 = ifelse(Rainfall_Le_Croci <= 3,0,
+                        Rainfall_Le_Croci),
+         lag1 = lag(rain3, +1),
+         lag3 = lag(rain3, +3),
+         lag5 = lag(rain3, +5),
+         lag7 = lag(rain3, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_Le_Croci)
+
+arno3_LC_1 <- arno3_LC %>%  dplyr::select(-Date)
+
+arno5_LC <- arno_orig_LagLC %>% 
+  mutate(rain5 = ifelse(Rainfall_Le_Croci <= 5, 0, 
+                        Rainfall_Le_Croci),
+         lag1 = lag(rain5, +1),
+         lag3 = lag(rain5, +3),
+         lag5 = lag(rain5, +5),
+         lag7 = lag(rain5, +7),
+         lag9 = lag(rain5, +9)) %>%
+  dplyr::select(-Rainfall_Le_Croci)
+
+arno5_LC_1 <- arno5_LC %>%   dplyr::select(-Date)
+
+## creating 5 new datasets Sieve with different min rainfall levels 
+## and with new time lags (trying to represent true effect of rain over target)
+#Cavallina
+arno0.5_CA <- arno_orig_LagCA %>% 
+  mutate(rain0.5 = ifelse(Rainfall_Cavallina <= 0.5, 0, 
+                          Rainfall_Cavallina),
+         lag1 = lag(rain0.5, +1),
+         lag3 = lag(rain0.5,+3),
+         lag5 = lag(rain0.5,+5),
+         lag7 = lag(rain0.5,+7),
+         lag9 = lag(rain0.5, +9)) %>% 
+  dplyr::select(-Rainfall_Cavallina)
+
+arno0.5_CA_1 <- arno0.5_CA %>%  dplyr::select(-Date)
+
+arno1.5_CA <- arno_orig_LagCA %>% 
+  mutate(rain1.5 = ifelse(Rainfall_Cavallina <= 1.5, 0, 
+                          Rainfall_Cavallina),
+         lag1 = lag(rain1.5, +1),
+         lag3 = lag(rain1.5, +3),
+         lag5 = lag(rain1.5, +5),
+         lag7 = lag(rain1.5, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_Cavallina)
+
+arno1.5_CA_1 <- arno1.5_CA %>%   dplyr::select(-Date)
+
+arno3_CA <- arno_orig_LagCA %>% 
+  mutate(rain3 = ifelse(Rainfall_Cavallina <= 3,0,
+                        Rainfall_Cavallina),
+         lag1 = lag(rain3, +1),
+         lag3 = lag(rain3, +3),
+         lag5 = lag(rain3, +5),
+         lag7 = lag(rain3, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_Cavallina)
+
+arno3_CA_1 <- arno3_CA %>%  dplyr::select(-Date)
+
+arno5_CA <- arno_orig_LagCA %>% 
+  mutate(rain5 = ifelse(Rainfall_Cavallina <= 5, 0, 
+                        Rainfall_Cavallina),
+         lag1 = lag(rain5, +1),
+         lag3 = lag(rain5, +3),
+         lag5 = lag(rain5, +5),
+         lag7 = lag(rain5, +7),
+         lag9 = lag(rain5, +9)) %>%
+  dplyr::select(-Rainfall_Cavallina)
+
+arno5_CA_1 <- arno5_CA %>%   dplyr::select(-Date)
+
+## creating 5 new datasets Sieve with different min rainfall levels 
+## and with new time lags (trying to represent true effect of rain over target)
+#Bibbiena
+arno0.5_B <- arno_orig_LagB %>% 
+  mutate(rain0.5 = ifelse(Rainfall_Bibbiena <= 0.5, 0, 
+                          Rainfall_Bibbiena),
+         lag1 = lag(rain0.5, +1),
+         lag3 = lag(rain0.5,+3),
+         lag5 = lag(rain0.5,+5),
+         lag7 = lag(rain0.5,+7),
+         lag9 = lag(rain0.5, +9)) %>% 
+  dplyr::select(-Rainfall_Bibbiena)
+
+arno0.5_B_1 <- arno0.5_B %>%  dplyr::select(-Date)
+
+arno1.5_B <- arno_orig_LagB %>% 
+  mutate(rain1.5 = ifelse(Rainfall_Bibbiena <= 1.5, 0, 
+                          Rainfall_Bibbiena),
+         lag1 = lag(rain1.5, +1),
+         lag3 = lag(rain1.5, +3),
+         lag5 = lag(rain1.5, +5),
+         lag7 = lag(rain1.5, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_Bibbiena)
+
+arno1.5_B_1 <- arno1.5_B %>%   dplyr::select(-Date)
+
+arno3_B <- arno_orig_LagB %>% 
+  mutate(rain3 = ifelse(Rainfall_Bibbiena <= 3,0,
+                        Rainfall_Bibbiena),
+         lag1 = lag(rain3, +1),
+         lag3 = lag(rain3, +3),
+         lag5 = lag(rain3, +5),
+         lag7 = lag(rain3, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_Bibbiena)
+
+arno3_B_1 <- arno3_B %>%  dplyr::select(-Date)
+
+arno5_B <- arno_orig_LagB %>% 
+  mutate(rain5 = ifelse(Rainfall_Bibbiena <= 5, 0, 
+                        Rainfall_Bibbiena),
+         lag1 = lag(rain5, +1),
+         lag3 = lag(rain5, +3),
+         lag5 = lag(rain5, +5),
+         lag7 = lag(rain5, +7),
+         lag9 = lag(rain5, +9)) %>%
+  dplyr::select(-Rainfall_Bibbiena)
+
+arno5_B_1 <- arno5_B %>%   dplyr::select(-Date)
+
+## creating 5 new datasets Sieve with different min rainfall levels 
+## and with new time lags (trying to represent true effect of rain over target)
+#Stia
+arno0.5_S <- arno_orig_LagS %>% 
+  mutate(rain0.5 = ifelse(Rainfall_Stia <= 0.5, 0, 
+                          Rainfall_Stia),
+         lag1 = lag(rain0.5, +1),
+         lag3 = lag(rain0.5,+3),
+         lag5 = lag(rain0.5,+5),
+         lag7 = lag(rain0.5,+7),
+         lag9 = lag(rain0.5, +9)) %>% 
+  dplyr::select(-Rainfall_Stia)
+
+arno0.5_S_1 <- arno0.5_S %>%  dplyr::select(-Date)
+
+arno1.5_S <- arno_orig_LagS %>% 
+  mutate(rain1.5 = ifelse(Rainfall_Stia <= 1.5, 0, 
+                          Rainfall_Stia),
+         lag1 = lag(rain1.5, +1),
+         lag3 = lag(rain1.5, +3),
+         lag5 = lag(rain1.5, +5),
+         lag7 = lag(rain1.5, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_Stia)
+
+arno1.5_S_1 <- arno1.5_S %>%   dplyr::select(-Date)
+
+arno3_S <- arno_orig_LagS %>% 
+  mutate(rain3 = ifelse(Rainfall_Stia <= 3,0,
+                        Rainfall_Stia),
+         lag1 = lag(rain3, +1),
+         lag3 = lag(rain3, +3),
+         lag5 = lag(rain3, +5),
+         lag7 = lag(rain3, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_Stia)
+
+arno3_S_1 <- arno3_S %>%  dplyr::select(-Date)
+
+arno5_S <- arno_orig_LagS %>% 
+  mutate(rain5 = ifelse(Rainfall_Stia <= 5, 0, 
+                        Rainfall_Stia),
+         lag1 = lag(rain5, +1),
+         lag3 = lag(rain5, +3),
+         lag5 = lag(rain5, +5),
+         lag7 = lag(rain5, +7),
+         lag9 = lag(rain5, +9)) %>%
+  dplyr::select(-Rainfall_Stia)
+
+arno5_S_1 <- arno5_S %>%   dplyr::select(-Date)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
