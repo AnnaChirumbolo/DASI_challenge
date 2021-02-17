@@ -359,7 +359,7 @@ write.csv(Lake_Bilancino_cut,"processed_data/BILANCINO_to_model.csv")
 #### snow ####
 #Temperature sotto lo zero / eventuale pioggia/neve, da analizzare
 str(Lake_Bilancino_cut)
-
+#rm(bilancino_featured)
 bilancino_featured <- add.seasons(Lake_Bilancino_cut) %>%
   mutate(snow.yes = as.factor(ifelse(Temperature_Le_Croci <=0 & Rainfall_Le_Croci > 0, 1,0)),
          snow.no = as.factor(ifelse(Temperature_Le_Croci > 0 & Rainfall_Le_Croci <= 0,1,0))) 
@@ -479,6 +479,80 @@ bilancino_rain5_Le_Croci.lag <- bilancino_rain5_Le_Croci %>%
          lag5 = lag(rain4, +5),
          lag7 = lag(rain4, +7)) %>% 
   write.csv(., "processed_data/bilancino_rain5_Le_Croci+lag.csv")
+
+
+####  lag per la media di pioggia ####
+
+bilancino_orig_LagMean <- Lake_Bilancino_cut %>% 
+  mutate(lag1 = lag(Rainfall_mean, +1),
+         lag3 = lag(Rainfall_mean,+3),
+         lag5 = lag(Rainfall_mean,+5),
+         lag7 = lag(Rainfall_mean,+7)) 
+
+bilancino_orig_LagMean1 <- bilancino_orig_LagMean %>% 
+  dplyr::select(-Date)
+
+## creating 5 new datasets con rainfall mean with different min rainfall levels 
+## and with new time lags (trying to represent true effect of rain over target)
+
+bilancino0.5_LagMean <- bilancino_orig_LagMean %>% 
+  mutate(rain0.5 = ifelse(Rainfall_mean <= 0.5, 0, 
+                          Rainfall_mean),
+         lag1 = lag(rain0.5, +1),
+         lag3 = lag(rain0.5,+3),
+         lag5 = lag(rain0.5,+5),
+         lag7 = lag(rain0.5,+7),
+         lag9 = lag(rain0.5, +9)) %>% 
+  dplyr::select(-Rainfall_mean)
+
+bilancino0.5_LagMean_1 <- bilancino0.5_LagMean %>%  dplyr::select(-Date)
+
+bilancino1.5_LagMean <- bilancino_orig_LagMean %>% 
+  mutate(rain1.5 = ifelse(Rainfall_mean <= 1.5, 0, 
+                          Rainfall_mean),
+         lag1 = lag(rain1.5, +1),
+         lag3 = lag(rain1.5, +3),
+         lag5 = lag(rain1.5, +5),
+         lag7 = lag(rain1.5, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_mean)
+
+bilancino1.5_LagMean_1 <- bilancino1.5_LagMean %>%   dplyr::select(-Date)
+
+bilancino3_LagMean <- bilancino_orig_LagMean %>% 
+  mutate(rain3 = ifelse(Rainfall_mean <= 3,0,
+                        Rainfall_mean),
+         lag1 = lag(rain3, +1),
+         lag3 = lag(rain3, +3),
+         lag5 = lag(rain3, +5),
+         lag7 = lag(rain3, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_mean)
+
+bilancino3_LagMean_1 <- bilancino3_LagMean %>%  dplyr::select(-Date)
+
+bilncino5_LagMean <- bilancino_orig_LagMean %>% 
+  mutate(rain5 = ifelse(Rainfall_mean <= 5, 0, 
+                        Rainfall_mean),
+         lag1 = lag(rain5, +1),
+         lag3 = lag(rain5, +3),
+         lag5 = lag(rain5, +5),
+         lag7 = lag(rain5, +7),
+         lag9 = lag(rain5, +9)) %>%
+  dplyr::select(-Rainfall_mean)
+
+bilncino5_LagMean_1 <- bilncino5_LagMean %>%   dplyr::select(-Date)
+
+
+
+
+
+
+
+
+
+
+
 
 
 ### dalla matrice di correlazione(piu sotto)
