@@ -656,7 +656,7 @@ River_Arno_cut$Rainfall_Vernio[is.na(River_Arno_cut$Rainfall_Vernio)] <-
 visdat::vis_dat(River_Arno_cut)
 # delete rows with NA  non posso recuperare i dati dal
 # 05-07-2007 al 01-01-2011
-cutdata_1 <- as.Date("2007-07-05")
+#cutdata_1 <- as.Date("2007-07-05")
 cutdata_2 <- as.Date("2011-01-01")
 River_Arno_cut1 <- River_Arno_cut[(River_Arno_cut$Date > cutdata_2), ]
 #River_Arno_cut1 e' il dataframe con una interruzione temporale dal
@@ -676,7 +676,7 @@ max(River_Arno_cut1$Date[is.na(River_Arno_cut1$Hydrometry_Nave_di_Rosano )])
 
 ####interpolo il valore mancante####
 # interpolation
-River_Arno_cut1$Hydrometry_Nave_di_Rosano <-as.numeric(na.approx(River_Arno_cut1$Hydrometry_Nave_di_Rosano))
+#River_Arno_cut1$Hydrometry_Nave_di_Rosano <-as.numeric(na.approx(River_Arno_cut1$Hydrometry_Nave_di_Rosano))
 
 #oppure
 River_Arno_cut1$Hydrometry_Nave_di_Rosano <-as.numeric(na.interp(River_Arno_cut1$Hydrometry_Nave_di_Rosano))
@@ -1316,7 +1316,7 @@ River_Arno_Season <- dummyVars(~Season, data = River_Arno_cut1, fullRank = F)
 River_Arno_Season <- as.data.frame(predict(River_Arno_Season, newdata = River_Arno_cut1))
 
 River_Arno_cut2 <- River_Arno_cut1 %>%
-  select(Hydrometry_Nave_di_Rosano, Temperature_Firenze, Rainfall_Le_Croci, Rainfall_Stia)
+  dplyr::select(Hydrometry_Nave_di_Rosano, Temperature_Firenze, Rainfall_Le_Croci, Rainfall_Stia)
 
 River_Arno_cut2 <- cbind(River_Arno_cut2, River_Arno_Season)
 
@@ -1386,7 +1386,7 @@ River_Arno_Season <- dummyVars(~Season, data = River_Arno_cut1, fullRank = F)
 River_Arno_Season <- as.data.frame(predict(River_Arno_Season, newdata = River_Arno_cut1))
 
 River_Arno_cut3 <- River_Arno_cut1 %>%
-  select(Hydrometry_Nave_di_Rosano, Temperature_Firenze, Rainfall_Cavallina, Rainfall_Bibbiena)
+  dplyr::select(Hydrometry_Nave_di_Rosano, Temperature_Firenze, Rainfall_Cavallina, Rainfall_Bibbiena)
 
 River_Arno_cut3 <- cbind(River_Arno_cut3, River_Arno_Season)
 
@@ -1423,10 +1423,13 @@ plot(rf_River_Arno_Hydrometry_Nave_di_Rosano3, verbose = F)
 pred_rf_River_Arno_Hydrometry_Nave_di_Rosano3 <- predict(rf_River_Arno_Hydrometry_Nave_di_Rosano3, newdata = test_River_Arno3)
 pred_rf_River_Arno_Hydrometry_Nave_di_Rosano3
 
-cat("RMSE Test:", round(rmse(pred_rf_River_Arno_Hydrometry_Nave_di_Rosano3$predicted, test_River_Arno3$Hydrometry_Nave_di_Rosano),2))
-#RMSE Test: 0.23
+RMSE_RF<-cat("RMSE Test:", round(rmse(pred_rf_River_Arno_Hydrometry_Nave_di_Rosano3$predicted, test_River_Arno3$Hydrometry_Nave_di_Rosano),2))
+RMSE_RF
+#RMSE Test : 0.48
+#ibrary(Metrics)
+#rmse(testing$medv,predValues)
 #
-#L'RMSE sul set di prova è 0,23.
+#L'RMSE sul set di prova è 0,48.
 #Si tratta di un risultato abbastanza buono, migliore di prima, che tiene conto 
 #di un piccolo numero di variabili esplicative. 
 #La varianza di questo modello è stata spiegata solo nel 33% dei casi
@@ -2051,12 +2054,12 @@ print(ST5.rmse
 )
 ##### 0.4539 Stia5 ####
 
+#RMSE Test: 0.48 per randomforest river arno
 
-
-  ##River arno RMSE CONFRONTO RMSE
-  #RMSE 0.3423 Test2 con Le_Croci, Cavallina, Bibbiena, Stia THE BEST
+  ##River arno RMSE CONFRONTO RMSE gboost
+  #RMSE 0.3423 Test2 con Le_Croci, Cavallina, Bibbiena, Stia THE BEST river arno
   
-  #0.4397 # RMSE LCO= Le croci rain0 secondo
+  #0.4397 # RMSE LCO= Le croci rain0 secondo classificato gboost
   #### 0.4702  RMSE LC1###  LE CROCI RAIN 1
   #### 0.4775 RMSE LE CROCI RAIN5 ####
 
