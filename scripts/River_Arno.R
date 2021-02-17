@@ -1103,6 +1103,42 @@ arno5_LC <- arno_orig_LagLC %>%
 
 arno5_LC_1 <- arno5_LC %>%   dplyr::select(-Date)
 
+## creating 5 new datasets per dataset...le_Croci 
+## ... or 5 new variables 
+
+arno0.5_LC.lag <- arno0.5_LC  %>% 
+  dplyr::mutate(lag1 = lag(rain1, +1),
+                lag3 = lag(rain1,+3),
+                lag5 = lag(rain1,+5),
+                lag7 = lag(rain1,+7)) %>%
+  write.csv(., "processed_data/arno0.5_LC+lag.csv")
+
+arno1.5_LC.lag <- arno1.5_LC %>% 
+  mutate(lag1 = lag(rain2, +1),
+         lag3 = lag(rain2, +3),
+         lag5 = lag(rain2, +5),
+         lag7 = lag(rain2, +7))%>% 
+  write.csv(., "processed_data/bilancino_rain1_Mangona+lag.csv")
+
+bilancino_rain3_Mangona.lag <- bilancino_rain3_Mangona %>% 
+  dplyr::mutate(lag1 = lag(rain3, +1),
+                lag3 = lag(rain3, +3),
+                lag5 = lag(rain3, +5),
+                lag7 = lag(rain3, +7)) %>% 
+  write.csv(., "processed_data/bilancino_rain1_Mangona+lag.csv")
+
+bilancino_rain5_Mangona.lag <- bilancino_rain5_Mangona %>% 
+  dplyr::mutate(lag1 = lag(rain4, +1),
+                lag3 = lag(rain4, +3),
+                lag5 = lag(rain4, +5),
+                lag7 = lag(rain4, +7)) %>% 
+  write.csv(., "processed_data/bilancino_rain5_Mangona+lag.csv")
+
+
+
+
+
+
 ## creating 5 new datasets Sieve with different min rainfall levels 
 ## and with new time lags (trying to represent true effect of rain over target)
 #Cavallina
@@ -1620,11 +1656,287 @@ LC0.perf <- gbm.perf(LC0.fit, method = "cv")
 
 ## make predictions 
 
-mg.pred<- stats::predict(object = mg.fit,
-                         newdata = mg.test,
-                         n.trees = mg.perf)
-mg.rmse <- Metrics::rmse(actual = mg.test$Flow_Rate,
-                         predicted = mg.pred)
-print(mg.rmse
-) # 2.223
+LC0.pred<- stats::predict(object = LC0.fit,
+                         newdata = LC0.test,
+                         n.trees = LC0.perf)
+LC0.rmse <- Metrics::rmse(actual = LC0.test$Hydrometry_Nave_di_Rosano,
+                         predicted = LC0.pred)
+print(LC0.rmse) # 0.4397 #Best Model
+
+## rain 1 le croci 
+
+LC1 <- arno1.5_LC %>%
+  dplyr::select( Rainfall_Cavallina, Rainfall_Stia, Rainfall_Bibbiena, Temperature_Firenze,
+                 Hydrometry_Nave_di_Rosano,
+                 Season, rain1.5)
+str(LC1)
+
+LC1.split <- initial_split(LC1,prop =.7)
+
+LC1.train <- training(LC1.split)
+LC1.test <- testing(LC1.split)
+
+LC1.fit <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
+                         data = LC1,
+                         verbose = T, 
+                         shrinkage = 0.01,
+                         interaction.depth = 3, 
+                         n.minobsinnode = 5,
+                         n.trees = 600,
+                         cv.folds = 12)
+
+LC1.perf <- gbm.perf(LC1.fit, method = "cv")
+
+## make predictions 
+
+LC1.pred<- stats::predict(object = LC1.fit,
+                               newdata = LC1.test,
+                               n.trees = LC1.perf)
+LC1.rmse <- Metrics::rmse(actual = LC1.test$Hydrometry_Nave_di_Rosano,
+                               predicted = LC1.pred)
+print(LC1.rmse) # 0.4702 ###  
+
+## rain 3 le croci 
+
+#LC3 <- arno3_LC %>%
+#  dplyr::select( Rainfall_Cavallina, Rainfall_Stia, Rainfall_Bibbiena, Temperature_Firenze,
+#                 Hydrometry_Nave_di_Rosano,
+#                 Season, rain3)
+
+## rain 5 le croci 
+
+LC5 <- arno5_LC %>%
+  dplyr::select( Rainfall_Cavallina, Rainfall_Stia, Rainfall_Bibbiena, Temperature_Firenze,
+                 Hydrometry_Nave_di_Rosano,
+                 Season, rain5)
+
+LC5.split <- initial_split(LC5,prop =.7)
+
+LC5.train <- training(LC5.split)
+LC5.test <- testing(LC5.split)
+
+LC5.fit <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
+                         data = LC5,
+                         verbose = T, 
+                         shrinkage = 0.01,
+                         interaction.depth = 3, 
+                         n.minobsinnode = 5,
+                         n.trees = 600,
+                         cv.folds = 12)
+
+LC5.perf <- gbm.perf(LC5.fit, method = "cv")
+
+## make predictions 
+
+LC5.pred<- stats::predict(object = LC5.fit,
+                               newdata = LC5.test,
+                               n.trees = LC5.perf)
+LC5.rmse <- Metrics::rmse(actual = LC5.test$Hydrometry_Nave_di_Rosano,
+                               predicted = LC5.pred)
+print(LC5.rmse) # 0.4775
+
+
+
+
+### rain 0 Bibbiena 
+bibbiena0 <- arno0.5_B %>%
+  dplyr::select( Rainfall_Cavallina, Rainfall_Stia, Rainfall_Le_Croci, Temperature_Firenze,
+                 Hydrometry_Nave_di_Rosano,
+                 Season, rain0.5)
+
+bibbiena0.split <- initial_split(bibbiena0,prop =.7)
+
+bibbiena0.train <- training(bibbiena0.split)
+bibbiena0.test <- testing(bibbiena0.split)
+
+bibbiena0.fit <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
+                   data = bibbiena0,
+                   verbose = T, 
+                   shrinkage = 0.01,
+                   interaction.depth = 3, 
+                   n.minobsinnode = 5,
+                   n.trees = 600,
+                   cv.folds = 12)
+
+bibbiena0.perf <- gbm.perf(bibbiena0.fit, method = "cv")
+
+## make predictions 
+
+bibbiena0.pred<- stats::predict(object = bibbiena0.fit,
+                         newdata = bibbiena0.test,
+                         n.trees = bibbiena0.perf)
+bibbiena0.rmse <- Metrics::rmse(actual = bibbiena0.test$Hydrometry_Nave_di_Rosano,
+                         predicted = bibbiena0.pred)
+print(bibbiena0.rmse
+)
+##### 0.4699 Bibbiena0 ####
+
+### Bibbiena1 rain 1 
+bibbiena1 <- arno1.5_B %>%
+  dplyr::select( Rainfall_Cavallina, Rainfall_Stia, Rainfall_Le_Croci, Temperature_Firenze,
+                 Hydrometry_Nave_di_Rosano,
+                 Season, rain1.5)
+
+bibbiena1.split <- initial_split(bibbiena1,prop =.7)
+
+bibbiena1.train <- training(bibbiena1.split)
+bibbiena1.test <- testing(bibbiena1.split)
+
+bibbiena1.fit <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
+                          data = bibbiena1,
+                          verbose = T, 
+                          shrinkage = 0.01,
+                          interaction.depth = 3, 
+                          n.minobsinnode = 5,
+                          n.trees = 600,
+                          cv.folds = 12)
+
+bibbiena1.perf <- gbm.perf(bibbiena1.fit, method = "cv")
+
+## make predictions 
+
+bibbiena1.pred<- stats::predict(object = bibbiena1.fit,
+                                newdata = bibbiena1.test,
+                                n.trees = bibbiena1.perf)
+bibbiena1.rmse <- Metrics::rmse(actual = bibbiena1.test$Hydrometry_Nave_di_Rosano,
+                                predicted = bibbiena1.pred)
+print(bibbiena1.rmse
+)
+##### 0.0.4919 Bibbiena1 ####
+
+### Bibbiena3 rain 1
+
+### Bibbiena5 rain 1
+
+bibbiena5 <- arno5_B %>%
+  dplyr::select( Rainfall_Cavallina, Rainfall_Stia, Rainfall_Le_Croci, Temperature_Firenze,
+                 Hydrometry_Nave_di_Rosano,
+                 Season, rain5)
+
+bibbiena5.split <- initial_split(bibbiena5,prop =.7)
+
+bibbiena5.train <- training(bibbiena5.split)
+bibbiena5.test <- testing(bibbiena5.split)
+
+bibbiena5.fit <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
+                          data = bibbiena5,
+                          verbose = T, 
+                          shrinkage = 0.01,
+                          interaction.depth = 3, 
+                          n.minobsinnode = 5,
+                          n.trees = 600,
+                          cv.folds = 12)
+
+bibbiena5.perf <- gbm.perf(bibbiena0.fit, method = "cv")
+
+## make predictions 
+
+bibbiena5.pred<- stats::predict(object = bibbiena5.fit,
+                                newdata = bibbiena5.test,
+                                n.trees = bibbiena5.perf)
+bibbiena5.rmse <- Metrics::rmse(actual = bibbiena5.test$Hydrometry_Nave_di_Rosano,
+                                predicted = bibbiena5.pred)
+print(bibbiena5.rmse
+)
+##### 0.4417 Bibbiena5 #### The Best controlla
+
+### rain 0 Cavallina 
+CA0 <- arno0.5_CA %>%
+  dplyr::select( Rainfall_Bibbiena, Rainfall_Stia, Rainfall_Le_Croci, Temperature_Firenze,
+                 Hydrometry_Nave_di_Rosano,
+                 Season, rain0.5)
+
+CA0.split <- initial_split(CA0,prop =.7)
+
+CA0.train <- training(CA0.split)
+CA0.test <- testing(CA0.split)
+
+CA0.fit <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
+                          data = CA0,
+                          verbose = T, 
+                          shrinkage = 0.01,
+                          interaction.depth = 3, 
+                          n.minobsinnode = 5,
+                          n.trees = 600,
+                          cv.folds = 12)
+
+CA0.perf <- gbm.perf(bibbiena0.fit, method = "cv")
+
+## make predictions 
+
+CA0.pred<- stats::predict(object = CA0.fit,
+                                newdata = CA0.test,
+                                n.trees = CA0.perf)
+CA0.rmse <- Metrics::rmse(actual = CA0.test$Hydrometry_Nave_di_Rosano,
+                                predicted = CA0.pred)
+print(CA0.rmse
+)
+##### 0.4575 Cavallina0 ####
+
+### rain 1 Cavallina 
+CA0 <- arno0.5_CA %>%
+  dplyr::select( Rainfall_Bibbiena, Rainfall_Stia, Rainfall_Le_Croci, Temperature_Firenze,
+                 Hydrometry_Nave_di_Rosano,
+                 Season, rain0.5)
+
+CA0.split <- initial_split(CA0,prop =.7)
+
+CA0.train <- training(CA0.split)
+CA0.test <- testing(CA0.split)
+
+CA0.fit <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
+                    data = CA0,
+                    verbose = T, 
+                    shrinkage = 0.01,
+                    interaction.depth = 3, 
+                    n.minobsinnode = 5,
+                    n.trees = 600,
+                    cv.folds = 12)
+
+CA0.perf <- gbm.perf(bibbiena0.fit, method = "cv")
+
+## make predictions 
+
+CA0.pred<- stats::predict(object = CA0.fit,
+                          newdata = CA0.test,
+                          n.trees = CA0.perf)
+CA0.rmse <- Metrics::rmse(actual = CA0.test$Hydrometry_Nave_di_Rosano,
+                          predicted = CA0.pred)
+print(CA0.rmse
+)
+##### 0.4575 Cavallina0 ####
+### rain 0 Cavallina 
+CA0 <- arno0.5_CA %>%
+  dplyr::select( Rainfall_Bibbiena, Rainfall_Stia, Rainfall_Le_Croci, Temperature_Firenze,
+                 Hydrometry_Nave_di_Rosano,
+                 Season, rain0.5)
+
+CA0.split <- initial_split(CA0,prop =.7)
+
+CA0.train <- training(CA0.split)
+CA0.test <- testing(CA0.split)
+
+CA0.fit <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
+                    data = CA0,
+                    verbose = T, 
+                    shrinkage = 0.01,
+                    interaction.depth = 3, 
+                    n.minobsinnode = 5,
+                    n.trees = 600,
+                    cv.folds = 12)
+
+CA0.perf <- gbm.perf(bibbiena0.fit, method = "cv")
+
+## make predictions 
+
+CA0.pred<- stats::predict(object = CA0.fit,
+                          newdata = CA0.test,
+                          n.trees = CA0.perf)
+CA0.rmse <- Metrics::rmse(actual = CA0.test$Hydrometry_Nave_di_Rosano,
+                          predicted = CA0.pred)
+print(CA0.rmse
+)
+##### 0.4575 Cavallina0 ####
+
+
 
