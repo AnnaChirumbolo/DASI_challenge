@@ -245,11 +245,11 @@ auser7 <- auser6 %>%
 
 str(auser7)
 
-#imp1=CoS
-#imp2=DIEC
-#imp3=LT2
+#imp1=CoS target
+#imp2=DIEC 
+#imp3=LT2 target
 #imp4=PAG
-#imp5=SAL
+#imp5=SAL taarget
 ## vis with imputation 
 
 (imp_vis <- ggplot(auser7, aes(Date, imputed_depth_to_gw.m, color = imp,

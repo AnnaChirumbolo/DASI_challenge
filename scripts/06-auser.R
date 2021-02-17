@@ -23,7 +23,7 @@ library(MASS)
 library(leaps)
 library(purrr)
 
-## reading files 
+## reading files  
 
 auser <- read.csv("processed_data/AUSER_to_model.csv") 
 # %>%
@@ -33,19 +33,22 @@ auser <- read.csv("processed_data/AUSER_to_model.csv")
 #  spread(key = imp, value = depth_to_gw.m) # in regression date doesnt really matter 
 str(auser)
 
+auser<-auser[,-1]
+#imp1=CoS target
+#imp2=DIEC 
+#imp3=LT2 target
+#imp4=PAG
+#imp5=SAL taarget
+## vis with imputation 
 ## prepping objects per target ##
 
 meteo <- c("rain","temp")
 
-pozzo1 <- doganella %>% dplyr::select(., contains("1"), contains(meteo))
-pozzo2 <- doganella %>% dplyr::select(., contains("2"), contains(meteo))
-pozzo3 <- doganella %>% dplyr::select(., contains("3"), contains(meteo))
-pozzo4 <- doganella %>% dplyr::select(., contains("4"), contains(meteo))
-pozzo5 <- doganella %>% dplyr::select(., contains("5"), contains(meteo))
-pozzo6 <- doganella %>% dplyr::select(., contains("6"), contains(meteo))
-pozzo7 <- doganella %>% dplyr::select(., contains("7"), contains(meteo))
-pozzo8 <- doganella %>% dplyr::select(., contains("8"), contains(meteo))
-pozzo9 <- doganella %>% dplyr::select(., contains("9"), contains(meteo))
+pozzo_SAL <- auser %>% dplyr::select(., contains("5"), contains(meteo))
+pozzo_LT2 <- auser %>% dplyr::select(., contains("3"), contains(meteo))
+pozzo_CoS <- auser %>% dplyr::select(., contains("1"), contains(meteo))
+
+
 
 #### computing stepwise regression for variable selection ####
 # creating function
@@ -62,10 +65,10 @@ step.wisef <- function(x, DATA){
 
 #### pozzo 1 ####
 
-pozzo1_sw <- step.wisef("imp1", pozzo1)
-pozzo1_sw$bestTune 
-pozzo1_sw$finalModel
-coef(pozzo1_sw$finalModel, 5)
+pozzo_SAL_sw <- step.wisef("imp5", pozzo_SAL)
+pozzo_SAL_sw$bestTune 
+pozzo_SAL_sw$finalModel
+coef(pozzo_SAL_sw$finalModel, 5)
 
 ### let's stick to three variables (?) ###
 ## question: model chooses the two temperatures even if they're highly correlated to one another...?
