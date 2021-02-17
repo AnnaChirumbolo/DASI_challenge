@@ -152,6 +152,12 @@ add.seasons <- function(data) {
 
 
 
+
+
+
+
+
+
 #### guardo le variabili target ####
 ## Le mie variabili TARGET sono: Lake_Level, Flow_Rate
 ##Sembra che ci siano alcuni picchi Flow_Rate a volte a gennaio, a volte in primavera,
@@ -389,32 +395,11 @@ bilancino_months <- bilancino_featured %>%
   mutate(lag1 = lag(Rainfall_Le_Croci, +1),
          lag3 = lag(Rainfall_Le_Croci,+3),
          lag5 = lag(Rainfall_Le_Croci,+5),
-         lag7 = lag(Rainfall_Le_Croci,+7),
-         lag9 = lag(Rainfall_Le_Croci, +9))
+         lag7 = lag(Rainfall_Le_Croci,+7)
+         )
 
 
-#bilancino_months <- bilancino_featured %>% 
- # dplyr::mutate(Y_m = as.Date(Date, format ="%Y-%m"),
- #        Semester = semester(Date, with_year = T),
-#         Quarters = quarter(Date, with_year = T),
-#         Trimonthly = as.factor(round_date(Y_m, unit = "3 months"))) %>% 
-  # date written is first day of the period
-  # dplyr::select(-Y_m) %>%
- # group_by(Trimonthly) %>% 
-#  dplyr::mutate(Fl_rate.Tri = mean(fl_rate)) %>% 
-#  ungroup() %>% 
-#  group_by(Quarters) %>% 
-#  mutate(Fl_rate.Quar = mean(fl_rate)) %>% 
-#  ungroup() %>% 
-#  group_by(Semester) %>% 
-#  mutate(Fl_rate.Sem = mean(fl_rate)) %>% 
-#  ungroup() %>% 
-#  mutate(lag1 = Lag(Rainfall_Le_Croci, +1),
- #        lag3 = Lag(Rainfall_Le_Croci,+3),
-#         lag5 = Lag(Rainfall_Le_Croci,+5),
-#         lag7 = Lag(Rainfall_Le_Croci,+7),
- #        lag9 = Lag(Rainfall_Le_Croci, +9))
-#mi da un errore
+
 
 #unique(bilancino_months$Trimonthly)
 
@@ -445,61 +430,159 @@ max(bilancino_months$Rainfall_mean)
 ### checking for rainfall ###
 ## changing mm levels 
 
-#ggplot(canneto_rain, aes(y = Rainfall_B)) +
-#geom_boxplot()
 
-## 5 datasets with 5 levels of min rain changed to 0:
+## Rainfall_Le_Croci 5 datasets with 5 levels of min rain changed to 0:
 
-bilancino_rain.5 <- bilancino_months %>% 
+bilancino_rain0_Le_Croci <- bilancino_months %>% 
   mutate(rain1 = ifelse(Rainfall_Le_Croci <= 0.5, 0, Rainfall_Le_Croci),
          seq.rain.val = sequence(rle(as.character(rain1))$lengths)) 
 
-bilancino_rain1.5 <- bilancino_months %>%  # whenever rain is lower than 1mm/day, = 0
+bilancino_rain1_Le_Croci <- bilancino_months %>%  # whenever rain is lower than 1mm/day, = 0
   mutate(rain2 = ifelse(Rainfall_Le_Croci <= 1.5, 0, Rainfall_Le_Croci),
          seq.rain.val = sequence(rle(as.character(rain2))$lengths))
 
-bilancino_rain3 <- bilancino_months %>% 
+bilancino_rain3_Le_Croci <- bilancino_months %>% 
   mutate(rain3 = ifelse(Rainfall_Le_Croci <= 3,0,Rainfall_Le_Croci),
          seq.rain.val = sequence(rle(as.character(rain3))$lengths))
 
-bilancino_rain5 <- bilancino_months %>% 
+bilancino_rain5_Le_Croci <- bilancino_months %>% 
   mutate(rain4 = ifelse(Rainfall_Le_Croci <= 5, 0, Rainfall_Le_Croci),
          seq.rain.val = sequence(rle(as.character(rain4))$lengths))
 
 ## creating 5 new datasets per dataset...
 ## ... or 5 new variables 
 
-bilancino_rain0.5.lag <- bilancino_rain.5 %>% 
+bilancino_rain0_Le_Croci.lag <- bilancino_rain0_Le_Croci %>% 
   dplyr::mutate(lag1 = lag(rain1, +1),
          lag3 = lag(rain1,+3),
          lag5 = lag(rain1,+5),
-         lag7 = lag(rain1,+7),
-         lag9 = lag(rain1, +9)) %>%
-  write.csv(., "processed_data/bilancino_rain0.5.csv")
+         lag7 = lag(rain1,+7)) %>%
+  write.csv(., "processed_data/bilancino_rain0_Le_Croci+lag.csv")
 
-bilancino_rain1.5.lag <- bilancino_rain1.5 %>% 
+bilancino_rain1_Le_Croci.lag <- bilancino_rain1_Le_Croci %>% 
   mutate(lag1 = lag(rain2, +1),
          lag3 = lag(rain2, +3),
          lag5 = lag(rain2, +5),
-         lag7 = lag(rain2, +7),
-         lag9 = lag(rain2, +9))%>% 
-  write.csv(., "processed_data/bilancino_rain1.5.csv")
+         lag7 = lag(rain2, +7))%>% 
+  write.csv(., "processed_data/bilancino_rain1_Le_Croci+lag.csv")
 
-bilancino_rain3.lag <- bilancino_rain3 %>% 
+bilancino_rain3_Le_Croci.lag <- bilancino_rain3_Le_Croci %>% 
   dplyr::mutate(lag1 = lag(rain3, +1),
          lag3 = lag(rain3, +3),
          lag5 = lag(rain3, +5),
-         lag7 = lag(rain3, +7),
-         lag9 = lag(rain3, +9)) %>% 
-  write.csv(., "processed_data/bilancino_rain3.csv")
+         lag7 = lag(rain3, +7)) %>% 
+  write.csv(., "processed_data/bilancino_rain1_Le_Croci+lag.csv")
 
-bilancino_rain5.lag <- bilancino_rain5 %>% 
+bilancino_rain5_Le_Croci.lag <- bilancino_rain5_Le_Croci %>% 
   dplyr::mutate(lag1 = lag(rain4, +1),
          lag3 = lag(rain4, +3),
          lag5 = lag(rain4, +5),
-         lag7 = lag(rain4, +7),
-         lag9 = lag(rain4, +9)) %>% 
-  write.csv(., "processed_data/bilancino_rain5.csv")
+         lag7 = lag(rain4, +7)) %>% 
+  write.csv(., "processed_data/bilancino_rain5_Le_Croci+lag.csv")
+
+
+### dalla matrice di correlazione(piu sotto)
+#vedo le variabile rainfall fortemente correlate,
+#ne tengo un paio: Rainfall_S_Piero, Rainfall_Mangona (le piu' rappressentative)
+# creo i dataset per i lag
+
+## Rainfall_S_Piero 5 datasets with 5 levels of min rain changed to 0:
+
+bilancino_rain0_S_Piero <- bilancino_months %>% 
+  mutate(rain1 = ifelse(Rainfall_S_Piero <= 0.5, 0, Rainfall_S_Piero),
+         seq.rain.val = sequence(rle(as.character(rain1))$lengths)) 
+
+bilancino_rain1_S_Piero <- bilancino_months %>%  # whenever rain is lower than 1mm/day, = 0
+  mutate(rain2 = ifelse(Rainfall_S_Piero <= 1.5, 0, Rainfall_S_Piero),
+         seq.rain.val = sequence(rle(as.character(rain2))$lengths))
+
+bilancino_rain3_S_Piero <- bilancino_months %>% 
+  mutate(rain3 = ifelse(Rainfall_S_Piero <= 3,0,Rainfall_S_Piero),
+         seq.rain.val = sequence(rle(as.character(rain3))$lengths))
+
+bilancino_rain5_S_Piero <- bilancino_months %>% 
+  mutate(rain4 = ifelse(Rainfall_S_Piero <= 5, 0, Rainfall_S_Piero),
+         seq.rain.val = sequence(rle(as.character(rain4))$lengths))
+
+## creating 5 new datasets per dataset...S_Piero
+## ... or 5 new variables 
+
+bilancino_rain0_S_Piero.lag <- bilancino_rain0_S_Piero %>% 
+  dplyr::mutate(lag1 = lag(rain1, +1),
+                lag3 = lag(rain1,+3),
+                lag5 = lag(rain1,+5),
+                lag7 = lag(rain1,+7)) %>%
+  write.csv(., "processed_data/bilancino_rain0_S_Piero+lag.csv")
+
+bilancino_rain1_S_Piero.lag <- bilancino_rain1_S_Piero %>% 
+  mutate(lag1 = lag(rain2, +1),
+         lag3 = lag(rain2, +3),
+         lag5 = lag(rain2, +5),
+         lag7 = lag(rain2, +7))%>% 
+  write.csv(., "processed_data/bilancino_rain1_S_Piero+lag.csv")
+
+bilancino_rain3_S_Piero.lag <- bilancino_rain3_S_Piero %>% 
+  dplyr::mutate(lag1 = lag(rain3, +1),
+                lag3 = lag(rain3, +3),
+                lag5 = lag(rain3, +5),
+                lag7 = lag(rain3, +7)) %>% 
+  write.csv(., "processed_data/bilancino_rain1_S_Piero+lag.csv")
+
+bilancino_rain5_S_Piero.lag <- bilancino_rain5_S_Piero %>% 
+  dplyr::mutate(lag1 = lag(rain4, +1),
+                lag3 = lag(rain4, +3),
+                lag5 = lag(rain4, +5),
+                lag7 = lag(rain4, +7)) %>% 
+  write.csv(., "processed_data/bilancino_rain5_S_Piero+lag.csv")
+
+## Rainfall_Mangona  5 datasets with 5 levels of min rain changed to 0:
+
+bilancino_rain0_Mangona  <- bilancino_months %>% 
+  mutate(rain1 = ifelse(Rainfall_Mangona  <= 0.5, 0, Rainfall_Mangona ),
+         seq.rain.val = sequence(rle(as.character(rain1))$lengths)) 
+
+bilancino_rain1_Mangona  <- bilancino_months %>%  # whenever rain is lower than 1mm/day, = 0
+  mutate(rain2 = ifelse(Rainfall_Mangona  <= 1.5, 0, Rainfall_Mangona ),
+         seq.rain.val = sequence(rle(as.character(rain2))$lengths))
+
+bilancino_rain3_Mangona  <- bilancino_months %>% 
+  mutate(rain3 = ifelse(Rainfall_Mangona  <= 3,0,Rainfall_Mangona ),
+         seq.rain.val = sequence(rle(as.character(rain3))$lengths))
+
+bilancino_rain5_Mangona <- bilancino_months %>% 
+  mutate(rain4 = ifelse(Rainfall_Mangona  <= 5, 0, Rainfall_Mangona ),
+         seq.rain.val = sequence(rle(as.character(rain4))$lengths))
+
+## creating 5 new datasets per dataset...Mangona 
+## ... or 5 new variables 
+
+bilancino_rain0_Mangona.lag <- bilancino_rain0_Mangona  %>% 
+  dplyr::mutate(lag1 = lag(rain1, +1),
+                lag3 = lag(rain1,+3),
+                lag5 = lag(rain1,+5),
+                lag7 = lag(rain1,+7)) %>%
+  write.csv(., "processed_data/bilancino_rain0_Mangona+lag.csv")
+
+bilancino_rain1_Mangona.lag <- bilancino_rain1_Mangona %>% 
+  mutate(lag1 = lag(rain2, +1),
+         lag3 = lag(rain2, +3),
+         lag5 = lag(rain2, +5),
+         lag7 = lag(rain2, +7))%>% 
+  write.csv(., "processed_data/bilancino_rain1_Mangona+lag.csv")
+
+bilancino_rain3_Mangona.lag <- bilancino_rain3_Mangona %>% 
+  dplyr::mutate(lag1 = lag(rain3, +1),
+                lag3 = lag(rain3, +3),
+                lag5 = lag(rain3, +5),
+                lag7 = lag(rain3, +7)) %>% 
+  write.csv(., "processed_data/bilancino_rain1_Mangona+lag.csv")
+
+bilancino_rain5_Mangona.lag <- bilancino_rain5_Mangona %>% 
+  dplyr::mutate(lag1 = lag(rain4, +1),
+                lag3 = lag(rain4, +3),
+                lag5 = lag(rain4, +5),
+                lag7 = lag(rain4, +7)) %>% 
+  write.csv(., "processed_data/bilancino_rain5_Mangona+lag.csv")
 
 
 
