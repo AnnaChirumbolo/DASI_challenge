@@ -1054,7 +1054,7 @@ arno5_Sorgente5_1 <- arno5_Sorgente %>%   dplyr::select(-Date)
 
 ## creating 5 new datasets Sieve with different min rainfall levels 
 ## and with new time lags (trying to represent true effect of rain over target)
-#Le_Croci
+#####Le_Croci+lag####
 arno0.5_LC <- arno_orig_LagLC %>% 
   mutate(rain0.5 = ifelse(Rainfall_Le_Croci <= 0.5, 0, 
                           Rainfall_Le_Croci),
@@ -1591,5 +1591,40 @@ Hydrometry_Nave_di_Rosano_effects %>%
   scale_color_brewer(palette = "Dark2")
 
 
+######  confronto i dataset con i lag
+####arno0.5_LC_1 rain LE CROCI ####
+#%>%
+#dplyr::select( Rainfall_Cavallina,Rainfall_Le_Croci, Rainfall_Stia, Rainfall_Bibbiena, Temperature_Firenze,
+#               Hydrometry_Nave_di_Rosano,
+#               Season, rain0.5) 
+LC0 <- arno0.5_LC_1 %>%
+  dplyr::select( Rainfall_Cavallina, Rainfall_Stia, Rainfall_Bibbiena, Temperature_Firenze,
+                 Hydrometry_Nave_di_Rosano,
+                 Season, rain0.5) 
 
+LC0.split <- initial_split(LC0,prop =.7)
+
+LC0.train <- training(LC0.split)
+LC0.test <- testing(LC0.split)
+
+LC0.fit <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
+                   data = LC0,
+                   verbose = T, 
+                   shrinkage = 0.01,
+                   interaction.depth = 3, 
+                   n.minobsinnode = 5,
+                   n.trees = 1000,
+                   cv.folds = 12)
+
+LC0.perf <- gbm.perf(LC0.fit, method = "cv")
+
+## make predictions 
+
+mg.pred<- stats::predict(object = mg.fit,
+                         newdata = mg.test,
+                         n.trees = mg.perf)
+mg.rmse <- Metrics::rmse(actual = mg.test$Flow_Rate,
+                         predicted = mg.pred)
+print(mg.rmse
+) # 2.223
 
