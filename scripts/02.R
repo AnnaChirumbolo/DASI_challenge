@@ -1025,7 +1025,7 @@ str(canneto)
 canneto_featured <- add.seasons(canneto2) %>%
   rename(fl_rate.Ls = imp_flow_rate) %>% 
   mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <= 0 & Rainfall_Settefrati > 0, 1,0)),
-         snow.no = as.factor(ifelse(Temperature_Settefrati > 0 & Rainfall_Settefrati <= 0,1,0))) 
+         snow.no = as.factor(ifelse(Temperature_Settefrati,1,0))) 
 str(canneto_featured)
 
 ggplot(canneto_featured,aes(Date, fl_rate.Ls))+
@@ -1088,20 +1088,16 @@ write.csv(canneto_months, "processed_data/MADONNA_DI_CANNETO_to_model+lags.csv")
 ## 5 datasets with 5 levels of min rain changed to 0:
 
 canneto_rain.5 <- canneto_months %>% 
-  mutate(rain1 = ifelse(Rainfall_Settefrati <= 0.5, 0, Rainfall_Settefrati),
-         seq.rain.val = sequence(rle(as.character(rain1))$lengths)) 
+  mutate(rain1 = ifelse(Rainfall_Settefrati <= 0.5, 0, Rainfall_Settefrati)) 
 
 canneto_rain1.5 <- canneto_months %>%  # whenever rain is lower than 1mm/day, = 0
-  mutate(rain2 = ifelse(Rainfall_Settefrati <= 1.5, 0, Rainfall_Settefrati),
-         seq.rain.val = sequence(rle(as.character(rain2))$lengths))
+  mutate(rain2 = ifelse(Rainfall_Settefrati <= 1.5, 0, Rainfall_Settefrati))
 
 canneto_rain3 <- canneto_months %>% 
-  mutate(rain3 = ifelse(Rainfall_Settefrati <= 3,0,Rainfall_Settefrati),
-         seq.rain.val = sequence(rle(as.character(rain3))$lengths))
+  mutate(rain3 = ifelse(Rainfall_Settefrati <= 3,0,Rainfall_Settefrati))
 
 canneto_rain5 <- canneto_months %>% 
-  mutate(rain4 = ifelse(Rainfall_Settefrati <= 5, 0, Rainfall_Settefrati),
-         seq.rain.val = sequence(rle(as.character(rain4))$lengths))
+  mutate(rain4 = ifelse(Rainfall_Settefrati <= 5, 0, Rainfall_Settefrati))
 
 ## creating 5 new datasets per dataset...
 ## ... or 5 new variables 
