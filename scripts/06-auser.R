@@ -25,15 +25,31 @@ library(purrr)
 
 ## reading files  
 
-auser <- read.csv("processed_data/AUSER_to_model.csv") 
-# %>%
-.# dplyr::select(-X)
-  #,-Rainfall_Velletri, -Rainfall_Monteporzio,
-  #              -Pozzo_1:-Pozzo_9) %>% 
-#  spread(key = imp, value = depth_to_gw.m) # in regression date doesnt really matter 
+auser <- read.csv("processed_data/AUSER_to_model.csv")%>%
+dplyr::select(-X, -Date,-Temperature_Ponte_a_Moriano, -DIEC, -PAG,-CoS, -LT2,-SAL,-imp2, -imp4)
+# in regression date doesnt really matter 
+#Temperature_Ponte_a_Moriano ho dovuto cancellarla per un problema sul sensore dal 2017, con tutti dati uguali a 0
 str(auser)
 
-auser<-auser[,-1]
+#### Correlation Matrix ####
+df <- auser
+df$Date <- NULL
+ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, layout.exp = 4, label_size = 3)
+rm(df)
+#dalla matrice di correlazione, vedo che le piogge sono fortemente correlate 
+#prendo le localita' piu' rappresentative:
+#Rainfall_Monte_Serra Rainfall_Croce_Arcana Rainfall_Calavorno Rainfall_Tereglio_Coreglia_Antelminelli
+# stesso discorso per le temperature: le piu' rappresenative sono:
+#Temperature_Monte_Serra, Temperature_Lucca_Orto_Botanico
+#stesso discorso per i volumi e idrometria
+
+auser<-auser%>%
+  dplyr::select(Rainfall_Monte_Serra, Rainfall_Croce_Arcana, Rainfall_Calavorno,
+                Rainfall_Tereglio_Coreglia_Antelminelli, Temperature_Monte_Serra,
+                Temperature_Lucca_Orto_Botanico, Volume_POL, Volume_CC2, Volume_CSAL,
+                Hydrometry_Monte_S_Quirico, imp1, imp3,imp5)
+
+#auser<-auser[,-1]
 #imp1=CoS target
 #imp2=DIEC 
 #imp3=LT2 target
@@ -42,11 +58,14 @@ auser<-auser[,-1]
 ## vis with imputation 
 ## prepping objects per target ##
 
-meteo <- c("rain","temp")
+#meteo <- c("rain","temp")
 
-pozzo_SAL <- auser %>% dplyr::select(., contains("5"), contains(meteo))
-pozzo_LT2 <- auser %>% dplyr::select(., contains("3"), contains(meteo))
-pozzo_CoS <- auser %>% dplyr::select(., contains("1"), contains(meteo))
+#pozzo1 <- auser %>% dplyr::select(-imp3, -Volume_Pozzo_3)
+#pozzo3 <- auser %>% dplyr::select(-imp1, -Volume_Pozzo_1)
+
+pozzo_SAL <- auser %>% dplyr::select(-imp3, -imp1)
+pozzo_LT2 <- auser %>% dplyr::select(-imp1, -imp5)
+pozzo_CoS <- auser %>% dplyr::select(-imp3, -imp5)
 
 
 
@@ -57,13 +76,28 @@ step.wisef <- function(x, DATA){
   train.control <- trainControl(method = "cv", number = 10)
   step.model <- train(as.formula(paste(x,"~.")), data = DATA, 
                       method = "leapSeq", 
-                      tuneGrid = data.frame(nvmax = 1:5),
+                      tuneGrid = data.frame(nvmax = 1:11),
                       trControl = train.control,
                       na.action = na.omit)
   return(step.model)
 }
 
-#### pozzo 1 ####
+#### pozzo 1 CoS ####
+#rm(pozzo_CoS_sw)
+pozzo_CoS_sw <- step.wisef("imp1", pozzo_CoS)
+pozzo_CoS_sw$bestTune 
+pozzo_CoS_sw$finalModel
+coef(pozzo_CoS_sw$finalModel, 10)
+
+#### pozzo 3 LT2 ####
+
+pozzo_LT2_sw <- step.wisef("imp3", pozzo_LT2)
+pozzo_LT2_sw$bestTune 
+pozzo_LT2_sw$finalModel
+coef(pozzo_LT2_sw$finalModel, 10)
+
+
+#### pozzo 5 SAL  ####
 
 pozzo_SAL_sw <- step.wisef("imp5", pozzo_SAL)
 pozzo_SAL_sw$bestTune 
@@ -74,7 +108,43 @@ coef(pozzo_SAL_sw$finalModel, 5)
 ## question: model chooses the two temperatures even if they're highly correlated to one another...?
 # why? 
 
+
+
 #### testing and training split ####
+
+set.seed(123)
+pozzo_CoS.split <- initial_split(pozzo_CoS, prop = .7)
+pozzo_CoS.train <- training(pozzo_CoS.split)
+pozzo_CoS.test <- testing(pozzo_CoS.split)
+
+pozzo_CoS_fit1 <- gbm::gbm(imp1 ~ .,
+                        data = pozzo_CoS,
+                        verbose = T, 
+                        shrinkage = 0.01,
+                        interaction.depth = 3, 
+                        n.minobsinnode = 5,
+                        n.trees = 5000,
+                        cv.folds = 10)
+perf_gbm1 <- gbm.perf(pozzo_CoS_fit1, method = "cv")
+
+## make predictions 
+
+pozzo_CoS_pred1 <- stats::predict(object = pozzo_CoS_fit1,
+                               newdata = pozzo_CoS.test,
+                               n.trees = perf_gbm1)
+rmse_fit1 <- Metrics::rmse(actual = pozzo_CoS.test$imp1,
+                           predicted = pozzo_CoS_pred1)
+print(rmse_fit1) # RMSE 0.3423
+# verificare il confronto rmse
+
+
+#### da aggiungere i confronti con i lag ####
+
+
+#### pozzo 3 LT2 tain/test####
+
+
+#### pozzo 5 SAL tain/test####
 
 set.seed(123)
 pozzo1.split <- initial_split(pozzo1, prop = .7)

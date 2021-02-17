@@ -32,6 +32,7 @@ summary(doganella)
 doganella_missing <- doganella %>% 
   miss_var_summary()
 print(doganella_missing)
+
 View(doganella_missing)
 
 

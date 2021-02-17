@@ -855,6 +855,267 @@ auser_featured <- add.seasons(auser8) %>%
 str(auser_featured)
 
 
+#### lag rain ####
+
+### changing effect of rain on target, and lagging the effect of rain on the target ###
+#dalla matrice di correlazione, vedo che le piogge sono fortemente correlate 
+#prendo le localita' piu' rappresentative:
+#Rainfall_Monte_Serra Rainfall_Croce_Arcana Rainfall_Calavorno 
+#Rainfall_Tereglio_Coreglia_Antelminelli
+
+#Rainfall_Monte_Serra + lag
+auser_orig_LagMS <- auser8 %>% 
+  mutate(lag1 = lag(Rainfall_Monte_Serra, +1),
+         lag3 = lag(Rainfall_Monte_Serra,+3),
+         lag5 = lag(Rainfall_Monte_Serra,+5),
+         lag7 = lag(Rainfall_Monte_Serra,+7)) 
+
+auser_orig_LagMS1 <- auser_orig_LagMS %>% 
+  dplyr::select(-Date)
+
+#Rainfall_Croce_Arcana + lag
+auser_orig_LagCA <- auser8 %>% 
+  mutate(lag1 = lag(Rainfall_Croce_Arcana, +1),
+         lag3 = lag(Rainfall_Croce_Arcana,+3),
+         lag5 = lag(Rainfall_Croce_Arcana,+5),
+         lag7 = lag(Rainfall_Croce_Arcana,+7)) 
+
+auser_orig_LagCA1 <- auser_orig_LagCA %>% 
+  dplyr::select(-Date)
+
+#Rainfall_Rainfall_Calavorno + lag
+auser_orig_LagCal <- auser8 %>% 
+  mutate(lag1 = lag(Rainfall_Calavorno, +1),
+         lag3 = lag(Rainfall_Calavorno,+3),
+         lag5 = lag(Rainfall_Calavorno,+5),
+         lag7 = lag(Rainfall_Calavorno,+7)) 
+
+auser_orig_LagCal1 <- auser_orig_LagCal %>% 
+  dplyr::select(-Date)
+
+#Rainfall_Rainfall_Tereglio_Coreglia_Antelminelli + lag
+auser_orig_LagTCA <- auser8 %>% 
+  mutate(lag1 = lag(Rainfall_Tereglio_Coreglia_Antelminelli, +1),
+         lag3 = lag(Rainfall_Tereglio_Coreglia_Antelminelli,+3),
+         lag5 = lag(Rainfall_Tereglio_Coreglia_Antelminelli,+5),
+         lag7 = lag(Rainfall_Tereglio_Coreglia_Antelminelli,+7)) 
+
+auser_orig_LagTCA1 <- auser_orig_LagTCA %>% 
+  dplyr::select(-Date)
+
+
+
+
+## creating 5 new datasets Sieve with different min rainfall levels 
+## and with new time lags (trying to represent true effect of rain over target)
+
+#Rainfall_Monte_Serra + lag
+#auser_orig_LagMS
+auser0.5_MS <- auser_orig_LagMS %>% 
+  mutate(rain0.5 = ifelse(Rainfall_Monte_Serra <= 0.5, 0, 
+                          Rainfall_Monte_Serra),
+         lag1 = lag(rain0.5, +1),
+         lag3 = lag(rain0.5,+3),
+         lag5 = lag(rain0.5,+5),
+         lag7 = lag(rain0.5,+7),
+         lag9 = lag(rain0.5, +9)) %>% 
+  dplyr::select(-Rainfall_Monte_Serra)
+
+auser0.5_MS_1 <- auser0.5_MS %>%  dplyr::select(-Date)
+
+auser1.5_MS <- auser_orig_LagMS %>% 
+  mutate(rain1.5 = ifelse(Rainfall_Monte_Serra <= 1.5, 0, 
+                          Rainfall_Monte_Serra),
+         lag1 = lag(rain1.5, +1),
+         lag3 = lag(rain1.5, +3),
+         lag5 = lag(rain1.5, +5),
+         lag7 = lag(rain1.5, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_Monte_Serra)
+
+auser1.5_MS_1 <- auser1.5_MS %>%   dplyr::select(-Date)
+
+auser3_MS <- auser_orig_LagMS %>% 
+  mutate(rain3 = ifelse(Rainfall_Monte_Serra <= 3,0,
+                        Rainfall_Monte_Serra),
+         lag1 = lag(rain3, +1),
+         lag3 = lag(rain3, +3),
+         lag5 = lag(rain3, +5),
+         lag7 = lag(rain3, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_Monte_Serra)
+
+auser3_MS_1 <- auser3_MS %>%  dplyr::select(-Date)
+
+auser5_MS <- auser_orig_LagMS %>% 
+  mutate(rain5 = ifelse(Rainfall_Monte_Serra <= 5, 0, 
+                        Rainfall_Monte_Serra),
+         lag1 = lag(rain5, +1),
+         lag3 = lag(rain5, +3),
+         lag5 = lag(rain5, +5),
+         lag7 = lag(rain5, +7)) %>%
+  dplyr::select(-Rainfall_Monte_Serra)
+
+auser5_MS_1 <- auser5_MS %>%   dplyr::select(-Date)
+
+
+## creating 5 new datasets Sorgente with different min rainfall levels 
+## and with new time lags (trying to represent true effect of rain over target)
+#Rainfall_Croce_Arcana + lag
+#auser_orig_LagCA
+auser0.5_CA <- auser_orig_LagCA %>% 
+  mutate(rain0.5 = ifelse(Rainfall_Croce_Arcana <= 0.5, 0, 
+                          Rainfall_Croce_Arcana),
+         lag1 = lag(rain0.5, +1),
+         lag3 = lag(rain0.5,+3),
+         lag5 = lag(rain0.5,+5),
+         lag7 = lag(rain0.5,+7)
+         ) %>% 
+  dplyr::select(-Rainfall_Croce_Arcana)
+
+auser0.5_CA_1 <- auser0.5_CA %>%  dplyr::select(-Date)
+
+auser1.5_CA <- auser_orig_LagCA %>% 
+  mutate(rain1.5 = ifelse(Rainfall_Croce_Arcana <= 1.5, 0, 
+                          Rainfall_Croce_Arcana),
+         lag1 = lag(rain1.5, +1),
+         lag3 = lag(rain1.5, +3),
+         lag5 = lag(rain1.5, +5),
+         lag7 = lag(rain1.5, +7)) %>% 
+  dplyr::select(-Rainfall_Croce_Arcana)
+
+auser1.5_CA_1 <- auser1.5_CA %>%   dplyr::select(-Date)
+
+auser3_CA <- auser_orig_LagCA %>% 
+  mutate(rain3 = ifelse(Rainfall_Croce_Arcana <= 3,0,
+                        Rainfall_Croce_Arcana),
+         lag1 = lag(rain3, +1),
+         lag3 = lag(rain3, +3),
+         lag5 = lag(rain3, +5),
+         lag7 = lag(rain3, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_Croce_Arcana)
+
+auser3_CA_1 <- auser3_CA %>%  dplyr::select(-Date)
+
+auser5_CA <- auser_orig_LagCA %>% 
+  mutate(rain5 = ifelse(Rainfall_Croce_Arcana <= 5, 0, 
+                        Rainfall_Croce_Arcana),
+         lag1 = lag(rain5, +1),
+         lag3 = lag(rain5, +3),
+         lag5 = lag(rain5, +5),
+         lag7 = lag(rain5, +7)) %>%
+  dplyr::select(-Rainfall_Croce_Arcana)
+
+auser5_CA_1 <- auser5_CA %>%   dplyr::select(-Date)
+
+
+
+#Rainfall_Rainfall_Calavorno + lag
+#auser_orig_LagCal
+auser0.5_Cal <- auser_orig_LagCal %>% 
+  mutate(rain0.5 = ifelse(Rainfall_Calavorno <= 0.5, 0, 
+                          Rainfall_Calavorno),
+         lag1 = lag(rain0.5, +1),
+         lag3 = lag(rain0.5,+3),
+         lag5 = lag(rain0.5,+5),
+         lag7 = lag(rain0.5,+7)
+  ) %>% 
+  dplyr::select(-Rainfall_Calavorno)
+
+auser0.5_Cal_1 <- auser0.5_Cal %>%  dplyr::select(-Date)
+
+auser1.5_Cal <- auser_orig_LagCal %>% 
+  mutate(rain1.5 = ifelse(Rainfall_Calavorno <= 1.5, 0, 
+                          Rainfall_Calavorno),
+         lag1 = lag(rain1.5, +1),
+         lag3 = lag(rain1.5, +3),
+         lag5 = lag(rain1.5, +5),
+         lag7 = lag(rain1.5, +7)) %>% 
+  dplyr::select(-Rainfall_Calavorno)
+
+auser1.5_Cal_1 <- auser1.5_Cal %>%   dplyr::select(-Date)
+
+
+auser3_Cal <- auser_orig_LagCal %>% 
+  mutate(rain3 = ifelse(Rainfall_Calavorno <= 3,0,
+                        Rainfall_Calavorno),
+         lag1 = lag(rain3, +1),
+         lag3 = lag(rain3, +3),
+         lag5 = lag(rain3, +5),
+         lag7 = lag(rain3, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_Calavorno)
+
+auser3_Cal_1 <- auser3_Cal %>%  dplyr::select(-Date)
+
+auser5_Cal <- auser_orig_LagCal %>% 
+  mutate(rain5 = ifelse(Rainfall_Calavorno <= 5, 0, 
+                        Rainfall_Calavorno),
+         lag1 = lag(rain5, +1),
+         lag3 = lag(rain5, +3),
+         lag5 = lag(rain5, +5),
+         lag7 = lag(rain5, +7)) %>%
+  dplyr::select(-Rainfall_Calavorno)
+
+auser5_Cal_1 <- auser5_Cal %>%   dplyr::select(-Date)
+
+#Rainfall_Rainfall_Tereglio_Coreglia_Antelminelli + lag
+#auser_orig_LagTCA
+auser0.5_TCA <- auser_orig_LagTCA %>% 
+  mutate(rain0.5 = ifelse(Rainfall_Tereglio_Coreglia_Antelminelli <= 0.5, 0, 
+                          Rainfall_Tereglio_Coreglia_Antelminelli),
+         lag1 = lag(rain0.5, +1),
+         lag3 = lag(rain0.5,+3),
+         lag5 = lag(rain0.5,+5),
+         lag7 = lag(rain0.5,+7)
+  ) %>% 
+  dplyr::select(-Rainfall_Tereglio_Coreglia_Antelminelli)
+
+auser0.5_TCA_1 <- auser0.5_TCA %>%  dplyr::select(-Date)
+
+auser1.5_TCA <- auser_orig_LagTCA %>% 
+  mutate(rain1.5 = ifelse(Rainfall_Tereglio_Coreglia_Antelminelli <= 1.5, 0, 
+                          Rainfall_Tereglio_Coreglia_Antelminelli),
+         lag1 = lag(rain1.5, +1),
+         lag3 = lag(rain1.5, +3),
+         lag5 = lag(rain1.5, +5),
+         lag7 = lag(rain1.5, +7)) %>% 
+  dplyr::select(-Rainfall_Tereglio_Coreglia_Antelminelli)
+
+auser1.5_TCA_1 <- auser1.5_TCA %>%   dplyr::select(-Date)
+
+auser3_TCA <- auser_orig_LagTCA %>% 
+  mutate(rain3 = ifelse(Rainfall_Tereglio_Coreglia_Antelminelli <= 3,0,
+                        Rainfall_Tereglio_Coreglia_Antelminelli),
+         lag1 = lag(rain3, +1),
+         lag3 = lag(rain3, +3),
+         lag5 = lag(rain3, +5),
+         lag7 = lag(rain3, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_Tereglio_Coreglia_Antelminelli)
+
+auser3_TCA_1 <- auser3_TCA %>%  dplyr::select(-Date)
+
+auser5_TCA <- auser_orig_LagTCA %>% 
+  mutate(rain5 = ifelse(Rainfall_Tereglio_Coreglia_Antelminelli <= 5, 0, 
+                        Rainfall_Tereglio_Coreglia_Antelminelli),
+         lag1 = lag(rain5, +1),
+         lag3 = lag(rain5, +3),
+         lag5 = lag(rain5, +5),
+         lag7 = lag(rain5, +7)) %>%
+  dplyr::select(-Rainfall_Tereglio_Coreglia_Antelminelli)
+
+auser5_TCA_1 <- auser5_TCA %>%   dplyr::select(-Date)
+
+
+
+
+
+
+
+
+
 
 
 
@@ -970,7 +1231,7 @@ auser_featured %>%
        subtitle = "in aq Auser") + 
   theme_classic()
 #commento
-# per LT2 non ci sono differenze per staioni
+# per LT2 non ci sono differenze per stagioni
 # per CoS e per Sal i pozzi sono piu' profondi in estate e autunno
 # ricordo che abbiamo preso il valore assoluto (i valori sono negativi)
 

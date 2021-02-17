@@ -131,12 +131,9 @@ Lake_Bilancino_cut$Season<-factor(Lake_Bilancino_cut$Season,
 
 add.seasons <- function(data) {
   seasons <- data %>% 
-    mutate(Date = lubridate::as_date(Date),
-           Year = as.factor(lubridate::year(Date)),
-           Month = as.factor(lubridate::month(Date)),
-           Day = as.factor(lubridate::day(Date)),
-           Month_day = format(Date,format = "%m-%d")) %>% 
-    mutate(Spring = factor(ifelse(Month_day >= "03-21" & Month_day < "06-21",
+    mutate(
+           Month_day = format(Date,format = "%m-%d"),
+           Spring = factor(ifelse(Month_day >= "03-21" & Month_day < "06-21",
                                   1,0)),
            Summer = factor(ifelse(Month_day >="06-21" & Month_day < "09-21",
                                   1,0)),
@@ -149,7 +146,6 @@ add.seasons <- function(data) {
     dplyr::select(-Month_day)
   return(seasons)
 }
-
 
 
 #### guardo le variabili target ####
@@ -350,163 +346,6 @@ Lake_Bilancino_cut %>%
 write.csv(Lake_Bilancino_cut,"processed_data/BILANCINO_to_model.csv")
 
 
-#### snow ####
-#Temperature sotto lo zero / eventuale pioggia/neve, da analizzare
-str(Lake_Bilancino_cut)
-
-bilancino_featured <- add.seasons(Lake_Bilancino_cut) %>%
-  mutate(snow.yes = as.factor(ifelse(Temperature_Le_Croci <=0 & Rainfall_Le_Croci > 0, 1,0)),
-         snow.no = as.factor(ifelse(Temperature_Le_Croci > 0 & Rainfall_Le_Croci <= 0,1,0))) 
-str(bilancino_featured)
-
-
-
-ggplot(Lake_Bilancino_cut,aes(Date, Flow_Rate))+
-  geom_line() +
-  geom_line(data = Lake_Bilancino_cut, aes(Date, Rainfall_Le_Croci, color = "red"))
-
-ggplot(Lake_Bilancino_cut,aes(Rainfall_Le_Croci, Flow_Rate))+
-  geom_point()
-
-#### creating quarters, semesters and trimonthly data  ####
-
-bilancino_months <- bilancino_featured %>% 
-         mutate(Y_m = as.Date(Date, format ="%Y-%m"),
-         Semester = semester(Date, with_year = T),
-         Quarters = quarter(Date),#, with_year = T),
-         Trimonthly = as.factor(round_date(Y_m, unit = "3 months"))) %>% 
-  # date written is first day of the period
-  # dplyr::select(-Y_m) %>%
-  group_by(Trimonthly) %>% 
-  mutate(Fl_rate.Tri = mean(Flow_Rate)) %>% 
-  ungroup() %>% 
-  #group_by(Quarters) %>% 
-  mutate(Fl_rate.Quar = mean(Flow_Rate)) %>% 
-  ungroup() %>% 
-  group_by(Semester) %>% 
-  mutate(Fl_rate.Sem = mean(Flow_Rate)) %>% 
-  ungroup() %>% 
-  mutate(lag1 = lag(Rainfall_Le_Croci, +1),
-         lag3 = lag(Rainfall_Le_Croci,+3),
-         lag5 = lag(Rainfall_Le_Croci,+5),
-         lag7 = lag(Rainfall_Le_Croci,+7),
-         lag9 = lag(Rainfall_Le_Croci, +9))
-
-
-#bilancino_months <- bilancino_featured %>% 
- # dplyr::mutate(Y_m = as.Date(Date, format ="%Y-%m"),
- #        Semester = semester(Date, with_year = T),
-#         Quarters = quarter(Date, with_year = T),
-#         Trimonthly = as.factor(round_date(Y_m, unit = "3 months"))) %>% 
-  # date written is first day of the period
-  # dplyr::select(-Y_m) %>%
- # group_by(Trimonthly) %>% 
-#  dplyr::mutate(Fl_rate.Tri = mean(fl_rate)) %>% 
-#  ungroup() %>% 
-#  group_by(Quarters) %>% 
-#  mutate(Fl_rate.Quar = mean(fl_rate)) %>% 
-#  ungroup() %>% 
-#  group_by(Semester) %>% 
-#  mutate(Fl_rate.Sem = mean(fl_rate)) %>% 
-#  ungroup() %>% 
-#  mutate(lag1 = Lag(Rainfall_Le_Croci, +1),
- #        lag3 = Lag(Rainfall_Le_Croci,+3),
-#         lag5 = Lag(Rainfall_Le_Croci,+5),
-#         lag7 = Lag(Rainfall_Le_Croci,+7),
- #        lag9 = Lag(Rainfall_Le_Croci, +9))
-#mi da un errore
-
-#unique(bilancino_months$Trimonthly)
-
-min(bilancino_months$Fl_rate.Tri)
-
-# vis trimesters
-ggplot(bilancino_months, aes(Trimonthly, Fl_rate.Tri))+
-  geom_bar(stat = "identity")
-
-# vis quarters 
-ggplot(bilancino_months, aes(Quarters, Fl_rate.Quar))+
-  geom_bar(stat = "identity")
-
-# vis semesters
-ggplot(bilancino_months, aes(Semester, Fl_rate.Sem))+
-  geom_bar(stat = "identity")
-
-write.csv(bilancino_months, "processed_data/BILANCINO_to_model+lags.csv")
-
-
-#### voglio rendere trascurabile le pioggie esigue, divido i livelli di pioggia in 3 ###
-min(bilancino_months$Rainfall_mean)
-mean(bilancino_months$Rainfall_mean)
-max(bilancino_months$Rainfall_mean)
-
-
-####
-### checking for rainfall ###
-## changing mm levels 
-
-#ggplot(canneto_rain, aes(y = Rainfall_B)) +
-#geom_boxplot()
-
-## 5 datasets with 5 levels of min rain changed to 0:
-
-bilancino_rain.5 <- bilancino_months %>% 
-  mutate(rain1 = ifelse(Rainfall_Le_Croci <= 0.5, 0, Rainfall_Le_Croci),
-         seq.rain.val = sequence(rle(as.character(rain1))$lengths)) 
-
-bilancino_rain1.5 <- bilancino_months %>%  # whenever rain is lower than 1mm/day, = 0
-  mutate(rain2 = ifelse(Rainfall_Le_Croci <= 1.5, 0, Rainfall_Le_Croci),
-         seq.rain.val = sequence(rle(as.character(rain2))$lengths))
-
-bilancino_rain3 <- bilancino_months %>% 
-  mutate(rain3 = ifelse(Rainfall_Le_Croci <= 3,0,Rainfall_Le_Croci),
-         seq.rain.val = sequence(rle(as.character(rain3))$lengths))
-
-bilancino_rain5 <- bilancino_months %>% 
-  mutate(rain4 = ifelse(Rainfall_Le_Croci <= 5, 0, Rainfall_Le_Croci),
-         seq.rain.val = sequence(rle(as.character(rain4))$lengths))
-
-## creating 5 new datasets per dataset...
-## ... or 5 new variables 
-
-bilancino_rain0.5.lag <- bilancino_rain.5 %>% 
-  dplyr::mutate(lag1 = lag(rain1, +1),
-         lag3 = lag(rain1,+3),
-         lag5 = lag(rain1,+5),
-         lag7 = lag(rain1,+7),
-         lag9 = lag(rain1, +9)) %>%
-  write.csv(., "processed_data/bilancino_rain0.5.csv")
-
-bilancino_rain1.5.lag <- bilancino_rain1.5 %>% 
-  mutate(lag1 = lag(rain2, +1),
-         lag3 = lag(rain2, +3),
-         lag5 = lag(rain2, +5),
-         lag7 = lag(rain2, +7),
-         lag9 = lag(rain2, +9))%>% 
-  write.csv(., "processed_data/bilancino_rain1.5.csv")
-
-bilancino_rain3.lag <- bilancino_rain3 %>% 
-  dplyr::mutate(lag1 = lag(rain3, +1),
-         lag3 = lag(rain3, +3),
-         lag5 = lag(rain3, +5),
-         lag7 = lag(rain3, +7),
-         lag9 = lag(rain3, +9)) %>% 
-  write.csv(., "processed_data/bilancino_rain3.csv")
-
-bilancino_rain5.lag <- bilancino_rain5 %>% 
-  dplyr::mutate(lag1 = lag(rain4, +1),
-         lag3 = lag(rain4, +3),
-         lag5 = lag(rain4, +5),
-         lag7 = lag(rain4, +7),
-         lag9 = lag(rain4, +9)) %>% 
-  write.csv(., "processed_data/bilancino_rain5.csv")
-
-
-
-
-
-
-
 #### correlazione Correlation Matrix ####
 df <- Lake_Bilancino_cut
 df$Date <- NULL
@@ -521,7 +360,7 @@ rm(df)
 #quindi la rimozione delle variabili riguarderà solo le precipitazioni.
 
 Lake_Bilancino_cut %>% 
- select(!c("Date", "Season")) %>%
+  select(!c("Date", "Season")) %>%
   cor(., method = "spearman", use = "complete.obs") %>%
   corrplot(., method = "color", type = "upper", col = core_col(100), number.cex = 1, addCoef.col = "gray8",
            tl.col = "black",tl.srt = 35, diag = T, tl.cex = 0.85)
@@ -588,6 +427,184 @@ rm(df)
 #
 #
 #
+
+
+#### snow ####
+#Temperature sotto lo zero / eventuale pioggia/neve, da analizzare
+
+Lake_Bilancino_cut <- read.csv("processed_data/BILANCINO_to_model.csv") %>% 
+  dplyr::select(-X,-Season)
+str(Lake_Bilancino_cut)
+
+#rm(bilancino_featured)
+bilancino_featured <- add.seasons(Lake_Bilancino_cut) %>%
+  mutate(snow.yes = as.factor(ifelse(Temperature_Le_Croci <=0 & Rainfall_Le_Croci > 0, 1,0)),
+         snow.no = as.factor(ifelse(Temperature_Le_Croci > 0 & Rainfall_Le_Croci <= 0,1,0))) 
+str(bilancino_featured)
+
+
+### rain le croci ###
+
+bilancino_months <- bilancino_featured %>% 
+  dplyr::select(-Rainfall_mean) %>% 
+  mutate(lag1 = lag(Rainfall_Le_Croci, +1),
+         lag3 = lag(Rainfall_Le_Croci,+3),
+         lag5 = lag(Rainfall_Le_Croci,+5),
+         lag7 = lag(Rainfall_Le_Croci,+7),
+         lag9 = lag(Rainfall_Le_Croci,+9))
+str(bilancino_months)
+
+write.csv(bilancino_months, "processed_data/BILANCINO_to_model+lags.csv")
+
+
+####
+### checking for rainfall ###
+## changing mm levels 
+
+
+## Rainfall_Le_Croci 5 datasets with 5 levels of min rain changed to 0:
+
+bilancino_rain0_Le_Croci <- bilancino_months %>% 
+  mutate(rain1 = ifelse(Rainfall_Le_Croci <= 0.5, 0, Rainfall_Le_Croci)) 
+
+bilancino_rain1_Le_Croci <- bilancino_months %>%  # whenever rain is lower than 1mm/day, = 0
+  mutate(rain2 = ifelse(Rainfall_Le_Croci <= 1.5, 0, Rainfall_Le_Croci))
+
+bilancino_rain3_Le_Croci <- bilancino_months %>% 
+  mutate(rain3 = ifelse(Rainfall_Le_Croci <= 3,0,Rainfall_Le_Croci))
+
+bilancino_rain5_Le_Croci <- bilancino_months %>% 
+  mutate(rain4 = ifelse(Rainfall_Le_Croci <= 5, 0, Rainfall_Le_Croci))
+
+## creating 5 new datasets per dataset...
+## ... or 5 new variables 
+
+bilancino_rain0_Le_Croci.lag <- bilancino_rain0_Le_Croci %>% 
+  dplyr::mutate(lag1 = lag(rain1, +1),
+         lag3 = lag(rain1,+3),
+         lag5 = lag(rain1,+5),
+         lag7 = lag(rain1,+7)) 
+
+bilancino_rain1_Le_Croci.lag <- bilancino_rain1_Le_Croci %>% 
+  mutate(lag1 = lag(rain2, +1),
+         lag3 = lag(rain2, +3),
+         lag5 = lag(rain2, +5),
+         lag7 = lag(rain2, +7))
+
+bilancino_rain3_Le_Croci.lag <- bilancino_rain3_Le_Croci %>% 
+  dplyr::mutate(lag1 = lag(rain3, +1),
+         lag3 = lag(rain3, +3),
+         lag5 = lag(rain3, +5),
+         lag7 = lag(rain3, +7)) 
+
+bilancino_rain5_Le_Croci.lag <- bilancino_rain5_Le_Croci %>% 
+  dplyr::mutate(lag1 = lag(rain4, +1),
+         lag3 = lag(rain4, +3),
+         lag5 = lag(rain4, +5),
+         lag7 = lag(rain4, +7)) 
+
+### dalla matrice di correlazione(piu sotto)
+#vedo le variabile rainfall fortemente correlate,
+#ne tengo un paio: Rainfall_S_Piero, Rainfall_Mangona (le piu' rappressentative)
+# creo i dataset per i lag
+
+## Rainfall_S_Piero 5 datasets with 5 levels of min rain changed to 0:
+
+bilancino_rain0_S_Piero <- bilancino_months %>% 
+  mutate(rain1 = ifelse(Rainfall_S_Piero <= 0.5, 0, Rainfall_S_Piero),
+         seq.rain.val = sequence(rle(as.character(rain1))$lengths)) 
+
+bilancino_rain1_S_Piero <- bilancino_months %>%  # whenever rain is lower than 1mm/day, = 0
+  mutate(rain2 = ifelse(Rainfall_S_Piero <= 1.5, 0, Rainfall_S_Piero),
+         seq.rain.val = sequence(rle(as.character(rain2))$lengths))
+
+bilancino_rain3_S_Piero <- bilancino_months %>% 
+  mutate(rain3 = ifelse(Rainfall_S_Piero <= 3,0,Rainfall_S_Piero),
+         seq.rain.val = sequence(rle(as.character(rain3))$lengths))
+
+bilancino_rain5_S_Piero <- bilancino_months %>% 
+  mutate(rain4 = ifelse(Rainfall_S_Piero <= 5, 0, Rainfall_S_Piero),
+         seq.rain.val = sequence(rle(as.character(rain4))$lengths))
+
+## creating 5 new datasets per dataset...S_Piero
+## ... or 5 new variables 
+
+bilancino_rain0_S_Piero.lag <- bilancino_rain0_S_Piero %>% 
+  dplyr::mutate(lag1 = lag(rain1, +1),
+                lag3 = lag(rain1,+3),
+                lag5 = lag(rain1,+5),
+                lag7 = lag(rain1,+7)) %>%
+  write.csv(., "processed_data/bilancino_rain0_S_Piero+lag.csv")
+
+bilancino_rain1_S_Piero.lag <- bilancino_rain1_S_Piero %>% 
+  mutate(lag1 = lag(rain2, +1),
+         lag3 = lag(rain2, +3),
+         lag5 = lag(rain2, +5),
+         lag7 = lag(rain2, +7))%>% 
+  write.csv(., "processed_data/bilancino_rain1_S_Piero+lag.csv")
+
+bilancino_rain3_S_Piero.lag <- bilancino_rain3_S_Piero %>% 
+  dplyr::mutate(lag1 = lag(rain3, +1),
+                lag3 = lag(rain3, +3),
+                lag5 = lag(rain3, +5),
+                lag7 = lag(rain3, +7)) %>% 
+  write.csv(., "processed_data/bilancino_rain1_S_Piero+lag.csv")
+
+bilancino_rain5_S_Piero.lag <- bilancino_rain5_S_Piero %>% 
+  dplyr::mutate(lag1 = lag(rain4, +1),
+                lag3 = lag(rain4, +3),
+                lag5 = lag(rain4, +5),
+                lag7 = lag(rain4, +7)) %>% 
+  write.csv(., "processed_data/bilancino_rain5_S_Piero+lag.csv")
+
+## Rainfall_Mangona  5 datasets with 5 levels of min rain changed to 0:
+
+bilancino_rain0_Mangona  <- bilancino_months %>% 
+  mutate(rain1 = ifelse(Rainfall_Mangona  <= 0.5, 0, Rainfall_Mangona ),
+         seq.rain.val = sequence(rle(as.character(rain1))$lengths)) 
+
+bilancino_rain1_Mangona  <- bilancino_months %>%  # whenever rain is lower than 1mm/day, = 0
+  mutate(rain2 = ifelse(Rainfall_Mangona  <= 1.5, 0, Rainfall_Mangona ),
+         seq.rain.val = sequence(rle(as.character(rain2))$lengths))
+
+bilancino_rain3_Mangona  <- bilancino_months %>% 
+  mutate(rain3 = ifelse(Rainfall_Mangona  <= 3,0,Rainfall_Mangona ),
+         seq.rain.val = sequence(rle(as.character(rain3))$lengths))
+
+bilancino_rain5_Mangona <- bilancino_months %>% 
+  mutate(rain4 = ifelse(Rainfall_Mangona  <= 5, 0, Rainfall_Mangona ),
+         seq.rain.val = sequence(rle(as.character(rain4))$lengths))
+
+## creating 5 new datasets per dataset...Mangona 
+## ... or 5 new variables 
+
+bilancino_rain0_Mangona.lag <- bilancino_rain0_Mangona  %>% 
+  dplyr::mutate(lag1 = lag(rain1, +1),
+                lag3 = lag(rain1,+3),
+                lag5 = lag(rain1,+5),
+                lag7 = lag(rain1,+7)) %>%
+  write.csv(., "processed_data/bilancino_rain0_Mangona+lag.csv")
+
+bilancino_rain1_Mangona.lag <- bilancino_rain1_Mangona %>% 
+  mutate(lag1 = lag(rain2, +1),
+         lag3 = lag(rain2, +3),
+         lag5 = lag(rain2, +5),
+         lag7 = lag(rain2, +7))%>% 
+  write.csv(., "processed_data/bilancino_rain1_Mangona+lag.csv")
+
+bilancino_rain3_Mangona.lag <- bilancino_rain3_Mangona %>% 
+  dplyr::mutate(lag1 = lag(rain3, +1),
+                lag3 = lag(rain3, +3),
+                lag5 = lag(rain3, +5),
+                lag7 = lag(rain3, +7)) %>% 
+  write.csv(., "processed_data/bilancino_rain1_Mangona+lag.csv")
+
+bilancino_rain5_Mangona.lag <- bilancino_rain5_Mangona %>% 
+  dplyr::mutate(lag1 = lag(rain4, +1),
+                lag3 = lag(rain4, +3),
+                lag5 = lag(rain4, +5),
+                lag7 = lag(rain4, +7)) %>% 
+  write.csv(., "processed_data/bilancino_rain5_Mangona+lag.csv")
 
 
 #### Random Forest ####
@@ -696,6 +713,668 @@ ggplot(pred_Lake_Bilancino_Lake_Level, aes(real, pred, fill = above))+
        subtitle = "Random forest / Flow_Rate variable / Bilancino lake") + 
   theme_21+
   theme(legend.position = "bottom", legend.direction = "vertical")
+
+
+
+
+
+############################################################################
+##############################################################################
+
+#### (ANNA) GBM ####
+
+
+step.wisef <- function(x, DATA){
+  set.seed(123)
+  train.control <- trainControl(method = "cv", number = 10)
+  step.model <- train(as.formula(paste(x,"~.")), data = DATA, 
+                      method = "leapSeq", 
+                      tuneGrid = data.frame(nvmax = 1:17),
+                      trControl = train.control,
+                      na.action = na.omit)
+  return(step.model)
+}
+
+
+#### flow rate ####
+
+## starting with gbm for bilancino (original) + lags 
+
+library(varhandle)
+library(rsample)
+library(gbm)
+
+str(bilancino_months)
+
+bilancino_months1 <- bilancino_months %>% 
+  dplyr::select(-Date)
+
+bilancino_months1[,9:14] <- unfactor(bilancino_months1[,9:14])
+str(bilancino_months1)
+
+
+
+set.seed(123)
+
+bilancino_orig.fl <- bilancino_months1 %>% dplyr::select(-Lake_Level)
+
+bilancino_orig.fl.split <- initial_split(bilancino_orig.fl,prop =.7)
+bilancino_orig.fl.train <- training(bilancino_orig.fl.split)
+bilancino_orig.fl.test <- testing(bilancino_orig.fl.split)
+
+bilancino_orig.fl.fit <- gbm::gbm(Flow_Rate ~ .,
+                                data = bilancino_orig.fl,
+                                verbose = T, 
+                                shrinkage = 0.01,
+                                interaction.depth = 3, 
+                                n.minobsinnode = 5,
+                                n.trees = 600,
+                                cv.folds = 12)
+
+bilancino_orig.fl.fit.perf <- gbm.perf(bilancino_orig.fl.fit, method = "cv")
+
+## make predictions 
+
+bilancino_orig.fl.fit.pred <- stats::predict(object = bilancino_orig.fl.fit,
+                                           newdata = bilancino_orig.fl.test,
+                                           n.trees = bilancino_orig.fl.fit.perf)
+bilancino_orig.fl.rmse <- Metrics::rmse(actual = bilancino_orig.fl.test$Flow_Rate,
+                                          predicted = bilancino_orig.fl.fit.pred)
+print(bilancino_orig.fl.rmse) # 3.14 ### BEST MODEL 
+
+
+## rain 0 le croci 
+
+str(bilancino_rain0_Le_Croci.lag)
+
+lecroci <- read.csv("processed_data/bilancino_rain0_Le_Croci+lag.csv") %>%
+  dplyr::select(-X,-Date)
+str(lecroci)
+
+lecroci.split <- initial_split(lecroci,prop =.7)
+
+lecroci.train <- training(lecroci.split)
+lecroci.test <- testing(lecroci.split)
+
+lecroci.fit <- gbm::gbm(Flow_Rate ~ .,
+                                  data = lecroci,
+                                  verbose = T, 
+                                  shrinkage = 0.01,
+                                  interaction.depth = 3, 
+                                  n.minobsinnode = 5,
+                                  n.trees = 600,
+                                  cv.folds = 12)
+
+lecroci.perf <- gbm.perf(lecroci.fit, method = "cv")
+
+## make predictions 
+
+lecroci.pred<- stats::predict(object = lecroci.fit,
+                                             newdata = lecroci.test,
+                                             n.trees = lecroci.perf)
+lecroci.rmse <- Metrics::rmse(actual = lecroci.test$Flow_Rate,
+                                        predicted = lecroci.pred)
+print(lecroci.rmse) # 2.13
+
+
+## rain 1 le croci 
+
+lecroci1 <- read.csv("processed_data/bilancino_rain1_Le_Croci+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+str(lecroci1)
+
+lecroci1.split <- initial_split(lecroci1,prop =.7)
+
+lecroci1.train <- training(lecroci1.split)
+lecroci1.test <- testing(lecroci1.split)
+
+lecroci1.fit <- gbm::gbm(Flow_Rate ~ .,
+                        data = lecroci1,
+                        verbose = T, 
+                        shrinkage = 0.01,
+                        interaction.depth = 3, 
+                        n.minobsinnode = 5,
+                        n.trees = 600,
+                        cv.folds = 12)
+
+lecroci1.perf <- gbm.perf(lecroci1.fit, method = "cv")
+
+## make predictions 
+
+lecroci1.pred<- stats::predict(object = lecroci1.fit,
+                              newdata = lecroci1.test,
+                              n.trees = lecroci1.perf)
+lecroci1.rmse <- Metrics::rmse(actual = lecroci1.test$Flow_Rate,
+                              predicted = lecroci1.pred)
+print(lecroci1.rmse) # 2.12 ### BEST MODEL 
+
+## rain 5 le croci 
+
+lecroci5 <- read.csv("processed_data/bilancino_rain5_Le_Croci+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+
+lecroci5.split <- initial_split(lecroci5,prop =.7)
+
+lecroci5.train <- training(lecroci5.split)
+lecroci5.test <- testing(lecroci5.split)
+
+lecroci5.fit <- gbm::gbm(Flow_Rate ~ .,
+                        data = lecroci5,
+                        verbose = T, 
+                        shrinkage = 0.01,
+                        interaction.depth = 3, 
+                        n.minobsinnode = 5,
+                        n.trees = 600,
+                        cv.folds = 12)
+
+lecroci5.perf <- gbm.perf(lecroci5.fit, method = "cv")
+
+## make predictions 
+
+lecroci5.pred<- stats::predict(object = lecroci5.fit,
+                              newdata = lecroci5.test,
+                              n.trees = lecroci5.perf)
+lecroci5.rmse <- Metrics::rmse(actual = lecroci5.test$Flow_Rate,
+                              predicted = lecroci5.pred)
+print(lecroci5.rmse) # 2.18
+
+
+
+
+### rain 0 s piero 
+
+sp <- read.csv("processed_data/bilancino_rain0_S_Piero+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+
+sp.split <- initial_split(sp,prop =.7)
+
+sp.train <- training(sp.split)
+sp.test <- testing(sp.split)
+
+sp.fit <- gbm::gbm(Flow_Rate ~ .,
+                        data = sp,
+                        verbose = T, 
+                        shrinkage = 0.01,
+                        interaction.depth = 3, 
+                        n.minobsinnode = 5,
+                        n.trees = 600,
+                        cv.folds = 12)
+
+sp.perf <- gbm.perf(sp.fit, method = "cv")
+
+## make predictions 
+
+sp.pred<- stats::predict(object = sp.fit,
+                              newdata = sp.test,
+                              n.trees = sp.perf)
+sp.rmse <- Metrics::rmse(actual = sp.test$Flow_Rate,
+                              predicted = sp.pred)
+print(sp.rmse
+      ) # 2.03
+
+### sp rain 1 
+
+sp1 <- read.csv("processed_data/bilancino_rain1_S_Piero+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+
+sp1.split <- initial_split(sp1,prop =.7)
+
+sp1.train <- training(sp1.split)
+sp1.test <- testing(sp1.split)
+
+sp1.fit <- gbm::gbm(Flow_Rate ~ .,
+                   data = sp1,
+                   verbose = T, 
+                   shrinkage = 0.01,
+                   interaction.depth = 3, 
+                   n.minobsinnode = 5,
+                   n.trees = 1000,
+                   cv.folds = 12)
+
+sp1.perf <- gbm.perf(sp1.fit, method = "cv")
+
+## make predictions 
+
+sp1.pred<- stats::predict(object = sp1.fit,
+                         newdata = sp1.test,
+                         n.trees = sp1.perf)
+sp1.rmse <- Metrics::rmse(actual = sp1.test$Flow_Rate,
+                         predicted = sp1.pred)
+print(sp1.rmse
+) # 1.98
+
+
+## rain 5 s piero 
+
+sp5 <- read.csv("processed_data/bilancino_rain5_S_Piero+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+
+sp5.split <- initial_split(sp5,prop =.7)
+
+sp5.train <- training(sp5.split)
+sp5.test <- testing(sp5.split)
+
+sp5.fit <- gbm::gbm(Flow_Rate ~ .,
+                   data = sp5,
+                   verbose = T, 
+                   shrinkage = 0.01,
+                   interaction.depth = 3, 
+                   n.minobsinnode = 5,
+                   n.trees = 600,
+                   cv.folds = 12)
+
+sp5.perf <- gbm.perf(sp5.fit, method = "cv")
+
+## make predictions 
+
+sp5.pred<- stats::predict(object = sp5.fit,
+                         newdata = sp5.test,
+                         n.trees = sp5.perf)
+sp5.rmse <- Metrics::rmse(actual = sp5.test$Flow_Rate,
+                         predicted = sp5.pred)
+print(sp5.rmse) # 1.98 ## BEST MODEL 
+
+
+### rain 0 mangona 
+
+mg <- read.csv("processed_data/bilancino_rain0_Mangona+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+
+mg.split <- initial_split(mg,prop =.7)
+
+mg.train <- training(mg.split)
+mg.test <- testing(mg.split)
+
+mg.fit <- gbm::gbm(Flow_Rate ~ .,
+                   data = mg,
+                   verbose = T, 
+                   shrinkage = 0.01,
+                   interaction.depth = 3, 
+                   n.minobsinnode = 5,
+                   n.trees = 1000,
+                   cv.folds = 12)
+
+mg.perf <- gbm.perf(mg.fit, method = "cv")
+
+## make predictions 
+
+mg.pred<- stats::predict(object = mg.fit,
+                         newdata = mg.test,
+                         n.trees = mg.perf)
+mg.rmse <- Metrics::rmse(actual = mg.test$Flow_Rate,
+                         predicted = mg.pred)
+print(mg.rmse
+) # 2.223
+
+## rain 1 mg 
+
+mg1 <- read.csv("processed_data/bilancino_rain1_Mangona+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+
+mg1.split <- initial_split(mg1,prop =.7)
+
+mg1.train <- training(mg1.split)
+mg1.test <- testing(mg1.split)
+
+mg1.fit <- gbm::gbm(Flow_Rate ~ .,
+                   data = mg1,
+                   verbose = T, 
+                   shrinkage = 0.01,
+                   interaction.depth = 3, 
+                   n.minobsinnode = 5,
+                   n.trees = 5000,
+                   cv.folds = 12)
+
+mg1.perf <- gbm.perf(mg1.fit, method = "cv")
+
+## make predictions 
+
+mg1.pred<- stats::predict(object = mg1.fit,
+                         newdata = mg1.test,
+                         n.trees = mg1.perf)
+mg1.rmse <- Metrics::rmse(actual = mg1.test$Flow_Rate,
+                         predicted = mg1.pred)
+print(mg1.rmse) # 1.70  ## BEST MODEL 
+
+
+### rain 5 mg 
+
+mg5 <- read.csv("processed_data/bilancino_rain5_Mangona+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+
+mg5.split <- initial_split(mg5,prop =.7)
+
+mg5.train <- training(mg5.split)
+mg5.test <- testing(mg5.split)
+
+mg5.fit <- gbm::gbm(Flow_Rate ~ .,
+                   data = mg5,
+                   verbose = T, 
+                   shrinkage = 0.01,
+                   interaction.depth = 3, 
+                   n.minobsinnode = 5,
+                   n.trees = 1000,
+                   cv.folds = 12)
+
+mg5.perf <- gbm.perf(mg5.fit, method = "cv")
+
+## make predictions 
+
+mg5.pred<- stats::predict(object = mg5.fit,
+                         newdata = mg5.test,
+                         n.trees = mg5.perf)
+mg5.rmse <- Metrics::rmse(actual = mg5.test$Flow_Rate,
+                         predicted = mg5.pred)
+print(mg5.rmse) # 2.07
+
+
+### best model...: 
+
+print(bilancino_orig.fl.rmse) # 3.14 ### BEST MODEL 
+
+print(lecroci1.rmse) # 2.12 ### BEST MODEL 
+
+print(sp5.rmse) # 1.98 ## BEST MODEL 
+
+print(mg1.rmse) # 1.70  ## BEST MODEL 
+
+
+### and mangona lowest error of all 
+
+## Lake Level
+
+bilancino_orig.ll <- bilancino_months1 %>% dplyr::select(-Flow_Rate)
+
+bilancino_orig.ll.split <- initial_split(bilancino_orig.ll,prop =.7)
+bilancino_orig.ll.train <- training(bilancino_orig.ll.split)
+bilancino_orig.ll.test <- testing(bilancino_orig.ll.split)
+
+bilancino_orig.ll.fit <- gbm::gbm(Lake_Level ~ .,
+                                  data = bilancino_orig.ll,
+                                  verbose = T, 
+                                  shrinkage = 0.01,
+                                  interaction.depth = 3, 
+                                  n.minobsinnode = 5,
+                                  n.trees = 2000,
+                                  cv.folds = 12)
+
+bilancino_orig.ll.fit.perf <- gbm.perf(bilancino_orig.ll.fit, method = "cv")
+
+## make predictions 
+
+bilancino_orig.ll.fit.pred <- stats::predict(object = bilancino_orig.ll.fit,
+                                             newdata = bilancino_orig.ll.test,
+                                             n.trees = bilancino_orig.ll.fit.perf)
+bilancino_orig.ll.rmse <- Metrics::rmse(actual = bilancino_orig.ll.test$Lake_Level,
+                                        predicted = bilancino_orig.ll.fit.pred)
+print(bilancino_orig.ll.rmse) # 2.08 ### BEST MODEL 
+
+
+### rain 0 le croci 
+
+lecroci.fit.ll <- gbm::gbm(Lake_Level ~ .,
+                        data = lecroci,
+                        verbose = T, 
+                        shrinkage = 0.01,
+                        interaction.depth = 3, 
+                        n.minobsinnode = 5,
+                        n.trees = 600,
+                        cv.folds = 12)
+
+lecroci.perf.ll <- gbm.perf(lecroci.fit.ll, method = "cv")
+
+## make predictions 
+
+lecroci.pred.ll <- stats::predict(object = lecroci.fit.ll,
+                              newdata = lecroci.test,
+                              n.trees = lecroci.perf.ll)
+lecroci.ll.rmse <- Metrics::rmse(actual = lecroci.test$Lake_Level,
+                              predicted = lecroci.pred.ll)
+print(lecroci.ll.rmse) # 1.70 ### BEST MODEL
+
+
+## rain 1 le croci 
+
+lecroci1.fit.ll <- gbm::gbm(Lake_Level ~ .,
+                         data = lecroci1,
+                         verbose = T, 
+                         shrinkage = 0.01,
+                         interaction.depth = 3, 
+                         n.minobsinnode = 5,
+                         n.trees = 600,
+                         cv.folds = 12)
+
+lecroci1.perf.ll <- gbm.perf(lecroci1.fit.ll, method = "cv")
+
+## make predictions 
+
+lecroci1.pred.ll<- stats::predict(object = lecroci1.fit.ll,
+                               newdata = lecroci1.test,
+                               n.trees = lecroci1.perf.ll)
+lecroci1.rmse.ll <- Metrics::rmse(actual = lecroci1.test$Lake_Level,
+                               predicted = lecroci1.pred.ll)
+print(lecroci1.rmse.ll) # 1.73
+
+
+## rain 5 le croci 
+
+lecroci5.fit.ll <- gbm::gbm(Lake_Level ~ .,
+                         data = lecroci5,
+                         verbose = T, 
+                         shrinkage = 0.01,
+                         interaction.depth = 3, 
+                         n.minobsinnode = 5,
+                         n.trees = 600,
+                         cv.folds = 12)
+
+lecroci5.perf.ll <- gbm.perf(lecroci5.fit.ll, method = "cv")
+
+## make predictions 
+
+lecroci5.pred.ll<- stats::predict(object = lecroci5.fit.ll,
+                               newdata = lecroci5.test,
+                               n.trees = lecroci5.perf.ll)
+lecroci5.rmse.ll <- Metrics::rmse(actual = lecroci5.test$Lake_Level,
+                               predicted = lecroci5.pred.ll)
+print(lecroci5.rmse.ll) # 1.77
+
+
+### rain 0 s piero 
+
+sp <- read.csv("processed_data/bilancino_rain0_S_Piero+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+
+sp.split <- initial_split(sp,prop =.7)
+
+sp.train <- training(sp.split)
+sp.test <- testing(sp.split)
+
+sp.fit <- gbm::gbm(Flow_Rate ~ .,
+                   data = sp,
+                   verbose = T, 
+                   shrinkage = 0.01,
+                   interaction.depth = 3, 
+                   n.minobsinnode = 5,
+                   n.trees = 600,
+                   cv.folds = 12)
+
+sp.perf <- gbm.perf(sp.fit, method = "cv")
+
+## make predictions 
+
+sp.pred<- stats::predict(object = sp.fit,
+                         newdata = sp.test,
+                         n.trees = sp.perf)
+sp.rmse <- Metrics::rmse(actual = sp.test$Flow_Rate,
+                         predicted = sp.pred)
+print(sp.rmse
+) # 2.03
+
+### sp rain 1 
+
+sp1 <- read.csv("processed_data/bilancino_rain1_S_Piero+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+
+sp1.split <- initial_split(sp1,prop =.7)
+
+sp1.train <- training(sp1.split)
+sp1.test <- testing(sp1.split)
+
+sp1.fit <- gbm::gbm(Flow_Rate ~ .,
+                    data = sp1,
+                    verbose = T, 
+                    shrinkage = 0.01,
+                    interaction.depth = 3, 
+                    n.minobsinnode = 5,
+                    n.trees = 1000,
+                    cv.folds = 12)
+
+sp1.perf <- gbm.perf(sp1.fit, method = "cv")
+
+## make predictions 
+
+sp1.pred<- stats::predict(object = sp1.fit,
+                          newdata = sp1.test,
+                          n.trees = sp1.perf)
+sp1.rmse <- Metrics::rmse(actual = sp1.test$Flow_Rate,
+                          predicted = sp1.pred)
+print(sp1.rmse
+) # 1.98
+
+
+## rain 5 s piero 
+
+sp5 <- read.csv("processed_data/bilancino_rain5_S_Piero+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+
+sp5.split <- initial_split(sp5,prop =.7)
+
+sp5.train <- training(sp5.split)
+sp5.test <- testing(sp5.split)
+
+sp5.fit <- gbm::gbm(Flow_Rate ~ .,
+                    data = sp5,
+                    verbose = T, 
+                    shrinkage = 0.01,
+                    interaction.depth = 3, 
+                    n.minobsinnode = 5,
+                    n.trees = 600,
+                    cv.folds = 12)
+
+sp5.perf <- gbm.perf(sp5.fit, method = "cv")
+
+## make predictions 
+
+sp5.pred<- stats::predict(object = sp5.fit,
+                          newdata = sp5.test,
+                          n.trees = sp5.perf)
+sp5.rmse <- Metrics::rmse(actual = sp5.test$Flow_Rate,
+                          predicted = sp5.pred)
+print(sp5.rmse) # 1.98 ## BEST MODEL 
+
+
+### rain 0 mangona 
+
+mg <- read.csv("processed_data/bilancino_rain0_Mangona+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+
+mg.split <- initial_split(mg,prop =.7)
+
+mg.train <- training(mg.split)
+mg.test <- testing(mg.split)
+
+mg.fit <- gbm::gbm(Flow_Rate ~ .,
+                   data = mg,
+                   verbose = T, 
+                   shrinkage = 0.01,
+                   interaction.depth = 3, 
+                   n.minobsinnode = 5,
+                   n.trees = 1000,
+                   cv.folds = 12)
+
+mg.perf <- gbm.perf(mg.fit, method = "cv")
+
+## make predictions 
+
+mg.pred<- stats::predict(object = mg.fit,
+                         newdata = mg.test,
+                         n.trees = mg.perf)
+mg.rmse <- Metrics::rmse(actual = mg.test$Flow_Rate,
+                         predicted = mg.pred)
+print(mg.rmse
+) # 2.223
+
+## rain 1 mg 
+
+mg1 <- read.csv("processed_data/bilancino_rain1_Mangona+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+
+mg1.split <- initial_split(mg1,prop =.7)
+
+mg1.train <- training(mg1.split)
+mg1.test <- testing(mg1.split)
+
+mg1.fit <- gbm::gbm(Flow_Rate ~ .,
+                    data = mg1,
+                    verbose = T, 
+                    shrinkage = 0.01,
+                    interaction.depth = 3, 
+                    n.minobsinnode = 5,
+                    n.trees = 5000,
+                    cv.folds = 12)
+
+mg1.perf <- gbm.perf(mg1.fit, method = "cv")
+
+## make predictions 
+
+mg1.pred<- stats::predict(object = mg1.fit,
+                          newdata = mg1.test,
+                          n.trees = mg1.perf)
+mg1.rmse <- Metrics::rmse(actual = mg1.test$Flow_Rate,
+                          predicted = mg1.pred)
+print(mg1.rmse) # 1.70  ## BEST MODEL 
+
+
+### rain 5 mg 
+
+mg5 <- read.csv("processed_data/bilancino_rain5_Mangona+lag.csv") %>% 
+  dplyr::select(-X,-Date)
+
+mg5.split <- initial_split(mg5,prop =.7)
+
+mg5.train <- training(mg5.split)
+mg5.test <- testing(mg5.split)
+
+mg5.fit <- gbm::gbm(Flow_Rate ~ .,
+                    data = mg5,
+                    verbose = T, 
+                    shrinkage = 0.01,
+                    interaction.depth = 3, 
+                    n.minobsinnode = 5,
+                    n.trees = 1000,
+                    cv.folds = 12)
+
+mg5.perf <- gbm.perf(mg5.fit, method = "cv")
+
+## make predictions 
+
+mg5.pred<- stats::predict(object = mg5.fit,
+                          newdata = mg5.test,
+                          n.trees = mg5.perf)
+mg5.rmse <- Metrics::rmse(actual = mg5.test$Flow_Rate,
+                          predicted = mg5.pred)
+print(mg5.rmse) # 2.07
+
+
+
+
+
+
+
+
+
+
+
 
 
 
