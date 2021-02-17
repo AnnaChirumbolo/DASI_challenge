@@ -883,7 +883,8 @@ River_Arno_cut1%>%
 
 #str(arno_featured)
 
-### changing effect of rain on target, and lagging the effect of rain on the target ###
+### changing effect of rain on target, and lagging the effect 
+#of rain on the target ###
 
 arno_orig_LagSieve <- River_Arno_cut1 %>% 
   mutate(lag1 = lag(Rainfall_mean_Sieve, +1),
@@ -1177,3 +1178,157 @@ ggplot(pred_River_Arno_Hydrometry_Nave_di_Rosano3, aes(real, pred, fill = above)
 
 #Il modello può essere migliorato quando vengono trovate più variabili
 #esplicative o il periodo di raccolta è più lungo e più stabile.
+
+
+
+#Sieve=c("Rainfall_Le_Croci", "Rainfall_Cavallina", 
+#"Rainfall_S_Agata", "Rainfall_Mangona",
+#"Rainfall_S_Piero","Rainfall_Vernio")]
+
+#Sorgente=Sorgente <- c("Rainfall_Camaldoli", "Rainfall_Bibbiena", 
+#"Rainfall_Laterina", "Rainfall_S_Savino",
+#"Rainfall_Montevarchi","Rainfall_Consuma",
+#"Rainfall_Incisa", "Rainfall_Stia" )
+
+
+##### GRADIENT BOOST MACHINE  #####
+
+## libraries 
+
+#library(rsample)
+library(caret)
+library(ggthemes)
+library(scales)
+library(wesanderson)
+library(tidyverse)
+library(gbm)
+library(Metrics)
+library(here)
+library(MASS)
+library(leaps)
+library(purrr)
+
+##
+###ánche qui faro due test
+#### testgb 1 con localita XXXXXXX ####
+
+
+#### testgb 2 con localita Le_Croci Cavallina  per il primo gruppo e Bibbiena Stiaper il secondo gruppo ####
+
+## reading files 
+River_Arno_cut_gb2<- River_Arno_cut1 %>%
+  dplyr::select( Rainfall_Cavallina,Rainfall_Le_Croci, Rainfall_Stia, Rainfall_Bibbiena, Temperature_Firenze,
+                 Hydrometry_Nave_di_Rosano,
+                 Season) 
+#spread(key = imp, value = depth_to_gw.m) # in regression date doesnt really matter 
+str(River_Arno_cut_gb2)
+
+## prepping objects per target ##
+
+
+
+
+#### computing stepwise regression for variable selection ####
+# creating function
+step.wisef <- function(x, DATA){
+  set.seed(123)
+  train.control <- trainControl(method = "cv", number = 10)
+  step.model <- train(as.formula(paste(x,"~.")), data = DATA, 
+                      method = "leapSeq", 
+                      tuneGrid = data.frame(nvmax = 1:6),
+                      trControl = train.control,
+                      na.action = na.omit)
+  return(step.model)
+}
+
+
+#### Hydrometry_Nave_diRosano target####
+
+Hydrometry_Nave_di_Rosano_sw <- step.wisef("Hydrometry_Nave_di_Rosano", River_Arno_cut_gb2)
+Hydrometry_Nave_di_Rosano_sw$bestTune 
+Hydrometry_Nave_di_Rosano_sw$finalModel
+coef(Hydrometry_Nave_di_Rosano_sw$finalModel, 5)
+
+### let's stick to three variables (?) ###
+## question: model chooses the two temperatures even if they're highly correlated to one another...?
+# why? 
+
+#### testing and training split ####
+
+set.seed(123)
+Hydrometry_Nave_di_Rosano.split <- initial_split(River_Arno_cut_gb2, prop = .7)
+Hydrometry_Nave_di_Rosano.train <- training(Hydrometry_Nave_di_Rosano.split)
+Hydrometry_Nave_di_Rosano.test <- testing(Hydrometry_Nave_di_Rosano.split)
+
+Hydrometry_Nave_di_Rosano_fit1 <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
+                        data = River_Arno_cut_gb2,
+                        verbose = T, 
+                        shrinkage = 0.01,
+                        interaction.depth = 3, 
+                        n.minobsinnode = 5,
+                        n.trees = 5000,
+                        cv.folds = 10)
+perf_gbm1 <- gbm.perf(Hydrometry_Nave_di_Rosano_fit1, method = "cv")
+
+## make predictions 
+
+Hydrometry_Nave_di_Rosano_pred2 <- stats::predict(object = Hydrometry_Nave_di_Rosano_fit1,
+                               newdata = Hydrometry_Nave_di_Rosano.test,
+                               n.trees = perf_gbm1)
+rmse_fit2 <- Metrics::rmse(actual = Hydrometry_Nave_di_Rosano.test$Hydrometry_Nave_di_Rosano,
+                           predicted = Hydrometry_Nave_di_Rosano_pred2)
+print(rmse_fit1) # RMSE 0.3423
+#(higher error than when keeping all variables)
+
+#plot - RAinfall_CAvallina
+gbm::plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = 1)
+# plot - RAinfall_Le_Croci
+plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = 2)
+# plot - RAinfall_Stia
+plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = 3)
+# plot - RAinfall_Bibbiena
+plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = 4)
+# plot - Temperature_Firenze
+plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = 5)
+
+
+## interactions of two features on the variable 
+
+gbm::plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = c(1,3)) # rain-rain
+plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = c(1,2)) # rain-rain
+plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = c(2,3)) # rain-rain
+plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = c(2,4)) # rain-rain
+plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = c(3,4)) # rain-rain
+plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = c(3,5)) # temp-rain
+plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = c(4,5)) # temp-rain
+plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = c(1,5)) # temp-rain
+plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = c(2,5)) # temp-rain
+
+
+
+
+### impact of different features on predicting depth to gw 
+
+# summarise model 
+
+Hydrometry_Nave_di_Rosano_effects <- tibble::as_tibble(gbm::summary.gbm(Hydrometry_Nave_di_Rosano_fit1,
+                                                     plotit = F))
+Hydrometry_Nave_di_Rosano_effects %>% utils::head()
+# this creates new dataset with var, factor variable with variables 
+# in our model, and rel.inf - relative influence each var has on model pred 
+
+# plot top 6 features
+Hydrometry_Nave_di_Rosano_effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # it's already only 3 vars
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  scale_color_brewer(palette = "Dark2")
+
+
+
+
