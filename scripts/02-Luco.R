@@ -374,54 +374,6 @@ statsNA(luco9$Temperature_Mensano)
 
 ggplot_na_distribution(luco9$Temperature_Mensano)
 
-
-#### FILLING GAPS WITH METEO ####
-
-#### temperature Mensano
-
-## non necessario in quanto non ci sono NA per le temperature
-#read_plus <- function(flnm) {
- # read_csv(flnm) %>% 
-  #  mutate(filename = flnm)
-#}
-
-#temp_dog_ls <- list.files(path = "./data/luco_3BMETEO/",
-#                          pattern = "*.csv$", 
-#                          full.names = T) %>%
-#  map_df(~read_plus(.)) 
-
-## manipulating temp data 
-#temp_dog <- luco9$Temperature_Mensano %>% 
-#  mutate(
-#         Date = gsub(".csv", "", Date),
-#         Date = gsub("([a-z])([[:digit:]])", "\\1 \\2", Date, perl = T)) %>%
-#  separate(date, into = c("weekday", "day")) %>%
-#  select(-weekday) %>%
-#  unite(date_final, day,date, sep = " ") %>%
-#  mutate(date_final = str_replace(date_final,"ago","08"),
-#         date_final = str_replace(date_final, "gen", "01"),
-#         date_final = str_replace(date_final, "feb", "02"),
-#         date_final = str_replace(date_final, "mar", "03"),
-#         date_final = str_replace(date_final, "apr", "04"),
-#         date_final = str_replace(date_final, "mag", "05"),
-#         date_final = str_replace(date_final, "giu", "06"),
-#         date_final = str_replace(date_final, "lug", "07"),
-#         date_final = str_replace(date_final, "sett", "09"),
-#         date_final = str_replace(date_final, "ott", "10"),
-#         date_final = str_replace(date_final, "nov","11"),
-#         date_final = str_replace(date_final, "dec", "12"),
-#         date_final = gsub(" ", "/", date_final),
-#         date_final = dmy(date_final)) %>%
-#  rename(Date = date_final) %>%
-#  select(Date, tmin, tmax) %>%
-#  mutate(Temperature_Mensano = rowMeans(subset(., select = c(tmin,tmax)),
-#                                         na.rm = T)) %>%
-#  select(-tmin, -tmax) %>%
-#  arrange(Date)
-
-#summary(temp_dog)
-
-
 #### filled in the data!!
 statsNA(luco9$Temperature_Mensano) # still one na missing x9
 
@@ -492,17 +444,17 @@ add.seasons <- function(data) {
            Month = as.factor(lubridate::month(Date)),
            Day = as.factor(lubridate::day(Date)),
            Month_day = format(Date,format = "%m-%d")) %>% 
-    group_by(Year) %>%
     mutate(Spring = factor(ifelse(Month_day >= "03-21" & Month_day < "06-21",
                                   1,0)),
            Summer = factor(ifelse(Month_day >="06-21" & Month_day < "09-21",
                                   1,0)),
            Autumn = factor(ifelse(Month_day >= "09-21" & Month_day < "12-21",
                                   1,0)),
-           Winter = factor(ifelse(Month_day >= "12-21" & Month_day < "03-21",
-                                  1,0))) %>%
-    select(-Month_day) %>% 
-    ungroup()
+           Winter = factor(ifelse(Month_day >= "12-21" & Month_day <= "12-31",
+                                  1, 
+                                  ifelse(Month_day >= "01-01" & Month_day < "03-21",
+                                         1, 0)))) %>%
+    dplyr::select(-Month_day)
   return(seasons)
 }
 
@@ -514,8 +466,8 @@ add.seasons <- function(data) {
 luco_featured <- add.seasons(luco9) %>%
   dplyr::select(-X) %>% 
   spread(key = imp, value = depth_to_gw.m) %>% 
-  mutate(snow.yes = as.factor(ifelse(Temperature_Mensano <=0,1,0)),
-         snow.no = as.factor(ifelse(Temperature_Mensano > 0, 1, 0)))
+  mutate(snow.yes = as.factor(ifelse(Temperature_Mensano < 0 & Rainfall_Mensano >= 0, 1,0)),
+         snow.no = as.factor(ifelse(Temperature_Mensano > 0, 1,0)))
 
 str(luco_featured)
 
