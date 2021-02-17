@@ -970,7 +970,7 @@ auser_featured %>%
        subtitle = "in aq Auser") + 
   theme_classic()
 #commento
-# per LT2 non ci sono differenze per staioni
+# per LT2 non ci sono differenze per stagioni
 # per CoS e per Sal i pozzi sono piu' profondi in estate e autunno
 # ricordo che abbiamo preso il valore assoluto (i valori sono negativi)
 

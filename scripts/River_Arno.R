@@ -225,7 +225,7 @@ rf_bibbiena <- rf_bibbiena_ls %>%
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = stringr::str_replace(date_final,"ago","08"),
          date_final = stringr::str_replace(date_final, "gen", "01"),
@@ -242,7 +242,7 @@ rf_bibbiena <- rf_bibbiena_ls %>%
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
   dplyr::rename(Date = date_final) %>%
-  select(Date, prec) %>%
+  dplyr::select(Date, prec) %>%
   arrange(Date)
 
 summary(rf_bibbiena)
@@ -269,7 +269,7 @@ rf_camaldoli <- rf_camaldoli_ls %>%
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = stringr::str_replace(date_final,"ago","08"),
          date_final = stringr::str_replace(date_final, "gen", "01"),
@@ -286,7 +286,7 @@ rf_camaldoli <- rf_camaldoli_ls %>%
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
   dplyr::rename(Date = date_final) %>%
-  select(Date, prec) %>%
+  dplyr::select(Date, prec) %>%
   arrange(Date)
 
 summary(rf_camaldoli)
@@ -313,7 +313,7 @@ rf_consuma <- rf_consuma_ls %>%
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = stringr::str_replace(date_final,"ago","08"),
          date_final = stringr::str_replace(date_final, "gen", "01"),
@@ -330,7 +330,7 @@ rf_consuma <- rf_consuma_ls %>%
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
   dplyr::rename(Date = date_final) %>%
-  select(Date, prec) %>%
+  dplyr::select(Date, prec) %>%
   arrange(Date)
 
 summary(rf_consuma)
@@ -357,7 +357,7 @@ rf_incisa <- rf_incisa_ls %>%
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = stringr::str_replace(date_final,"ago","08"),
          date_final = stringr::str_replace(date_final, "gen", "01"),
@@ -374,7 +374,7 @@ rf_incisa <- rf_incisa_ls %>%
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
   dplyr::rename(Date = date_final) %>%
-  select(Date, prec) %>%
+  dplyr::select(Date, prec) %>%
   arrange(Date)
 
 summary(rf_incisa)
@@ -401,7 +401,7 @@ rf_laterina <- rf_laterina_ls %>%
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr:: select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = stringr::str_replace(date_final,"ago","08"),
          date_final = stringr::str_replace(date_final, "gen", "01"),
@@ -418,7 +418,7 @@ rf_laterina <- rf_laterina_ls %>%
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
   dplyr::rename(Date = date_final) %>%
-  select(Date, prec) %>%
+  dplyr::select(Date, prec) %>%
   arrange(Date)
 
 summary(rf_laterina)
@@ -445,7 +445,7 @@ rf_montevarchi <- rf_montevarchi_ls %>%
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = stringr::str_replace(date_final,"ago","08"),
          date_final = stringr::str_replace(date_final, "gen", "01"),
@@ -462,7 +462,7 @@ rf_montevarchi <- rf_montevarchi_ls %>%
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
   dplyr::rename(Date = date_final) %>%
-  select(Date, prec) %>%
+  dplyr::select(Date, prec) %>%
   arrange(Date)
 
 summary(rf_montevarchi)
@@ -489,7 +489,7 @@ rf_ssavino <- rf_ssavino_ls %>%
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = stringr::str_replace(date_final,"ago","08"),
          date_final = stringr::str_replace(date_final, "gen", "01"),
@@ -506,7 +506,7 @@ rf_ssavino <- rf_ssavino_ls %>%
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
   dplyr::rename(Date = date_final) %>%
-  select(Date, prec) %>%
+  dplyr::select(Date, prec) %>%
   arrange(Date)
 
 summary(rf_ssavino)
@@ -533,7 +533,7 @@ rf_stia <- rf_stia_ls %>%
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = stringr::str_replace(date_final,"ago","08"),
          date_final = stringr::str_replace(date_final, "gen", "01"),
@@ -550,7 +550,7 @@ rf_stia <- rf_stia_ls %>%
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
   dplyr:: rename(Date = date_final) %>%
-  select(Date, prec) %>%
+  dplyr::select(Date, prec) %>%
   arrange(Date)
 
 summary(rf_stia)
@@ -580,7 +580,7 @@ rf_vernio <- rf_vernio_ls %>%
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = stringr::str_replace(date_final,"ago","08"),
          date_final = stringr::str_replace(date_final, "gen", "01"),
@@ -597,7 +597,7 @@ rf_vernio <- rf_vernio_ls %>%
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>% 
   dplyr::rename(Date = date_final) %>%
-  select(Date, prec) %>%
+  dplyr:: select(Date, prec) %>%
   arrange(Date)
 
 summary(rf_vernio)
@@ -755,7 +755,7 @@ rm(df)
 
 #### visualizzo la pioggia per localita'####
 River_Arno_cut1 %>%
-  select(Date, Rainfall_Le_Croci, Rainfall_Cavallina, Rainfall_S_Agata, Rainfall_Mangona, Rainfall_S_Piero,
+  dplyr::select(Date, Rainfall_Le_Croci, Rainfall_Cavallina, Rainfall_S_Agata, Rainfall_Mangona, Rainfall_S_Piero,
          Rainfall_Vernio, Rainfall_Stia, Rainfall_Consuma, Rainfall_Incisa, Rainfall_Montevarchi,
          Rainfall_S_Savino, Rainfall_Laterina, Rainfall_Bibbiena, Rainfall_Camaldoli) %>%
   melt(., id.vars = "Date") %>%
@@ -819,7 +819,7 @@ write.csv(River_Arno_cut1,"processed_data/ARNO_to_model.csv")
 ###correlazione seconda tabella di visibilita' con il metodo di spearman 
 #+ le stagioni
 River_Arno_cut1 %>%
-  select(!c("Date", "Season")) %>%
+  dplyr::select(!c("Date", "Season")) %>%
   cor(., method = "spearman", use = "complete.obs") %>%
   corrplot(., method = "color", type = "upper", col = core_col(100),
            tl.col = "black",tl.srt = 35, diag = T, tl.cex = 0.72)
@@ -869,6 +869,146 @@ River_Arno_cut1%>%
 #La maggioranza dei valori misurati è compresa tra 1 e 4 metri. 
 #Dopo qualche stagione irregolare, ci sono diversi cali 
 #fino a 0 nel 2013, 2014 e 2019, che tornano rapidamente alla normalità.
+
+
+
+
+#### funzione season + lag ####
+
+## adding new features: seasons and presence/absence of snow
+#non ho la pioggia su firenze
+#arno_featured <- add.seasons(River_Arno_cut1) %>%
+#  mutate(snow.yes = as.factor(ifelse(Temperature_XXX <=0 & Rainfall_XXX > 0, 1,0)),
+#         snow.no = as.factor(ifelse(Temperature_XXX >0,1,0))) 
+
+#str(arno_featured)
+
+### changing effect of rain on target, and lagging the effect of rain on the target ###
+
+arno_orig_LagSieve <- River_Arno_cut1 %>% 
+  mutate(lag1 = lag(Rainfall_mean_Sieve, +1),
+         lag3 = lag(Rainfall_mean_Sieve,+3),
+         lag5 = lag(Rainfall_mean_Sieve,+5),
+         lag7 = lag(Rainfall_mean_Sieve,+7)) 
+
+arno_orig_LagSieve1 <- arno_orig_LagSieve %>% 
+  dplyr::select(-Date)
+
+
+arno_orig_LagSorgente <- River_Arno_cut1 %>% 
+  mutate(lag1 = lag(Rainfall_mean_Sorgente, +1),
+         lag3 = lag(Rainfall_mean_Sorgente,+3),
+         lag5 = lag(Rainfall_mean_Sorgente,+5),
+         lag7 = lag(Rainfall_mean_Sorgente,+7)) 
+
+arno_orig_LagSorgente1 <- arno_orig_LagSorgente %>% 
+  dplyr::select(-Date)
+
+## creating 5 new datasets Sieve with different min rainfall levels 
+## and with new time lags (trying to represent true effect of rain over target)
+
+arno0.5_Sieve <- arno_orig_LagSieve %>% 
+  mutate(rain0.5 = ifelse(Rainfall_mean_Sieve <= 0.5, 0, 
+                          Rainfall_mean_Sieve),
+         lag1 = lag(rain0.5, +1),
+         lag3 = lag(rain0.5,+3),
+         lag5 = lag(rain0.5,+5),
+         lag7 = lag(rain0.5,+7),
+         lag9 = lag(rain0.5, +9)) %>% 
+  dplyr::select(-Rainfall_mean_Sieve)
+
+arno0.5_Sieve_1 <- arno0.5_Sieve %>%  dplyr::select(-Date)
+
+arno1.5_Sieve <- arno_orig_LagSieve %>% 
+  mutate(rain1.5 = ifelse(Rainfall_mean_Sieve <= 1.5, 0, 
+                          Rainfall_mean_Sieve),
+         lag1 = lag(rain1.5, +1),
+         lag3 = lag(rain1.5, +3),
+         lag5 = lag(rain1.5, +5),
+         lag7 = lag(rain1.5, +7)
+         ) %>% 
+  dplyr::select(-Rainfall_mean_Sieve)
+
+arno1.5_Sieve_1 <- arno1.5_Sieve %>%   dplyr::select(-Date)
+
+arno3_Sieve <- arno_orig_LagSieve %>% 
+  mutate(rain3 = ifelse(Rainfall_mean_Sieve <= 3,0,
+                        Rainfall_mean_Sieve),
+         lag1 = lag(rain3, +1),
+         lag3 = lag(rain3, +3),
+         lag5 = lag(rain3, +5),
+         lag7 = lag(rain3, +7)
+         ) %>% 
+  dplyr::select(-Rainfall_mean_Sieve)
+
+arno3_Sieve_1 <- arno3_Sieve %>%  dplyr::select(-Date)
+
+arno5_Sieve <- arno_orig_LagSieve %>% 
+  mutate(rain5 = ifelse(Rainfall_mean_Sieve <= 5, 0, 
+                        Rainfall_mean_Sieve),
+         lag1 = lag(rain5, +1),
+         lag3 = lag(rain5, +3),
+         lag5 = lag(rain5, +5),
+         lag7 = lag(rain5, +7),
+         lag9 = lag(rain5, +9)) %>%
+  dplyr::select(-Rainfall_mean_Sieve)
+
+arno5_Sieve5_1 <- arno5_Sieve %>%   dplyr::select(-Date)
+
+
+## creating 5 new datasets Sorgente with different min rainfall levels 
+## and with new time lags (trying to represent true effect of rain over target)
+
+arno0.5_Sorgente <- arno_orig_LagSorgente %>% 
+  mutate(rain0.5 = ifelse(Rainfall_mean_Sorgente <= 0.5, 0, 
+                          Rainfall_mean_Sorgente),
+         lag1 = lag(rain0.5, +1),
+         lag3 = lag(rain0.5,+3),
+         lag5 = lag(rain0.5,+5),
+         lag7 = lag(rain0.5,+7),
+         lag9 = lag(rain0.5, +9)) %>% 
+  dplyr::select(-Rainfall_mean_Sorgente)
+
+arno0.5_Sorgente_1 <- arno0.5_Sorgente %>%  dplyr::select(-Date)
+
+arno1.5_Sorgente <- arno_orig_LagSorgente %>% 
+  mutate(rain1.5 = ifelse(Rainfall_mean_Sorgente <= 1.5, 0, 
+                          Rainfall_mean_Sorgente),
+         lag1 = lag(rain1.5, +1),
+         lag3 = lag(rain1.5, +3),
+         lag5 = lag(rain1.5, +5),
+         lag7 = lag(rain1.5, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_mean_Sorgente)
+
+arno1.5_Sorgente_1 <- arno1.5_Sorgente %>%   dplyr::select(-Date)
+
+arno3_Sorgente <- arno_orig_LagSorgente %>% 
+  mutate(rain3 = ifelse(Rainfall_mean_Sorgente <= 3,0,
+                        Rainfall_mean_Sorgente),
+         lag1 = lag(rain3, +1),
+         lag3 = lag(rain3, +3),
+         lag5 = lag(rain3, +5),
+         lag7 = lag(rain3, +7)
+  ) %>% 
+  dplyr::select(-Rainfall_mean_Sorgente)
+
+arno3_Sorgente_1 <- arno3_Sorgente %>%  dplyr::select(-Date)
+
+arno5_Sorgente <- arno_orig_LagSorgente %>% 
+  mutate(rain5 = ifelse(Rainfall_mean_Sorgente <= 5, 0, 
+                        Rainfall_mean_Sorgente),
+         lag1 = lag(rain5, +1),
+         lag3 = lag(rain5, +3),
+         lag5 = lag(rain5, +5),
+         lag7 = lag(rain5, +7),
+         lag9 = lag(rain5, +9)) %>%
+  dplyr::select(-Rainfall_mean_Sorgente)
+
+arno5_Sorgente5_1 <- arno5_Sorgente %>%   dplyr::select(-Date)
+
+
+
 
 
 #### RAndom Forest test ####
