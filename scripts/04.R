@@ -17,7 +17,6 @@ library(tidyverse)
 library(lubridate)
 library(xts)
 
-
 #### lupa file ####
 
 lupa <- read.csv("processed_data/LUPA_to_model.csv") %>%
