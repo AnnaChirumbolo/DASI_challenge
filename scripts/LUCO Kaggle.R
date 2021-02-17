@@ -6,26 +6,23 @@ library(ggplot2)
 library(lubridate)
 library(ggpubr)
 library(corrplot)
-library(tidyverse)
 library(imputeTS)
 library(zoo)
 library(data.table)
-library(lubridate)
 library(outliers)
 library(tidyselect)
 library(Hmisc)
 library(caret)
 library(h2o)
-library(tidyverse)
 library(randomForest)
 library(caret)
 library(tree)
 library(e1071)
 require(caTools)
 library(tsibble)
-library(lubridate)
 library(gbm)
 library(forecast)
+library(naniar)
 
 
 #### uploading files ####
@@ -36,14 +33,9 @@ luco <- read.csv("data/Aquifer_Luco.csv")
 
 #### luco ####
 
-str(luco)
-
-summary(luco)
-
 luco_missing <- luco %>% 
   miss_var_summary()
 print(luco_missing)
-View(luco_missing)
 
 
 luco1 <- luco %>% 
@@ -52,21 +44,22 @@ luco1 <- luco %>%
   mutate(Date = dmy(Date),
          well = gsub("Depth_to_Groundwater_","",well))
 
+#visualizzo le variabili target in funzione del tempo
 (first_look <- ggplot(luco1, aes(x =Date, y = abs(depth_to_gw.m), color = well))+
     geom_line(size = .5)+
     theme_classic())
 
-### missing data clearly starting from 
-
-## removing missing for depth to gw
 
 min(luco1$Date[!is.na(luco1$depth_to_gw.m)])
+
+#decido di prendere solo Pozzo 1 e Pozzo 3 in quanto Podere casetta non ha dati aggiornati
+#e Pozzo 4 ha andamenti non interpretabili
 
 luco_filtered <- luco1 %>% 
   filter(Date >= "2017-09-01", well!="Pozzo_4" & well!="Podere_Casetta")
 
 
-
+#mostro i grafici con i missing value del Pozzo 1 e Pozzo 3
 (second_look <- ggplot(luco_filtered, aes(Date, abs(depth_to_gw.m), 
                                           color = well))+
     geom_line(size = .5)+
@@ -74,11 +67,6 @@ luco_filtered <- luco1 %>%
     scale_x_date(date_breaks = "1 year", date_labels = "%Y")+
     ylab("Abs. depth to groundwater (m)")+
     xlab(""))
-
-ggsave("img/luco_filtered_depth_to_groundwater.jpg", 
-       dpi = 500, height = 5, width = 10)
-
-
 
 ### scatter correlations ###
 
@@ -88,170 +76,30 @@ luco_cor <- luco_filtered %>%
   cor(.,use = "complete.obs") %>%
   corrplot(.,method = "circle")
 
+#a seguito dell'analisi del corrplot di rimuovere diverse features con alta correlazione
 
-##mi tengo due piogge (Mensano e Montalcinello), Podere è il Pozzo 2, e una sola temperatura (Mensano)
-
-luco_finish <- luco_filtered %>%
-  dplyr::select(-Volume_Pozzo_4,  -Temperature_Siena_Poggio_al_Vento, -Temperature_Pentolina, -Temperature_Monteroni_Arbia_Biena, -Rainfall_Simignano, -Rainfall_Siena_Poggio_al_Vento, -Rainfall_Monteroni_Arbia_Biena, -Rainfall_Monteroni_Arbia_Biena, -Rainfall_Monticiano_la_Pineta, -Rainfall_Pentolina, -Rainfall_Ponte_Orgia, -Rainfall_Scorgiano, -Rainfall_Sovicille) %>%
-  spread(key = well, value = depth_to_gw.m)
-
-(scatter_temp_Siena <- ggplot(luco_filtered, 
-                              aes(x = Temperature_Siena_Poggio_al_Vento,
-                                  y = abs(depth_to_gw.m),
-                                  color = well))+
-    geom_point(size = 1, alpha = 0.8)+
-    theme_classic()+
-    xlim(0,31))
-
-
-
-# from the plot there doesnt seem to be any correlation.... 
-
-(scatter_temp_Mensano <- ggplot(luco_filtered, 
-                                aes(x = Temperature_Mensano,
-                                    y = abs(depth_to_gw.m),
-                                    color = well))+
-    geom_point(size = 1, alpha = 0.8)+
-    theme_classic()+
-    xlim(0,31))
-
-# from the plot there doesnt seem to be any correlation....
-
-(scatter_temp_Pentolina <- ggplot(luco_filtered, 
-                                  aes(x = Temperature_Pentolina,
-                                      y = abs(depth_to_gw.m),
-                                      color = well))+
-    geom_point(size = 1, alpha = 0.8)+
-    theme_classic()+
-    xlim(0,31))
-
-# from the plot there doesnt seem to be any correlation.... 
-
-
-(scatter_temp_Monteroni <- ggplot(luco_filtered,
-                                  aes(Temperature_Monteroni_Arbia_Biena, 
-                                      abs(depth_to_gw.m),
-                                      color = well))+
-    geom_point(size = 1, alpha = 0.8)+
-    theme_classic()+
-    xlim(0,31))
-
-# same for Monteroni ... 
-
-## rain ##
-
-min(luco_filtered$Rainfall_Simignano,na.rm = T)
-max(luco_filtered$Rainfall_Simignano,na.rm = T)
-min(luco_filtered$Rainfall_Siena_Poggio_al_Vento,na.rm = T)
-max(luco_filtered$Rainfall_Siena_Poggio_al_Vento,na.rm = T)
-
-(scatter_rain_Simignano <- ggplot(luco_filtered, 
-                                  aes(Rainfall_Simignano,
-                                      abs(depth_to_gw.m),
-                                      color = well))+
-    geom_point(size = 1, alpha = .8)+
-    theme_classic()+
-    xlim(0,115))
-
-
-(scatter_rain_Siena <- ggplot(luco_filtered,
-                              aes(Rainfall_Siena_Poggio_al_Vento,
-                                  abs(depth_to_gw.m),
-                                  color = well))+
-    geom_point(size = 1, alpha = .8)+
-    theme_classic()+
-    xlim(0,115))
-
-
-
-
-### saving plots ###
-
-panelled_rain_scatter <- ggarrange(scatter_rain_Simignano,
-                                   scatter_rain_Siena)
-panelled_rain_scatter
-
-
-ggsave("img/luco_corr_rain.png",
-       dpi = 500, height = 10, width = 18)
-
-
-
-panelled_temp_scatter <- ggarrange(scatter_temp_Siena,
-                                   scatter_temp_Mensano,
-                                   scatter_temp_Pentolina,
-                                   scatter_temp_Monteroni)
-panelled_temp_scatter
-
-ggsave("img/luco_corr_temp.png",
-       dpi = 500, height= 10, width = 18)
-
-
-### saving luco .csv 
-
-View(luco_filtered)
-
-# saving 
-
-write.csv(luco_filtered, "processed_data/luco_filtered.csv")
-write.csv(luco_finish, "processed_data/luco_finish.csv")
-
-################################################################################
-############################# Fine 1 #############################################
-
-luco <- luco_finish
-
-luco1 <- luco %>% 
-  gather(key = "well", value = "depth_to_gw.m", Pozzo_1:Pozzo_3) %>%
-  mutate(Date = ymd (Date),
-         well = gsub("Pozzo_","",well))
-
-(first_look <- ggplot(luco1, aes(x =Date, y = abs(depth_to_gw.m), color = well))+
-    geom_line(size = .5)+
-    theme_classic())
-
-
-
-# overall view of depth to gw changes by well type 
-(depth_to_gw <- ggplot(luco1, aes(Date, depth_to_gw.m,
-                                  color = well, group = well))+
-    geom_line(size = 0.5)+
-    theme_classic())
-
-
-### vis well by well, to fill in gaps 
+luco <- luco_filtered %>%
+  dplyr::select(-Rainfall_Scorgiano, -Rainfall_Pentolina, -Rainfall_Simignano, -Rainfall_Siena_Poggio_al_Vento,-Rainfall_Monticiano_la_Pineta,-Rainfall_Sovicille,-Rainfall_Ponte_Orgia,-Rainfall_Monteroni_Arbia_Biena) %>%
+  dplyr::select(-Temperature_Pentolina, -Temperature_Siena_Poggio_al_Vento, -Temperature_Monteroni_Arbia_Biena) %>%
+  dplyr::select(-Volume_Pozzo_4) %>%
+  spread(key=well, value = depth_to_gw.m)
 
 ## pozzo 1
 
-
+#mostro l'andamento della target Pozzo 1
 (luco_p1 <- ggplot(luco, aes(Date, Pozzo_1, group = 1))+
     geom_line(size = 0.5)+
     theme_classic())
 
 ## pozzo 3
 
-
+#mostro l'andamento della target Pozzo 3
 (luco_p3 <- ggplot(luco, aes(Date, Pozzo_3, group = 1))+
     geom_line(size = 0.5)+
     theme_classic())
 
-## if i wanted to count how many nas following in a row?
 
-group.na <- function(x){
-  group <- if_else(is.na(x), 1, 0)
-  return(group)
-}
-
-
-# creating a function that counts sequence of nas in a row for each variable 
-count.na <- function(x){
-  group_na <- if_else(is.na(x), 1,0)
-  grp <- with(rle(group_na), rep(seq_along(lengths), lengths))
-  counter <- ave(grp,grp, FUN = seq_along)
-  return(counter)
-}
-
-## imputeTS
+## utilizzo imputeTS per riempire i NaN delle target
 
 #Pozzo_1
 
@@ -275,16 +123,8 @@ ggplot_na_intervals(luco$Pozzo_3)
 
 ggplot_na_gapsize(luco$Pozzo_3)
 
+## uso na_ma da imputeTS
 
-## linear interpolation 
-
-#luco4 <- data.frame(luco, lapply(luco[,8:9], na.approx))
-
-
-
-#### FINAL ####
-
-## using na.ma from imputeTS
 
 luco5 <- data.frame(luco, lapply(luco[,7:8], 
                                  function(x) na_ma(x, k=1)))
@@ -299,7 +139,7 @@ luco7 <- luco6 %>%
 str(luco7)
 
 
-## vis with imputation 
+## visualizzo il dataset con i valori "imputati" per le variabili target
 
 (imp_vis <- ggplot(luco7, aes(Date, imputed_depth_to_gw.m, color = imp,
                               group = imp))+
@@ -308,8 +148,7 @@ str(luco7)
     scale_x_date(date_breaks = "1 year", date_labels = "%Y"))
 
 
-statsNA(luco7$imputed_depth_to_gw.m)
-## cleaned up - no more missing data 
+statsNA(luco7$imputed_depth_to_gw.m) #non ci sono più Na
 
 
 #### checking for outliers ####
@@ -319,14 +158,13 @@ statsNA(luco7$imputed_depth_to_gw.m)
 luco8 <- luco7 %>% 
   spread(key = "imp", value = "imputed_depth_to_gw.m") 
 
-summary(luco8[,7:10])
 
 ## hist 
 
 (hist_luco <- ggplot(luco7, aes(imputed_depth_to_gw.m))+
     geom_histogram()+
     theme_classic()+
-    facet_wrap(vars(imp)))
+    facet_wrap(vars(imp)))  #distribuzioni similari
 
 
 ## boxplots
@@ -336,21 +174,7 @@ summary(luco8[,7:10])
                             aes(y = imputed_depth_to_gw.m,
                                 color = imp))+
     geom_boxplot()+
-    theme_classic())#
-
-# saving
-ggsave("img/hist_luco_target.jpg", dpi = 500, width = 10, height=7)
-
-#### checking singularly 
-
-(imp1_luco <- ggplot(luco7, aes(y = Pozzo_1))+
-    geom_boxplot()+
-    theme_classic())
-
-(imp3_luco <- ggplot(luco7, aes(y = Pozzo_3))+
-    geom_boxplot()+
-    theme_classic())
-
+    theme_classic()) #presenza di outlier per target 1
 
 
 ## extracting vals of potential outliers 
@@ -366,16 +190,16 @@ upper_bound # -10
 upper_bound99 <- quantile(luco8$imp1, 0.99)
 upper_bound99 # -9,0285
 
-## checking stats to verify it's an outlier
+## verifico la presenza di outlier
 # grubbs test
 test1 <- grubbs.test(luco8$imp1)
-test1 # 112.5 is an outlier (at 5% significance level)
+test1 # -2.8 is an outlier (at 5% significance level)
 
-## substituting with q3 value 
+## sostituisco con il valore q3  
 luco8$imp1[luco8$imp1 >= -9.0285] <- -10.60
 summary(luco8$imp1)
 
-# for pozzo 3
+# per pozzo 3
 out3_luco <- boxplot.stats(luco8$imp3) # -11,9
 out3_luco
 out3_ind_luco <- which(luco8$imp3 %in% c(out3_luco))
@@ -385,15 +209,9 @@ out3_ind_luco # line 945
 test3 <- grubbs.test(luco8$imp3)
 test3 # it is an outlier, 5% significance
 
-# substituting (non necessario)
-#luco8$imp3[luco8$imp3 >= -11.9] <- -11.9
+# sostituisco? (non lo ritengo necessario)
 summary(luco8$imp3)
 
-
-(plot_check_out <- ggplot(luco8, aes(Date, imp1 ))+
-    geom_point()+
-    #geom_line(data = luco8, aes(Date, Rainfall_Mensano, color = "red"))+
-    theme_classic())
 
 ####################
 
@@ -402,15 +220,8 @@ luco9 <- luco8 %>%
 
 (luco_noout <- ggplot(luco9, aes(y=depth_to_gw.m,color = imp))+
     geom_boxplot()+
-    theme_classic())
+    theme_classic()) #ohhh, le due target ripulite dagli outlier
 
-# saving 
-
-ggsave("img/luco_boxplot.jpg", dpi = 500, width = 10, height = 7)
-
-
-
-### keeping outliers for pozzi 1 and 3 - from most recent years, and there's 100+ according to the boxplot
 
 ### checking outliers for feature variables 
 
@@ -419,34 +230,6 @@ luco10 <- luco9 %>%
   gather(key = "rain_sensor", value = "rain.mm", Rainfall_Mensano, Rainfall_Montalcinello)
 
 
-## vis hist
-
-# temp
-
-(temp_hist_luco <- ggplot(luco10, aes(temp.C))+
-    geom_histogram()+
-    theme_classic()+
-    facet_wrap(vars(temp_sensor)))
-
-# pretty similar distribution
-
-# rain
-(rain_hist_luco <- ggplot(luco10, aes(rain.mm))+
-    geom_histogram()+
-    theme_classic()+
-    facet_wrap(vars(rain_sensor)))
-
-# pretty similar here as well
-
-
-## vis boxplot
-
-# temp 
-(temp_box_luco <- ggplot(luco10, aes(y=temp.C, color = temp_sensor))+
-    geom_boxplot()+
-    theme_classic())
-
-# no outliers 
 
 # rain 
 (rain_box_luco <- ggplot(luco10, aes(y = rain.mm, color = rain_sensor))+
@@ -480,13 +263,15 @@ out_rainm_luco_ind
 df_rainm_out <- luco9[out_rainm_luco_ind,]
 df_rainm_out
 
+#decido di lasciare i valori climatici senza rimuovere outlier 
+
 # plotting it over time 
 (plot_rainm_out <- ggplot(df_rainm_out, aes(Date, Rainfall_Mensano))+
     geom_point()+
     geom_line(data = luco9, aes(Date, Rainfall_Mensano, color = "red"))+
     theme_classic())
 
-# it occurs throughout - from 2017 through to 2020
+# lasso temporale - from 2017 through to 2020
 
 
 # montalcinello
@@ -507,10 +292,10 @@ View(df_rainv_luco)
     geom_point()+
     theme_classic())
 
-#### decision to leave them as such 
+#### lascio il dataset invariato
 
 
-#### checking out for missing - rain and temp ####
+#### controllo per valori mancanti - rain and temp ####
 
 # rain
 statsNA(luco9$Rainfall_Mensano)
@@ -532,10 +317,8 @@ ggplot_na_distribution(luco9$Temperature_Mensano)
 
 statsNA(luco9$Temperature_Mensano)
 
-ggplot_na_distribution(luco9$Temperature_Mensano)
+ggplot_na_distribution(luco9$Temperature_Mensano) #oleee, non ci sono valori mancanti!
 
-#### filled in the data!!
-statsNA(luco9$Temperature_Mensano) # still one na missing x9
 
 ## vis distrib data with imputed vars 
 
@@ -544,52 +327,6 @@ ggplot(luco9, aes(Date, Temperature_Mensano))+
   geom_line(data = luco9, aes(Date, Temperature_Mensano,
                               color = "red"))+
   theme_classic()
-
-## perfettooooooo
-
-################################################################################
-#### looking at last feature: volume ####
-
-# volume is of the water pumped OUT from the drinking water plant 
-# thus removed from the aquifer
-
-luco_vol <- luco %>% 
-  dplyr::select(Date, Volume_Pozzo_1: Volume_Pozzo_3)  %>%
-  gather(key = "pozzo", value = "volume.mc", -Date) %>%
-  mutate(Date = ymd(Date))
-str(luco_vol)
-
-(vol_luco <- ggplot(luco_vol, aes(Date, volume.mc, color = pozzo,
-                                 group = pozzo))+
-    geom_line()+
-    theme_classic()+
-    scale_x_date(date_breaks = "1 year", date_labels = "%Y"))
-
-# boxplots 
-
-(vol_box_luco <- ggplot(luco_vol, aes(y = volume.mc, color = pozzo))+
-    geom_boxplot()+
-    theme_classic())
-
-# hist 
-(vol_hist_luco <- ggplot(luco_vol, aes(volume.mc))+
-    geom_histogram()+
-    facet_wrap(vars(pozzo))+
-    theme_classic())
-
-#######################################################################################################
-## to use these data:
-# need to remove the first years where there's total absence
-# ohterwise how to predict it? impossible 
-## or try and find data on it - but think it'll be pretty much impossible since there's no chance 
-# if acea doesn't have it who would? 
-## if i remove the first years i would be left with a very small dataset indeed
-## might have to consider leaving these values aside and not use them for the model...? 
-## otherwise i can't model just from the last few years, 
-# if the target variable, of interest, is present from the years before 
-## it would then be wiser to not consider volume data, and keep years where target data is available 
-# and just use rain and temp as features 
-#######################################################################################################
 
 ################################################################################
 ################################################################################
@@ -691,11 +428,7 @@ luco_rain_type4 <- luco_featured %>%
                 lag9mon = Lag(rain4montalcinello, +9))
 
 
-
-
-
-luco <- luco_featured %>%
-  dplyr::select(-Pozzo_1,-Pozzo_3)
+luco <- luco_featured
 
 luco_base_val <- luco %>% 
   group_by(Year) %>% 
@@ -703,9 +436,9 @@ luco_base_val <- luco %>%
 
 str(luco)
 
-summary(luco_base_val)
+#### divido il dataset tra train e test per ogni target
 
-#### splitting dataset between train and test
+#POZZO_1
 
 lucoRF1 <- luco %>%
   dplyr::select(-Volume_Pozzo_3, -Date, -Day, -Month, -Year, -imp3)
@@ -721,6 +454,7 @@ luco_test1 <- luco[-luco_train1,"imp1"]
 summary(luco_train)
 
 #### random forest model ####
+#Pozzo_1
 
 rf_formula <- as.formula("imp1 ~.")
 luco_rf <- randomForest(rf_formula, 
@@ -739,19 +473,64 @@ plot(luco_rf)
 
 luco_rf_margin <- predict(luco_rf, newdata =luco[-luco_train1,])
 
-mean((luco_rf_margin - luco_test1)^2) # MSE = 0.0635
-sqrt(mean((luco_rf_margin - luco_test1)^2)) # RMSE = 0.2520
+mean((luco_rf_margin - luco_test1)^2) # MSE = 0.0596
+sqrt(mean((luco_rf_margin - luco_test1)^2)) # RMSE = 0.2443
 
 
-#var(luco$imp_flow_rate)
+#var
 
 importance(luco_rf)
 varImpPlot(luco_rf)
 
 #### 
 
+#POZZO_3
+
+lucoRF3 <- luco %>%
+  dplyr::select(-Volume_Pozzo_1, -Date, -Day, -Month, -Year, -imp1)
+
+Train_Test <- sample(c("Train","Test"), nrow(lucoRF3), replace = T,
+                     prob = c(0.75,0.25))
+luco_train <- lucoRF3[Train_Test =="Train",]
+luco_test <- lucoRF3[Train_Test == "Test",]
+
+luco_train3 <- sample(1:nrow(lucoRF3),nrow(lucoRF3)/2)
+luco_test3 <- luco[-luco_train3,"imp3"]
+
+summary(luco_train)
+
+#### random forest model ####
+#Pozzo_3
+
+rf_formula <- as.formula("imp3 ~.")
+luco_rf <- randomForest(rf_formula, 
+                        data = luco_train,
+                        ntree = 200,
+                        importance = T,
+                        replace = T)
+print(luco_rf)
+# MSE = 0.1596
+# % var expl = 67.1 %
+
+plot(luco_rf)
+# shows error change with increasing number of trees 
+# Y - corresp MSE 
+# X - tree number 
+
+luco_rf_margin <- predict(luco_rf, newdata =luco[-luco_train3,])
+
+mean((luco_rf_margin - luco_test3)^2) # MSE = 0.1073
+sqrt(mean((luco_rf_margin - luco_test3)^2)) # RMSE = 0.3275
+
+
+#var
+
+importance(luco_rf)
+varImpPlot(luco_rf)
+
 
 #### comparing with regression tree ####
+#Pozzo_1
 
 luco_tree <- tree(imp1 ~., data = lucoRF1, subset = luco_train1)
 summary(luco_tree)
@@ -774,7 +553,32 @@ plot(prune_luco)
 text(prune_luco, pretty = 0)
 
 tree_luco_margin <- predict(luco_tree, newdata = luco[-luco_train1,])
-mean((tree_luco_margin - luco_test1)^2) # MSE = 0.1237 (worse than RF MSE)
+mean((tree_luco_margin - luco_test1)^2) # MSE = 0.0830
+
+#Pozzo_3
+
+luco_tree <- tree(imp3 ~., data = lucoRF3, subset = luco_train3)
+summary(luco_tree)
+
+
+plot(luco_tree)
+text(luco_tree, pretty = 0)
+
+cv_luco <- cv.tree(luco_tree)
+cv_luco
+
+plot(cv_luco$size, cv_luco$dev, type = "b")
+# could go down to 9 leaves
+
+prune_luco <- prune.tree(luco_tree, best = 6)
+summary(prune_luco)
+cv.tree(luco_tree,,prune.tree)$dev
+
+plot(prune_luco)
+text(prune_luco, pretty = 0)
+
+tree_luco_margin <- predict(luco_tree, newdata = luco[-luco_train3,])
+mean((tree_luco_margin - luco_test3)^2) # MSE = 0.1511
 
 ################################################################################
 ################################################################################
@@ -797,19 +601,14 @@ library(MASS)
 library(leaps)
 library(purrr)
 
-## reading files 
 
-luco <- read.csv("processed_data/luco_featured.csv") %>%
-  dplyr::select(-X, -Date, -Pozzo_1, -Pozzo_3, -Year, -Day, -Month) 
-#spread(key = imp, value = depth_to_gw.m) # in regression date doesnt really matter 
-str(luco)
 
 ## prepping objects per target ##
 
 meteo <- c("rain","temp")
 
-pozzo1 <- luco %>% dplyr::select(-imp3, -Volume_Pozzo_3)
-pozzo3 <- luco %>% dplyr::select(-imp1, -Volume_Pozzo_1)
+pozzo1 <- luco %>% dplyr::select(-imp3, -Volume_Pozzo_3, -Date, -Year, -Month, -Day)
+pozzo3 <- luco %>% dplyr::select(-imp1, -Volume_Pozzo_1, -Date, -Year, -Month, -Day)
 
 #### computing stepwise regression for variable selection ####
 # creating function
@@ -824,13 +623,12 @@ step.wisef <- function(x, DATA){
   return(step.model)
 }
 
-summary(pozzo1)
 #### pozzo 1 ####
 
 pozzo1_sw <- step.wisef("imp1", pozzo1)
-pozzo1_sw$bestTune 
+pozzo1_sw$bestTune #7 var
 pozzo1_sw$finalModel
-coef(pozzo1_sw$finalModel, 6)
+coef(pozzo1_sw$finalModel, 7)
 
 ### let's stick to three variables (?) ###
 ## question: model chooses the two temperatures even if they're highly correlated to one another...?
@@ -860,20 +658,8 @@ pozzo1_pred1 <- stats::predict(object = pozzo1_fit1,
                                n.trees = perf_gbm1)
 rmse_fit1 <- Metrics::rmse(actual = pozzo1.test$imp1,
                            predicted = pozzo1_pred1)
-print(rmse_fit1) # RMSE 0.1610
-#(higher error than when keeping all variables)
+print(rmse_fit1) # RMSE 0.1586
 
-#plot - rain mensano
-gbm::plot.gbm(pozzo1_fit1, i.var = 1)
-# plot - rain montalcinello
-plot.gbm(pozzo1_fit1, i.var = 2)
-
-
-## interactions of two features on the variable 
-
-gbm::plot.gbm(pozzo1_fit1, i.var = c(1,3)) # temp-rain
-plot.gbm(pozzo1_fit1, i.var = c(1,2)) # rain-rain
-plot.gbm(pozzo1_fit1, i.var = c(2,3)) # temp-rain
 
 ### impact of different features on predicting depth to gw 
 
@@ -882,13 +668,12 @@ plot.gbm(pozzo1_fit1, i.var = c(2,3)) # temp-rain
 pozzo1_effects <- tibble::as_tibble(gbm::summary.gbm(pozzo1_fit1,
                                                      plotit = F))
 pozzo1_effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
+ 
 
-# plot top 6 features
+# plot top 7 features
 pozzo1_effects %>% 
   arrange(desc(rel.inf)) %>% 
-  top_n(6) %>%  # it's already only 3 vars
+  top_n(7) %>%  # it's already only 7 vars
   ggplot(aes(x = fct_reorder(.f = var,
                              .x = rel.inf),
              y = rel.inf,
@@ -922,13 +707,13 @@ ggplot(pozzo1.test) +
 # stepwise
 
 pozzo3_sw <- step.wisef("imp3",pozzo3)
-pozzo3_sw$bestTune # 5
-coef(pozzo3_sw$finalModel, 4)
+pozzo3_sw$bestTune # 9
+coef(pozzo3_sw$finalModel, 9)
 
 
 # split 
 set.seed(123)
-p3.split <- initial_split(pozzo3, prop = .7)
+p3.split <- initial_split(pozzo3, prop = .9)
 p3.train <- training(p3.split)
 p3.test <- testing(p3.split)
 
@@ -950,23 +735,8 @@ p3_pred1 <- stats::predict(object = p3.fit1,
                            n.trees = p3.fit1_perf)
 p3_rmse <- Metrics::rmse(actual = p3.test$imp3,
                          predicted = p3_pred1)
-print(p3_rmse) # 1.89
+print(p3_rmse) # 0.2528
 
-gbm::plot.gbm(p3.fit1, i.var = 1)
-
-plot.gbm(p3.fit1, i.var = 2)
-
-plot.gbm(p3.fit1, i.var = 3)
-
-# ecc...
-
-## interactions of two features on the variable 
-
-gbm::plot.gbm(p3.fit1, i.var = c(1,3))
-plot.gbm(p3.fit1, i.var = c(1,2))
-plot.gbm(p3.fit1, i.var = c(2,3))
-
-### impact of different features on predicting depth to gw 
 
 # summarise model 
 
@@ -976,10 +746,10 @@ p3.effects %>% utils::head()
 # this creates new dataset with var, factor variable with variables 
 # in our model, and rel.inf - relative influence each var has on model pred 
 
-# plot top 3 features
+# plot top 6 features
 p3.effects %>% 
   arrange(desc(rel.inf)) %>% 
-  top_n(6) %>%  # it's already only 3 vars
+  top_n(6) %>%  # it's already only 6 vars
   ggplot(aes(x = fct_reorder(.f = var,
                              .x = rel.inf),
              y = rel.inf,
@@ -1008,50 +778,8 @@ ggplot(p3.test) +
   theme_fivethirtyeight()
 
 
-#### XGBOOST ####
+###############################################################################
 
-library(xgboost)
-library(lubridate)
-library(tibble)
-
-View(pozzo1)
-max(pozzo1$Date)
-str(pozzo1)
-
-pozzo1_ext <- luco_featured %>%
-  dplyr::select(-imp3, -Pozzo_3) %>%
-  dplyr::mutate(Date = as_date(Date)) %>%
-  bind_rows(tibble(Date = seq(start = as_date("2020-07-31"),
-                              from = as_date("2020-07-31"),
-                              by = "day", length.out = 31),
-                   imp1 = rep(NA, 31)))
-tail(pozzo1_ext)
-
-pozzo1_xgb <- luco_featured %>%
-  dplyr::select(-imp3, -Pozzo_3) %>%
-  dplyr::mutate(months = lubridate::month(Date),
-         years = lubridate::year(Date),
-         days = lubridate::day(Date))
-
-str(pozzo1_xgb)
-
-## split - train and prediction sets
-
-p1.xgb.train <- pozzo1_xgb[1:nrow(luco_featured),]
-p1.xgb.pred <- pozzo1_xgb[(nrow(luco_featured)+1):nrow(pozzo1_xgb),]
-
-p1.x_train <- xgboost::xgb.DMatrix(as.matrix(p1.xgb.train %>% 
-                                               dplyr::select(months, years)))
-p1.x_pred <- xgboost::xgb.DMatrix(as.matrix(p1.xgb.pred %>% 
-                                              dplyr::select(months, years)))
-p1.y_train <- p1.xgb.train$imp1
-
-
-p1.xgb_trcontrol <- caret::trainControl(
-  method ="cv",
-  number = 5,
-  
-)
 
 
 
