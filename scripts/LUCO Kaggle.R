@@ -8,7 +8,6 @@ library(ggpubr)
 library(corrplot)
 library(tidyverse)
 library(imputeTS)
-library(ggplot2)
 library(zoo)
 library(data.table)
 library(lubridate)
@@ -88,6 +87,7 @@ luco_cor <- luco_filtered %>%
   spread(key=well, value = depth_to_gw.m) %>%
   cor(.,use = "complete.obs") %>%
   corrplot(.,method = "circle")
+
 
 ##mi tengo due piogge (Mensano e Montalcinello), Podere è il Pozzo 2, e una sola temperatura (Mensano)
 
@@ -597,6 +597,9 @@ str(luco_vol)
 ################################################################################
 ################################################################################
 
+
+#creazione funzione stagione
+
 add.seasons <- function(data) {
   seasons <- data %>% 
     mutate(Date = lubridate::as_date(Date),
@@ -618,194 +621,77 @@ add.seasons <- function(data) {
   return(seasons)
 }
 
+# aggiunta features stagioni e neve
 
 luco_featured <- add.seasons(luco9) %>%
+  dplyr::select(-Pozzo_1,-Pozzo_3) %>%   #rimozione delle "vecchie" target con valori NA
   spread(key = imp, value = depth_to_gw.m) %>% 
   dplyr::mutate(snow.yes = as.factor(ifelse(Temperature_Mensano < 0 & Rainfall_Mensano >= 0, 1,0)),
          snow.no = as.factor(ifelse(Temperature_Mensano > 0, 1,0)))
 
 str(luco_featured)
 
-
-###
-# autoTS
-# regime shifts - script 
-# livello medio trimestre per trimestre, o mese per mese 
-# (non so se vale la pena) distinguere comportamento falda a seconda dell'anno (piovoso o siccitoso)
-###
-# filtro per livelli di pioggia - identificare livelli pioggia dura meno di un x giorni - cambio livello minimo a 0 
-# con cinque livelli diversi di pioggia --> creo cinque time series diverse
-# introduco un lag - traslo in avanti tutte le serie delle pioggie --> traslo a 4 gg in futuro
-# disallineamento tra falda acquifera e la pioggia
-# per cinque serie con livelli di pioggia minima creo altre cinque con il lag 
-# confrontare i modelli 
-# relazione monotona --> correl. spearman tra pioggia e acquifero
-# sulla base di quella selezionerei un primo set di features 
-# poi si runna il modello (autoTS/xgboost)
-### 
-# temperatura - va bene divsione per stagioni, neve, ricarica
-# effetto maggiore su consumi
-
-str(luco_featured)
-
-# creating quarters, semesters and trimonthly data 
-
-luco_months_pozzo1 <- luco_featured %>% 
-  mutate(Y_m = as.Date(Date, format ="%Y-%m"),
-                Semester = semester(Date, with_year = T),
-                Quarters = quarter(Date, with_year = T),
-                Trimonthly = as.factor(round_date(Y_m, unit = "3 months"))) %>% 
-  # date written is first day of the period
-  # dplyr::select(-Y_m) %>%
-  group_by(Trimonthly) %>% 
-  dplyr::mutate(Mean_depth_1.Tri = mean(imp1)) %>% 
-  ungroup() %>% 
-  group_by(Quarters) %>% 
-  dplyr::mutate(Mean_depth_1.Quar = mean(imp1)) %>% 
-  ungroup() %>% 
-  group_by(Semester) %>% 
-  dplyr::mutate(Mean_depth_1.Sem = mean(imp1)) %>% 
-  ungroup() %>% 
-  dplyr::mutate(lag1 = Lag(Rainfall_Mensano, +1),
-         lag3 = Lag(Rainfall_Mensano,+3),
-         lag5 = Lag(Rainfall_Mensano,+5),
-         lag7 = Lag(Rainfall_Mensano,+7),
-         lag9 = Lag(Rainfall_Mensano, +9))
-
-luco_months_pozzo3 <- luco_featured %>% 
-  dplyr::mutate(Y_m = as.Date(Date, format ="%Y-%m"),
-                Semester = semester(Date, with_year = T),
-                Quarters = quarter(Date, with_year = T),
-                Trimonthly = as.factor(round_date(Y_m, unit = "3 months"))) %>% 
-  # date written is first day of the period
-  # dplyr::select(-Y_m) %>%
-  group_by(Trimonthly) %>% 
-  mutate(Mean_depth_1.Tri = mean(imp3)) %>% 
-  ungroup() %>% 
-  group_by(Quarters) %>% 
-  mutate(Mean_depth_1.Quar = mean(imp3)) %>% 
-  ungroup() %>% 
-  group_by(Semester) %>% 
-  mutate(Mean_depth_1.Sem = mean(imp3)) %>% 
-  ungroup() %>% 
-  mutate(lag1 = Lag(Rainfall_Mensano, +1),
-         lag3 = Lag(Rainfall_Mensano,+3),
-         lag5 = Lag(Rainfall_Mensano,+5),
-         lag7 = Lag(Rainfall_Mensano,+7),
-         lag9 = Lag(Rainfall_Mensano, +9)) 
-
-# vis trimesters
-ggplot(luco_months_pozzo1, aes(Trimonthly, Mean_depth_1.Tri, fill = Year))+
-  geom_bar(stat = "identity")
-
-# vis quarters 
-ggplot(luco_months_pozzo1, aes(Quarters, Mean_depth_1.Quar, fill = Year))+
-  geom_bar(stat = "identity")
-
-# vis semesters
-ggplot(luco_months_pozzo1, aes(Semester, Mean_depth_1.Sem, fill = Year))+
-  geom_bar(stat = "identity")
-
-write.csv(luco_months_pozzo1, "processed_data/luco_lag_pozzo1.csv")
-
-####
-### checking for rainfall ###
-## changing mm levels 
-
-#ggplot(canneto_rain, aes(y = Rainfall_Settefrati)) +
-#geom_boxplot()
-
-## 5 datasets with 5 levels of min rain changed to 0:
-
-#5 per Mensano
-luco_rain_mensano.5 <- luco %>% 
-  mutate(rain1 = ifelse(Rainfall_Mensano <= 0.5, 0, Rainfall_Mensano),
-         seq.rain.val = sequence(rle(as.character(rain1))$lengths))
-
-luco_rain_mensano1.5 <- luco %>%  # whenever rain is lower than 1mm/day, = 0
-  mutate(rain2 = ifelse(Rainfall_Mensano <= 1.5, 0, Rainfall_Mensano),
-         seq.rain.val = sequence(rle(as.character(rain2))$lengths))
-
-luco_rain_mensano3 <- luco %>% 
-  mutate(rain3 = ifelse(Rainfall_Mensano <= 3,0,Rainfall_Mensano),
-         seq.rain.val = sequence(rle(as.character(rain3))$lengths))
-
-luco_rain_mensano5 <- luco %>% 
-  mutate(rain4 = ifelse(Rainfall_Mensano <= 5, 0, Rainfall_Mensano),
-         seq.rain.val = sequence(rle(as.character(rain4))$lengths))
-
-luco_rain_mensano7 <- luco %>% 
-  mutate(rain5 = ifelse(Rainfall_Mensano <=7, 0, Rainfall_Mensano),
-         seq.rain.val = sequence(rle(as.character(rain5))$lengths))
-
-#5 per Montalcinello
-luco_rain_montalcinello.5 <- luco %>% 
-  mutate(rain1 = ifelse(Rainfall_Montalcinello <= 0.5, 0, Rainfall_Montalcinello),
-         seq.rain.val = sequence(rle(as.character(rain1))$lengths))
-
-luco_rain_montalcinello1.5 <- luco %>%  # whenever rain is lower than 1mm/day, = 0
-  mutate(rain2 = ifelse(Rainfall_Montalcinello <= 1.5, 0, Rainfall_Montalcinello),
-         seq.rain.val = sequence(rle(as.character(rain2))$lengths))
-
-luco_rain_montalcinello3 <- luco %>% 
-  mutate(rain3 = ifelse(Rainfall_Montalcinello <= 3,0,Rainfall_Montalcinello),
-         seq.rain.val = sequence(rle(as.character(rain3))$lengths))
-
-luco_rain_montalcinello5 <- luco %>% 
-  mutate(rain4 = ifelse(Rainfall_Montalcinello <= 5, 0, Rainfall_Montalcinello),
-         seq.rain.val = sequence(rle(as.character(rain4))$lengths))
-
-luco_rain_montalcinello7 <- luco %>% 
-  mutate(rain5 = ifelse(Rainfall_Montalcinello <=7, 0, Rainfall_Montalcinello),
-         seq.rain.val = sequence(rle(as.character(rain5))$lengths))
+## 5 datasets with 4 levels of min rain changed to 0:
 
 
-## creating 5 new datasets per dataset...
-## ... or 5 new variables 
+luco_rain_type1 <- luco_featured %>% 
+  dplyr::mutate(rain1mensano = ifelse(Rainfall_Mensano <= 5, 0, Rainfall_Mensano),
+         rain1montalcinello = ifelse(Rainfall_Montalcinello <= 5, 0, Rainfall_Montalcinello),
+         lag1men = Lag(rain1mensano, +1),
+         lag3men = Lag(rain1mensano,+3),
+         lag5men = Lag(rain1mensano,+5),
+         lag7men = Lag(rain1mensano,+7),
+         lag9men = Lag(rain1mensano, +9),
+         lag1mon = Lag(rain1montalcinello, +1),
+         lag3mon = Lag(rain1montalcinello,+3),
+         lag5mon = Lag(rain1montalcinello,+5),
+         lag7mon = Lag(rain1montalcinello,+7),
+         lag9mon = Lag(rain1montalcinello, +9))
 
-luco_rain0.5.lag <- luco_rain_mensano.5 %>% 
-  mutate(lag1 = Lag(rain1, +1),
-         lag3 = Lag(rain1,+3),
-         lag5 = Lag(rain1,+5),
-         lag7 = Lag(rain1,+7),
-         lag9 = Lag(rain1, +9)) %>%
-  write.csv(., "processed_data/luco_rain0.5.csv")
+luco_rain_type2 <- luco_featured %>% 
+  dplyr::mutate(rain2mensano = ifelse(Rainfall_Mensano <= 10, 0, Rainfall_Mensano),
+                rain2montalcinello = ifelse(Rainfall_Montalcinello <= 10, 0, Rainfall_Montalcinello),
+                lag1men = Lag(rain2mensano, +1),
+                lag3men = Lag(rain2mensano,+3),
+                lag5men = Lag(rain2mensano,+5),
+                lag7men = Lag(rain2mensano,+7),
+                lag9men = Lag(rain2mensano, +9),
+                lag1mon = Lag(rain2montalcinello, +1),
+                lag3mon = Lag(rain2montalcinello,+3),
+                lag5mon = Lag(rain2montalcinello,+5),
+                lag7mon = Lag(rain2montalcinello,+7),
+                lag9mon = Lag(rain2montalcinello, +9))
 
-luco_rain1.5.lag <- luco_rain_mensano1.5 %>% 
-  mutate(lag1 = Lag(rain2, +1),
-         lag3 = Lag(rain2, +3),
-         lag5 = Lag(rain2, +5),
-         lag7 = Lag(rain2, +7),
-         lag9 = Lag(rain2, +9))%>% 
-  write.csv(., "processed_data/luco_rain1.5.csv")
+luco_rain_type3 <- luco_featured %>% 
+  dplyr::mutate(rain3mensano = ifelse(Rainfall_Mensano <= 15, 0, Rainfall_Mensano),
+                rain3montalcinello = ifelse(Rainfall_Montalcinello <= 15, 0, Rainfall_Montalcinello),
+                lag1men = Lag(rain3mensano, +1),
+                lag3men = Lag(rain3mensano,+3),
+                lag5men = Lag(rain3mensano,+5),
+                lag7men = Lag(rain3mensano,+7),
+                lag9men = Lag(rain3mensano, +9),
+                lag1mon = Lag(rain3montalcinello, +1),
+                lag3mon = Lag(rain3montalcinello,+3),
+                lag5mon = Lag(rain3montalcinello,+5),
+                lag7mon = Lag(rain3montalcinello,+7),
+                lag9mon = Lag(rain3montalcinello, +9))
 
-luco_rain3.lag <- luco_rain_mensano3 %>% 
-  mutate(lag1 = Lag(rain3, +1),
-         lag3 = Lag(rain3, +3),
-         lag5 = Lag(rain3, +5),
-         lag7 = Lag(rain3, +7),
-         lag9 = Lag(rain3, +9)) %>% 
-  write.csv(., "processed_data/luco_rain3.csv")
+luco_rain_type4 <- luco_featured %>% 
+  dplyr::mutate(rain4mensano = ifelse(Rainfall_Mensano <= 30, 0, Rainfall_Mensano),
+                rain4montalcinello = ifelse(Rainfall_Montalcinello <= 30, 0, Rainfall_Montalcinello),
+                lag1men = Lag(rain4mensano, +1),
+                lag3men = Lag(rain4mensano,+3),
+                lag5men = Lag(rain4mensano,+5),
+                lag7men = Lag(rain4mensano,+7),
+                lag9men = Lag(rain4mensano, +9),
+                lag1mon = Lag(rain4montalcinello, +1),
+                lag3mon = Lag(rain4montalcinello,+3),
+                lag5mon = Lag(rain4montalcinello,+5),
+                lag7mon = Lag(rain4montalcinello,+7),
+                lag9mon = Lag(rain4montalcinello, +9))
 
-luco_rain5.lag <- luco_rain_mensano5 %>% 
-  mutate(lag1 = Lag(rain4, +1),
-         lag3 = Lag(rain4, +3),
-         lag5 = Lag(rain4, +5),
-         lag7 = Lag(rain4, +7),
-         lag9 = Lag(rain4, +9)) %>% 
-  write.csv(., "processed_data/luco_rain5.csv")
 
-luco_rain7.lag <- luco_rain_mensano7 %>% 
-  mutate(lag1 = Lag(rain5, +1),
-         lag3 = Lag(rain5, +3),
-         lag5 = Lag(rain5, +5),
-         lag7 = Lag(rain5, +7),
-         lag9 = Lag(rain5, +9)) %>% 
-  write.csv(., "processed_data/luco_rain7.csv")
 
-write.csv(luco_featured, "processed_data/luco_featured.csv")
-
-##passo poi a 03-luco.R per proseguire l'analisi
 
 
 luco <- luco_featured %>%
