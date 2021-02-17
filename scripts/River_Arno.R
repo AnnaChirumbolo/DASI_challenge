@@ -1507,10 +1507,10 @@ library(purrr)
 
 ##
 ###ánche qui faro due test
-#### testgb 1 con localita XXXXXXX ####
+#### testgb 1 con localita XXXXXXX mean cancello ####
 
 
-#### testgb 2 con localita Le_Croci Cavallina  per il primo gruppo e Bibbiena Stiaper il secondo gruppo ####
+#### testgb 2 con localita Le_Croci Cavallina  per il primo gruppo e Bibbiena Stia per il secondo gruppo ####
 
 ## reading files 
 River_Arno_cut_gb2<- River_Arno_cut1 %>%
@@ -1574,8 +1574,9 @@ Hydrometry_Nave_di_Rosano_pred2 <- stats::predict(object = Hydrometry_Nave_di_Ro
                                n.trees = perf_gbm1)
 rmse_fit2 <- Metrics::rmse(actual = Hydrometry_Nave_di_Rosano.test$Hydrometry_Nave_di_Rosano,
                            predicted = Hydrometry_Nave_di_Rosano_pred2)
-print(rmse_fit1) # RMSE 0.3423
-#(higher error than when keeping all variables)
+print(rmse_fit1) 
+#### RMSE 0.3423 Test2 con Le_Croci, Cavallina, Bibbiena, Stia ####
+#
 
 #plot - RAinfall_CAvallina
 gbm::plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = 1)
@@ -1661,7 +1662,8 @@ LC0.pred<- stats::predict(object = LC0.fit,
                          n.trees = LC0.perf)
 LC0.rmse <- Metrics::rmse(actual = LC0.test$Hydrometry_Nave_di_Rosano,
                          predicted = LC0.pred)
-print(LC0.rmse) # 0.4397 #Best Model
+print(LC0.rmse) 
+#### 0.4397 # RMSE LCO= Le croci rain0 ####
 
 ## rain 1 le croci 
 
@@ -1694,7 +1696,8 @@ LC1.pred<- stats::predict(object = LC1.fit,
                                n.trees = LC1.perf)
 LC1.rmse <- Metrics::rmse(actual = LC1.test$Hydrometry_Nave_di_Rosano,
                                predicted = LC1.pred)
-print(LC1.rmse) # 0.4702 ###  
+print(LC1.rmse) 
+#### 0.4702  RMSE LC1###  
 
 ## rain 3 le croci 
 
@@ -1733,7 +1736,8 @@ LC5.pred<- stats::predict(object = LC5.fit,
                                n.trees = LC5.perf)
 LC5.rmse <- Metrics::rmse(actual = LC5.test$Hydrometry_Nave_di_Rosano,
                                predicted = LC5.pred)
-print(LC5.rmse) # 0.4775
+print(LC5.rmse) 
+#### 0.4775 RMSE LE CROCI RAIN5 ####
 
 
 
@@ -1802,7 +1806,7 @@ bibbiena1.rmse <- Metrics::rmse(actual = bibbiena1.test$Hydrometry_Nave_di_Rosan
                                 predicted = bibbiena1.pred)
 print(bibbiena1.rmse
 )
-##### 0.0.4919 Bibbiena1 ####
+##### 0.4919 Bibbiena1 ####
 
 ### Bibbiena3 rain 1
 
@@ -1838,7 +1842,7 @@ bibbiena5.rmse <- Metrics::rmse(actual = bibbiena5.test$Hydrometry_Nave_di_Rosan
                                 predicted = bibbiena5.pred)
 print(bibbiena5.rmse
 )
-##### 0.4417 Bibbiena5 #### The Best controlla
+##### 0.4417 Bibbiena5 #### 
 
 ### rain 0 Cavallina 
 CA0 <- arno0.5_CA %>%
@@ -1976,38 +1980,7 @@ print(ST0.rmse
 )
 ##### 0.4529 Stia0 ####
 
-### rain 0 Stia 
-ST0 <- arno0.5_S %>%
-  dplyr::select( Rainfall_Bibbiena, Rainfall_Cavallina, Rainfall_Le_Croci, Temperature_Firenze,
-                 Hydrometry_Nave_di_Rosano,
-                 Season, rain0.5)
 
-ST0.split <- initial_split(ST0,prop =.7)
-
-ST0.train <- training(ST0.split)
-ST0.test <- testing(ST0.split)
-
-ST0.fit <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
-                    data = ST0,
-                    verbose = T, 
-                    shrinkage = 0.01,
-                    interaction.depth = 3, 
-                    n.minobsinnode = 5,
-                    n.trees = 600,
-                    cv.folds = 12)
-
-ST0.perf <- gbm.perf(ST0.fit, method = "cv")
-
-## make predictions 
-
-ST0.pred<- stats::predict(object = ST0.fit,
-                          newdata = ST0.test,
-                          n.trees = ST0.perf)
-ST0.rmse <- Metrics::rmse(actual = ST0.test$Hydrometry_Nave_di_Rosano,
-                          predicted = ST0.pred)
-print(ST0.rmse
-)
-##### 0.4529 Stia0 ####
 
 
 
@@ -2080,6 +2053,73 @@ print(ST5.rmse
 
 
 
+  ##River arno RMSE CONFRONTO RMSE
+  #RMSE 0.3423 Test2 con Le_Croci, Cavallina, Bibbiena, Stia THE BEST
+  
+  #0.4397 # RMSE LCO= Le croci rain0 secondo
+  #### 0.4702  RMSE LC1###  LE CROCI RAIN 1
+  #### 0.4775 RMSE LE CROCI RAIN5 ####
 
+##### 0.4699 Bibbiena0 ####
+##### 0.4919 Bibbiena1 ####
+##### 0.4417 Bibbiena5 #### 
+
+##### 0.4575 Cavallina0 ####
+##### 0.4486 Cavallina1 ####
+##### 0.4511 Cavallina5 ####
+
+##### 0.4529 Stia0 ####
+##### 0.4674 Stia1 ####
+##### 0.4539 Stia5 ####
+
+#### PLOT  plot rmse LC0 ####
+#plot - RAinfall_CAvallina
+gbm::plot.gbm(LC0.fit, i.var = 1)
+# plot - RAinfall_Stia
+plot.gbm(LC0.fit, i.var = 2)
+# plot - RAinfall_Bibbiena
+plot.gbm(LC0.fit, i.var = 3)
+# plot - Temperature_Firenze
+plot.gbm(LC0.fit, i.var = 4)
+
+
+
+## interactions of two features on the variable 
+
+gbm::plot.gbm(LC0.fit, i.var = c(1,3)) # rain-rain
+plot.gbm(LC0.fit, i.var = c(1,2)) # rain-rain
+plot.gbm(LC0.fit, i.var = c(2,3)) # rain-rain
+
+plot.gbm(LC0.fit, i.var = c(3,4)) # temp-rain
+plot.gbm(LC0.fit, i.var = c(3,5)) # season-rain
+plot.gbm(LC0.fit, i.var = c(4,5)) # temp-season
+plot.gbm(LC0.fit, i.var = c(1,5)) # season-rain
+plot.gbm(LC0.fit, i.var = c(2,5)) # season-rain
+
+
+
+
+### impact of different features on predicting depth to gw 
+
+# summarise model 
+
+LC0.fit_effects <- tibble::as_tibble(gbm::summary.gbm(LC0.fit,
+                                                                        plotit = F))
+LC0.fit_effects %>% utils::head()
+# this creates new dataset with var, factor variable with variables 
+# in our model, and rel.inf - relative influence each var has on model pred 
+
+# plot top 6 features
+LC0.fit_effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # it's already only 3 vars
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  scale_color_brewer(palette = "Dark2")
+#rain0.5 e' il lag per Rainfall_Le_Croci
 
 
