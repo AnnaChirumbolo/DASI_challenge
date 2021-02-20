@@ -24,6 +24,12 @@ We therefore report below the error table (RMSE) that our modeling has produced.
 
 ### <a href="#section2"> 1. Data Cleaning and Feature Engineering</a>
 
+
+Trying relative links 
+
+[LINK TO 1. DATA CLEANING AND FEATURE ENGINEERING](docs/1_data_cleaning.md)
+
+
   <a href="#subsect1"><sub> 1.1 Aquifers </sub></a>
   
   <a href="#subsect2"><sub> 1.2 Water Springs </sub></a>
@@ -164,3 +170,4 @@ Lastly, we created five new features for each new dataset, with five different t
 <a name="#subsect8"></a>
 
 ## 2.4 Lake 
+
