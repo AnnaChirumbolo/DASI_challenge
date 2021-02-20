@@ -48,7 +48,7 @@ We therefore report below the error table (RMSE) that our modeling has produced.
 ---------------------------------------------------------------
 
 
-<a href="#section1"></a>
+<a name="#section1"></a>
 
 # 0. Importing Datasets and Libraries
 
@@ -93,27 +93,27 @@ library(stats)
 
 ```
 
-<a href="#section2"></a>
+<a name="#section2"></a>
 
-# 1. Data Cleaning 
+# 1. Data Cleaning and Feature Engineering
 
 
 text bla bla 
 
 
-<a href="#subsect1"></a>
+<a name="#subsect1"></a>
 
 ## 1.1 Aquifers
 
-<a href="#subsect2"></a>
+<a name="#subsect2"></a>
 
 ## 1.2 Water Springs
 
-<a href="#subsect3"></a>
+<a name="#subsect3"></a>
 
 ## 1.3 River 
 
-<a href="#subsect4"></a>
+<a name="#subsect4"></a>
 
 ## 1.4 Lake
 
@@ -142,30 +142,30 @@ Lastly, we created five new features for each new dataset, with five different t
 
 
 
-<a href="#section3"></a>
+<a name="#section3"></a>
 
 # 2. Modelling and Forecasting
 
 
-<a href="#subsect5"></a>
+<a name="#subsect5"></a>
 
 ## 2.1 Aquifers
 
 
 
-<a href="#subsect6"></a>
+<a name="#subsect6"></a>
 
 ## 2.2 Water Springs 
 
 
 
 
-<a href="#subsect7"></a>
+<a name="#subsect7"></a>
 
 ## 2.3 River 
 
 
 
-<a href="#subsect8"></a>
+<a name="#subsect8"></a>
 
 ## 2.4 Lake 
