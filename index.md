@@ -23,7 +23,7 @@ We therefore report below the error table (RMSE) that our modeling has produced.
 
 ## Summary: 
 
-### <a href="#section1"> 0. Importing Datasets and Libraries</a>
+ <a href="#section1"> 0. Importing Datasets and Libraries</a>
 
 ### <a href="#section2"> 1. Data Cleaning and Feature Engineering</a>
 
