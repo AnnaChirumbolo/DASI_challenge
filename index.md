@@ -22,13 +22,13 @@ We therefore report below the error table (RMSE) that our modeling has produced.
 
 ### <a href="#section1"> 0. Importing Datasets and Libraries</a>
 
+## [0. IMPORTING LIBRARIES AND DATASETS](docs/0.md)
+
 ### <a href="#section2"> 1. Data Cleaning and Feature Engineering</a>
 
 
-Trying relative links 
-
-## [1. DATA CLEANING AND FEATURE ENGINEERING](docs/1_data_cleaning.md)
-
+TRYING RELATIVE LINKS
+## [1. DATA CLEANING AND FEATURE ENGINEERING](docs/1.md)
 
   <a href="#subsect1"><sub> 1.1 Aquifers </sub></a>
   
@@ -39,6 +39,8 @@ Trying relative links
   <a href="#subsect4"><sub> 1.4 Lake </sub></a>
   
 ### <a href="#section3"> 2. Modelling and Forecasting</a>
+
+## [2. MODELLING AND FORECASTING](docs/2.md)
 
   <a href="#subsect5"><sub> 2.1 Aquifers </sub></a>
   
