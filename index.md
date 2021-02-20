@@ -50,7 +50,7 @@ We therefore report below the error table (RMSE) that our modeling has produced.
 
 <a href="#section1"></a>
 
-# 0. Importing Datasets and Libraries </a>
+# 0. Importing Datasets and Libraries
 
 ```
 ## Here are all the libraries used for this project 
@@ -95,14 +95,30 @@ library(stats)
 
 <a href="#section2"></a>
 
-# 1. Data Cleaning </a>
+# 1. Data Cleaning 
 
-# 
 
-<a href="#section3"></a>
+text bla bla 
 
-# 2. Feature engineering
 
+<a href="#subsect1"></a>
+
+## 1.1 Aquifers
+
+<a href="#subsect2"></a>
+
+## 1.2 Water Springs
+
+<a href="#subsect3"></a>
+
+## 1.3 River 
+
+<a href="#subsect4"></a>
+
+## 1.4 Lake
+
+
+## Feature Engineering
 
 In addition to the feature variables provided by Acea, we decided to carry out some feature engineering, in order to extract new features that would perhaps ease the model performance and improve its prediction capabilities. 
 
@@ -123,3 +139,33 @@ We modified minimum rainfall levels to 0, assuming that small rainfall values wo
 - Lag effect of rainfall (when present) over the target variable 
 
 Lastly, we created five new features for each new dataset, with five different time lags (set at 1, 3, 5, 7 and 9 days) representing the potentially delayed effect of rainfall on the target variable.
+
+
+
+<a href="#section3"></a>
+
+# 2. Modelling and Forecasting
+
+
+<a href="#subsect5"></a>
+
+## 2.1 Aquifers
+
+
+
+<a href="#subsect6"></a>
+
+## 2.2 Water Springs 
+
+
+
+
+<a href="#subsect7"></a>
+
+## 2.3 River 
+
+
+
+<a href="#subsect8"></a>
+
+## 2.4 Lake 
