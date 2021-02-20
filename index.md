@@ -2,6 +2,9 @@
 
 image?
 
+
+<center>
+
 ## Summary:
 
 #### <a href="#section1"> Executive Summary.</a>
@@ -25,3 +28,5 @@ image?
   
   <a href="#subsect8"><sub> 1.4 Lake </sub></a>
   
+
+</center>
