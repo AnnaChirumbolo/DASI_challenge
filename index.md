@@ -23,26 +23,31 @@ We therefore report below the error table (RMSE) that our modeling has produced.
 
 ## Summary: 
 
-### <a href="#section1"> 0. Importing Datasets and Libraries </a>
-### <a href="#section2"> 1. Data Cleaning and Feature Engineering </a>
+### <a href="#section1"> 0. Importing Datasets and Libraries</a>
 
-  <a href="#subsect1"><sub> 1.1 Aquifers </sub></a>
-  
-  <a href="#subsect2"><sub> 1.2 Water Springs </sub></a>
-  
-  <a href="#subsect3"><sub> 1.3 River </sub></a>
-  
-  <a href="#subsect4"><sub> 1.4 Lake </sub></a>
-  
-### <a href="#section3"> 2. Modelling and Forecasting </a>
 
-  <a href="#subsect5"><sub> 2.1 Aquifers </sub></a>
+
+### <a href="#section2"> 1. Data Cleaning and Feature Engineering</a>
+
+####  <a href="#subsect1"> 1.1 Aquifers</a>
   
-  <a href="#subsect6"><sub> 2.2 Water Springs </sub></a>
+####  <a href="#subsect2"> 1.2 Water Springs</a>
   
-  <a href="#subsect7"><sub> 2.3 River </sub></a>
+####  <a href="#subsect3"> 1.3 River</a>
   
-  <a href="#subsect8"><sub> 2.4 Lake </sub></a>
+####  <a href="#subsect4"> 1.4 Lake</a>
+
+
+  
+### <a href="#section3"> 2. Modelling and Forecasting</a>
+
+#### <a href="#subsect5"> 2.1 Aquifers</a>
+  
+#### <a href="#subsect6"> 2.2 Water Springs</a>
+  
+#### <a href="#subsect7"> 2.3 River</a>
+  
+#### <a href="#subsect8"> 2.4 Lake</a>
   
 
 ---------------------------------------------------------------
