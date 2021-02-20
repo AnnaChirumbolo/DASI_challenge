@@ -18,12 +18,9 @@ We are therefore satisfied with the results achieved in the few days of dedicate
 
 We therefore report below the error table (RMSE) that our modeling has produced.
 
-
-
-
 ## Summary: 
 
- <a href="#section1"> 0. Importing Datasets and Libraries</a>
+### <a href="#section1"> 0. Importing Datasets and Libraries</a>
 
 ### <a href="#section2"> 1. Data Cleaning and Feature Engineering</a>
 
@@ -46,7 +43,7 @@ We therefore report below the error table (RMSE) that our modeling has produced.
   <a href="#subsect8"><sub> 2.4 Lake </sub></a>
   
 
-<a name="#section1"></a>
+<a id="#section1"></a>
 
 # 0. Importing Datasets and Libraries
 
