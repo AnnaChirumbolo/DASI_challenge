@@ -27,7 +27,7 @@ We therefore report below the error table (RMSE) that our modeling has produced.
 
 Trying relative links 
 
-[LINK TO 1. DATA CLEANING AND FEATURE ENGINEERING](docs/1_data_cleaning.md)
+## [1. DATA CLEANING AND FEATURE ENGINEERING](docs/1_data_cleaning.md)
 
 
   <a href="#subsect1"><sub> 1.1 Aquifers </sub></a>
