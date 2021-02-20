@@ -1,3 +1,5 @@
+# DASI Challenge - ACEA 
+
 ## Executive Summary.
 
 The analysis work was approached by the team by assigning each one a type of water basin, in an attempt to be able to “specialize” in the short time available on a specific water system.
@@ -19,10 +21,11 @@ We therefore report below the error table (RMSE) that our modeling has produced.
 
 
 
-### Summary: 
+## Summary: 
 
-#### <a href="#section1"> 0. Importing Datasets and Libraries </a>
-#### <a href="#section2"> 1. Data Cleaning and Feature Engineering </a>
+### <a href="#section1"> 0. Importing Datasets and Libraries </a>
+### <a href="#section2"> 1. Data Cleaning and Feature Engineering </a>
+
   <a href="#subsect1"><sub> 1.1 Aquifers </sub></a>
   
   <a href="#subsect2"><sub> 1.2 Water Springs </sub></a>
@@ -31,12 +34,92 @@ We therefore report below the error table (RMSE) that our modeling has produced.
   
   <a href="#subsect4"><sub> 1.4 Lake </sub></a>
   
-#### <a href="#section3"> 2. Modelling and Forecasting </a>
-  <a href="#subsect5"><sub> 1.1 Aquifers </sub></a>
+### <a href="#section3"> 2. Modelling and Forecasting </a>
+
+  <a href="#subsect5"><sub> 2.1 Aquifers </sub></a>
   
-  <a href="#subsect6"><sub> 1.2 Water Springs </sub></a>
+  <a href="#subsect6"><sub> 2.2 Water Springs </sub></a>
   
-  <a href="#subsect7"><sub> 1.3 River </sub></a>
+  <a href="#subsect7"><sub> 2.3 River </sub></a>
   
-  <a href="#subsect8"><sub> 1.4 Lake </sub></a>
+  <a href="#subsect8"><sub> 2.4 Lake </sub></a>
   
+
+---------------------------------------------------------------
+
+
+<a href="#section1"></a>
+
+# 0. Importing Datasets and Libraries </a>
+
+```
+## Here are all the libraries used for this project 
+
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(ggpubr)
+library(imputeTS)
+library(zoo)
+library(data.table)
+library(lubridate)
+library(outliers)
+library(tidyselect)
+library(GGally)
+library(naniar)
+library(visdat)
+library(forecast)
+library(xts)
+library(caTools)
+library(reshape2)
+library(Hmisc)
+library(caret) 
+library(randomForest)
+library(tree)
+library(tsibble)
+library(gbm)
+library(rsample)
+library(scales)
+library(Metrics)
+library(here)
+library(MASS)
+library(leaps)
+library(corrplot)
+library(varhandle)
+library(autoTS)
+library(h2o)
+library(MLmetrics)
+library(stats)
+
+```
+
+<a href="#section2"></a>
+
+# 1. Data Cleaning </a>
+
+# 
+
+<a href="#section3"></a>
+
+# 2. Feature engineering
+
+
+In addition to the feature variables provided by Acea, we decided to carry out some feature engineering, in order to extract new features that would perhaps ease the model performance and improve its prediction capabilities. 
+
+These features have been created through one-hot encoding procedures. These include: 
+
+- Seasons 
+
+We customised a function to split the years over the four seasons (set to change at solstices and equinoxes). We created four new features, each representing one season as dummy variable.
+
+- Occurrence of snow 
+
+We engineered two new features, again as dummy variables. One representing occurrence of snow - assuming temperature is below or equal to 0, and rainfall is greater than 0. The second one representing absence of snow - assuming temperature is greather than 0.
+
+- Changes in minimum rainfall levels 
+
+We modified minimum rainfall levels to 0, assuming that small rainfall values would have a minimal, thus neglectable, effect over the target variable. By looking at the distribution of rainfall values we arbitrarily set four different minimum rainfall values to 0. We thus obtained five different datasets per waterbody, each with a different minimum rainfall values (including the original dataset).
+
+- Lag effect of rainfall (when present) over the target variable 
+
+Lastly, we created five new features for each new dataset, with five different time lags (set at 1, 3, 5, 7 and 9 days) representing the potentially delayed effect of rainfall on the target variable.
