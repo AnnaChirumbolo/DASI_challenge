@@ -49,6 +49,20 @@ We therefore report below the error table (RMSE) that our modeling has produced.
   
 #### <a href="#subsect8"> 2.4 Lake</a>
   
+#### <a href="#section1"> 1. The appendix document.</a>
+#### <a href="#section2"> 2. Create the appendix sections using `LaTex` syntax.</a>
+  <a href="#subsect1"><sub> (a) Why LaTex and not another markup language? </sub></a>
+
+  <a href="#subsect2"><sub> (b) Write headings and titles </sub></a>
+
+  <a href="#subsect3"><sub> (c) Place the appendices in distinct pages </sub></a>
+
+#### <a href="#section3"> 3. Appendix A: tables of raw data.</a>
+#### <a href="#section4"> 4. Appendix B: additional figures.</a>
+#### <a href="#section5"> 5. Appendix C: code.</a>
+#### <a href="#section6"> 6. Insert the Appendix in the main text.</a>
+#### <a href="#section7"> 7. Try it yourself!</a>
+
 
 ---------------------------------------------------------------
 
