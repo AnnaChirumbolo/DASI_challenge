@@ -128,7 +128,7 @@ print(canneto_missing) # flow rate data missing: more than 50%
 
 (first_look_canneto <- ggplot(canneto,
                               aes(Date ,Flow_Rate_Madonna_di_Canneto))+
-    geom_line(size= 1, color = "blue", alpha = 0.7)+
+    geom_line(size= 1, color = "steelblue2", alpha = 0.7)+
     xlab("")+
     ggtitle("Distribution flow rate (L/s) over time in Madonna di Canneto\n")+
     scale_y_continuous(limits = c(0,300),expand = c(0,0))+
@@ -499,7 +499,6 @@ coef(canneto4.4.sw$finalModel,7)
 
 #####----------------------------------------------------------------------------------------------------------------------------------------#####
 ### Running autoML from h2o package ###
-
 # The following two commands remove any previously installed H2O packages for R.
 if ("package:h2o" %in% search()) { detach("package:h2o", unload=TRUE) }
 if ("h2o" %in% rownames(installed.packages())) { remove.packages("h2o") }
@@ -516,6 +515,11 @@ install.packages("h2o", type="source", repos="http://h2o-release.s3.amazonaws.co
 # Finally, let's load H2O and start up an H2O cluster
 library(h2o)
 h2o.init()
+
+h2o.no_progress()  # Turn off progress bars for notebook readability
+
+
+
 ## canneto_featured ##
 
 canneto_featured.h2o <- as.h2o(canneto_featured)
