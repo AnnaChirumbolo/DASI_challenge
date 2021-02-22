@@ -163,7 +163,24 @@ print(canneto_filtered_missing)
 
 ## outliers for target ##
 
+canneto_filtered <- canneto_filtered %>% 
+  mutate(imp_flow_rate = na_ma(Flow_Rate_Madonna_di_Canneto)) %>% 
+  dplyr::select(-Flow_Rate_Madonna_di_Canneto)
 
+# boxplot
+(box_canneto <- ggplot(canneto_filtered, aes(y = imp_flow_rate))+
+    geom_boxplot()+
+    theme_classic())
+# no outliers visually 
+
+# stats
+out_canneto <- boxplot.stats(canneto2$imp_flow_rate)
+out_canneto
+# confirmed no out 
+
+# grubbs test 
+test_canneto <- grubbs.test(canneto2$imp_flow_rate)
+test_canneto # confirmed no out 
 
 
 #### features: meteo ####
@@ -268,7 +285,7 @@ temp_filled
 
 meteo <- gridExtra::arrangeGrob(rain_filled,temp_filled)
 ggsave("img/canneto/panel_meteo_canneto.jpg", meteo, dpi = 500,
-       width=10, height=8)
+       width=10, height=9)
 
 
 ### outliers ###
@@ -751,73 +768,70 @@ testt_canneto # confirmed stats - no out
 canneto_featured <- add.seasons(canneto_filtered) %>%
   rename(fl_rate.Ls = imp_flow_rate) %>% 
   mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <=0 & Rainfall_Settefrati > 0, 1,0)),
-         snow.no = as.factor(ifelse(Temperature_Settefrati >0,1,0))) 
+         snow.no = as.factor(ifelse(Temperature_Settefrati >0,1,0)),
+         week = cut(Date, "week")) %>% 
+  group_by(week) %>% 
+  mutate(mean_rain = mean(Rainfall_Settefrati)) %>% 
+  ungroup()
 
 str(canneto_featured)
 
-### changing effect of rain on target, and lagging the effect of rain on the target ###
+summary(canneto_featured$mean_rain)
 
-canneto_orig <- canneto_featured %>% 
-  mutate(lag1 = Lag(Rainfall_Settefrati, +1),
-         lag3 = Lag(Rainfall_Settefrati,+3),
-         lag5 = Lag(Rainfall_Settefrati,+5),
-         lag7 = Lag(Rainfall_Settefrati,+7),
-         lag9 = Lag(Rainfall_Settefrati, +9)) 
+#### choosing best lag length ####
 
-canneto_orig1 <- canneto_orig %>% 
-  dplyr::select(-Date)
+#install.packages("tsDyn")
+library(tsDyn)
+
+
+canneto_ts <- ts(canneto_featured, start = c(2016,1),
+                 frequency = 7)
+View(canneto_ts)
+
+canneto_lag <- lags.select(canneto_ts, lag.max = 10)
+
+print(canneto_lag)
+summary(canneto_lag)
+
+# lag 8 - best lag 
+
+canneto_featured <- canneto_featured %>% 
+  mutate(lag8 = Lag(Rainfall_Settefrati, +8))
 
 ## creating 5 new datasets with different min rainfall levels 
 ## and with new time lags (trying to represent true effect of rain over target)
 
-canneto0.5 <- canneto_orig %>% 
-  mutate(rain0.5 = ifelse(Rainfall_Settefrati <= 0.5, 0, 
+canneto0.8 <- canneto_featured %>% 
+  mutate(rain0.8 = ifelse(mean_rain <= 0.8, 0, 
                           Rainfall_Settefrati),
-         lag1 = Lag(rain0.5, +1),
-         lag3 = Lag(rain0.5,+3),
-         lag5 = Lag(rain0.5,+5),
-         lag7 = Lag(rain0.5,+7),
-         lag9 = Lag(rain0.5, +9)) %>% 
+         lag8 = Lag(rain0.8, +8)) %>% 
   dplyr::select(-Rainfall_Settefrati)
 
-canneto0.5_1 <- canneto0.5 %>%  dplyr::select(-Date)
+canneto0.8_1 <- canneto0.8 %>%  dplyr::select(-Date)
 
-canneto1.5 <- canneto_orig %>% 
-  mutate(rain1.5 = ifelse(Rainfall_Settefrati <= 1.5, 0, 
+canneto1.5 <- canneto_featured %>% 
+  mutate(rain1.5 = ifelse(mean_rain <= 1.5, 0, 
                           Rainfall_Settefrati),
-         lag1 = Lag(rain1.5, +1),
-         lag3 = Lag(rain1.5, +3),
-         lag5 = Lag(rain1.5, +5),
-         lag7 = Lag(rain1.5, +7),
-         lag9 = Lag(rain1.5, +9)) %>% 
+         lag8 = Lag(rain1.5, +8)) %>% 
   dplyr::select(-Rainfall_Settefrati)
 
 canneto1.5_1 <- canneto1.5 %>%   dplyr::select(-Date)
 
-canneto3 <- canneto_orig %>% 
-  mutate(rain3 = ifelse(Rainfall_Settefrati <= 3,0,
+canneto2.8 <- canneto_featured %>% 
+  mutate(rain2.8 = ifelse(mean_rain <= 2.8,0,
                         Rainfall_Settefrati),
-         lag1 = Lag(rain3, +1),
-         lag3 = Lag(rain3, +3),
-         lag5 = Lag(rain3, +5),
-         lag7 = Lag(rain3, +7),
-         lag9 = Lag(rain3, +9)) %>% 
+         lag8 = Lag(rain2.8, +8)) %>% 
   dplyr::select(-Rainfall_Settefrati)
 
-canneto3_1 <- canneto3 %>%  dplyr::select(-Date)
+canneto2.8_1 <- canneto2.8 %>%  dplyr::select(-Date)
 
-canneto5 <- canneto_orig %>% 
-  mutate(rain5 = ifelse(Rainfall_Settefrati <= 5, 0, 
+canneto4.4 <- canneto_featured %>% 
+  mutate(rain4.4 = ifelse(mean_rain <= 4.4, 0, 
                         Rainfall_Settefrati),
-         lag1 = Lag(rain5, +1),
-         lag3 = Lag(rain5, +3),
-         lag5 = Lag(rain5, +5),
-         lag7 = Lag(rain5, +7),
-         lag9 = Lag(rain5, +9)) %>%
+         lag8 = Lag(rain4.4, +8)) %>%
   dplyr::select(-Rainfall_Settefrati)
 
-canneto5_1 <- canneto5 %>%   dplyr::select(-Date)
-
+canneto4.4_1 <- canneto4.4 %>%   dplyr::select(-Date)
 
 ### Checking correlations between features with correlation matrix ### 
 
