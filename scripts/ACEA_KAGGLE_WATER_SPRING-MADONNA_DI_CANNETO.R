@@ -2,7 +2,7 @@
 ######### only canneto #########
 ################################
 
-## custom function ##
+#### custom functions ####
 
 ## creating function to read multiple files at once 
 
@@ -47,15 +47,18 @@ step.wisef <- function(x, DATA){
   return(step.model)
 }
 
+
+#### libraries ####
+
 ## installing packages
-install.packages('caret', dependencies = TRUE)
-install.packages("imputeTS")
-install.packages("varhandle")
-install.packages("autoTS")
-install.packages("h2o")
-install.packages("MLmetrics")
-install.packages("stats")
-install.packages("rsample")
+#install.packages('caret', dependencies = TRUE)
+#install.packages("imputeTS")
+#install.packages("varhandle")
+#install.packages("autoTS")
+#install.packages("h2o")
+#install.packages("MLmetrics")
+#install.packages("stats")
+#install.packages("rsample")
 
 ## Here are all the libraries used for this project 
 
@@ -96,6 +99,11 @@ library(h2o)
 library(MLmetrics)
 library(stats)
 
+#### reading file: madonna di canneto ####
+
+
+canneto <- read.csv("data/Water_Spring_Madonna_di_Canneto.csv")
+
 ## First overall look
 str(canneto)
 
@@ -105,7 +113,9 @@ summary(canneto)
 #tail(canneto)
 
 ## Changing date value to "date" format
-canneto$Date <- dmy(canneto$Date)
+canneto <- canneto %>% 
+  rename(Date = ï..Date) %>% 
+  mutate(Date = dmy(Date))
 
 ## Checking for missing values 
 canneto_missing <- canneto %>% 
@@ -114,11 +124,16 @@ print(canneto_missing) # flow rate data missing: more than 50%
 
 ## First visualisation of target distribution over years
 
-#(first_look_canneto <- ggplot(canneto,
-#                              aes(Date ,Flow_Rate_Madonna_di_Canneto))+
-#    geom_line(size= 1)+
-#    theme_classic())
+(first_look_canneto <- ggplot(canneto,
+                              aes(Date ,Flow_Rate_Madonna_di_Canneto))+
+    geom_line(size= 1, color = "blue", alpha = 0.7)+
+    xlab("")+
+    ylab("Flow Rate (L/s)\n")+
+    theme_classic())
 # big gap of data first years
+
+ggsave("img/canneto/first_look_target_canneto.jpg",
+       dpi = 500, width = 15, height = 8)
 
 ## Filtering out first years with no target data
 
@@ -132,33 +147,14 @@ canneto_filtered <- canneto %>%
   filter(Date >= "2016-04-13") 
 
 ## How are these NAs distributed over time?
-ggplot_na_distribution(canneto_filtered$Flow_Rate_Madonna_di_Canneto)
-
-
-## First visualisation of target distribution over years
-
-#(first_look_canneto <- ggplot(canneto,
-#                              aes(Date ,Flow_Rate_Madonna_di_Canneto))+
-#    geom_line(size= 1)+
-#    theme_classic())
-# big gap of data first years
-
-## Filtering out first years with no target data
-
-# Which year to start from? 
-#min(canneto$Date[!is.na(canneto$Flow_Rate_Madonna_di_Canneto)])        
-
-# "2015-03-13", but there's another big gap before that, so removing until 2016-04-13
-
-# Filtering out from 2015-03-13
-canneto_filtered <- canneto %>% 
-  filter(Date >= "2016-04-13") 
-
-## How are these NAs distributed over time?
-ggplot_na_distribution(canneto_filtered$Flow_Rate_Madonna_di_Canneto)
+ggplot_na_distribution(canneto_filtered$Flow_Rate_Madonna_di_Canneto,
+                       title = "Distribution of Missing Target Values (Madonna di Canneto)\n",
+                       ylab = "Flow Rate (L/s)\n")
+ggsave("img/canneto/na_dist_cannetof.jpg", dpi = 500, width = 15, height = 8)
+?ggplot_na_distribution
 
 ## checking for missing data after filtering 
-canneto_filtered_missing <- canneto_nomissing %>% 
+canneto_filtered_missing <- canneto_filtered %>% 
   miss_var_summary()
 print(canneto_filtered_missing)
 # there are missing data for all variables but Date
