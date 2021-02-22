@@ -767,7 +767,8 @@ testt_canneto # confirmed stats - no out
 
 canneto_featured <- add.seasons(canneto_filtered) %>%
   rename(fl_rate.Ls = imp_flow_rate) %>% 
-  mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <=0 & Rainfall_Settefrati > 0, 1,0)),
+  mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <=0 & 
+                                       Rainfall_Settefrati > 0, 1,0)),
          snow.no = as.factor(ifelse(Temperature_Settefrati >0,1,0)),
          week = cut(Date, "week")) %>% 
   group_by(week) %>% 
@@ -795,9 +796,12 @@ summary(canneto_lag)
 
 # lag 8 - best lag 
 
+
 canneto_featured <- canneto_featured %>% 
   mutate(lag8 = Lag(Rainfall_Settefrati, +8))
 
+canneto_featured1 <- canneto_featured %>% 
+  dplyr::select(-Date,-week,-mean_rain)
 ## creating 5 new datasets with different min rainfall levels 
 ## and with new time lags (trying to represent true effect of rain over target)
 
@@ -836,13 +840,14 @@ canneto4.4_1 <- canneto4.4 %>%   dplyr::select(-Date)
 ### Checking correlations between features with correlation matrix ### 
 
 # first changing factors to numeric values ... 
-canneto_orig1[,4:9] <- unfactor(canneto_orig1[,4:9])
+canneto_featured1[,4:9] <- unfactor(canneto_featured1[,4:9])
 canneto0.5_1[,3:8] <- unfactor(canneto0.5_1[,3:8])
 canneto1.5_1[,3:8] <- unfactor(canneto1.5_1[,3:8])
 canneto3_1[,3:8] <- unfactor(canneto3_1[,3:8])
 canneto5_1[,3:8] <- unfactor(canneto5_1[,3:8])
 
-canneto_orig.cor <- canneto_orig1 %>% 
+str(canneto_featured1)
+canneto_orig.cor <- canneto_featured1 %>% 
   cor(., use = "complete.obs") %>%
   corrplot(., method = "circle",
            tl.col = "black",tl.srt = 35, 
