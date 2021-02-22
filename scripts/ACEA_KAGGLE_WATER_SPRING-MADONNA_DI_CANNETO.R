@@ -133,7 +133,7 @@ print(canneto_missing) # flow rate data missing: more than 50%
 # big gap of data first years
 
 ggsave("img/canneto/first_look_target_canneto.jpg",
-       dpi = 500, width = 15, height = 8)
+       dpi = 500, width = 10, height = 6)
 
 ## Filtering out first years with no target data
 
@@ -149,9 +149,250 @@ canneto_filtered <- canneto %>%
 ## How are these NAs distributed over time?
 ggplot_na_distribution(canneto_filtered$Flow_Rate_Madonna_di_Canneto,
                        title = "Distribution of Missing Target Values (Madonna di Canneto)\n",
-                       ylab = "Flow Rate (L/s)\n")
-ggsave("img/canneto/na_dist_cannetof.jpg", dpi = 500, width = 15, height = 8)
+                       ylab = "Flow Rate (L/s)\n",
+                       theme = ggplot2::theme_classic())
+ggsave("img/canneto/na_dist_cannetof.jpg", dpi = 500, width = 10, height = 6)
 ?ggplot_na_distribution
+
+## checking for missing data after filtering 
+canneto_filtered_missing <- canneto_filtered %>% 
+  miss_var_summary()
+print(canneto_filtered_missing)
+# there are missing data for all variables but Date
+
+
+## outliers for target ##
+
+
+
+
+#### features: meteo ####
+
+meteo_canneto <- list.files(path = "./data/MADONNA_DI_CANNETO_3BMETEO/",
+                            pattern = "*.csv$", 
+                            full.names = T) %>%
+  map_df(~read_plus(.)) 
+
+
+## manipulating rainfall data (3bmeteo)
+rain_canneto <- meteo_canneto %>% 
+  rename(date1 = filename) %>% 
+  mutate(date1 = gsub("./data/MADONNA_DI_CANNETO_3BMETEO/", "", date1),
+         date1 = gsub(".csv", "", date1),
+         date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
+  separate(date, into = c("weekday", "day")) %>%
+  dplyr::select(-weekday) %>%
+  unite(date_final, day,date1, sep = " ") %>%
+  mutate(date_final = str_replace(date_final,"ago","08"),
+         date_final = str_replace(date_final, "gen", "01"),
+         date_final = str_replace(date_final, "feb", "02"),
+         date_final = str_replace(date_final, "mar", "03"),
+         date_final = str_replace(date_final, "apr", "04"),
+         date_final = str_replace(date_final, "mag", "05"),
+         date_final = str_replace(date_final, "giu", "06"),
+         date_final = str_replace(date_final, "lug", "07"),
+         date_final = str_replace(date_final, "set", "09"),
+         date_final = str_replace(date_final, "ott", "10"),
+         date_final = str_replace(date_final, "nov","11"),
+         date_final = str_replace(date_final, "dic", "12"),
+         date_final = gsub(" ", "/", date_final),
+         date_final = dmy(date_final)) %>%
+  rename(Date = date_final,
+         Rainfall_Settefrati = prec) %>%
+  dplyr::select(Date, Rainfall_Settefrati)
+
+#summary(rain_canneto)
+
+## manipulating temperature data (3bmeteo)
+
+temp_canneto <- meteo_canneto %>% 
+  rename(date1 = filename) %>% 
+  mutate(date1 = gsub("./data/MADONNA_DI_CANNETO_3BMETEO/", "", date1),
+         date1 = gsub(".csv", "", date1),
+         date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
+  separate(date, into = c("weekday", "day")) %>%
+  dplyr::select(-weekday) %>%
+  unite(date_final, day,date1, sep = " ") %>%
+  mutate(date_final = str_replace(date_final,"ago","08"),
+         date_final = str_replace(date_final, "gen", "01"),
+         date_final = str_replace(date_final, "feb", "02"),
+         date_final = str_replace(date_final, "mar", "03"),
+         date_final = str_replace(date_final, "apr", "04"),
+         date_final = str_replace(date_final, "mag", "05"),
+         date_final = str_replace(date_final, "giu", "06"),
+         date_final = str_replace(date_final, "lug", "07"),
+         date_final = str_replace(date_final, "set", "09"),
+         date_final = str_replace(date_final, "ott", "10"),
+         date_final = str_replace(date_final, "nov","11"),
+         date_final = str_replace(date_final, "dic", "12"),
+         date_final = gsub(" ", "/", date_final),
+         date_final = dmy(date_final)) %>%
+  rename(Date = date_final) %>%
+  dplyr::select(Date, tmin, tmax) %>%
+  mutate(Temperature_Settefrati = rowMeans(subset(., select = c(tmin,tmax)),
+                                           na.rm = T)) %>%
+  dplyr::select(-tmin, -tmax)
+
+#summary(temp_canneto)
+
+## Filling dataset to model with new meteorological data 
+
+# temp
+canneto_filtered$Temperature_Settefrati[is.na(canneto_filtered$Temperature_Settefrati)] <- temp_canneto$Temperature_Settefrati[match(canneto_filtered$Date[is.na(canneto_filtered$Temperature_Settefrati)],
+                                                                                                                                       temp_canneto$Date)]
+
+# rain 
+canneto_filtered$Rainfall_Settefrati[is.na(canneto_filtered$Rainfall_Settefrati)] <- rain_canneto$Rainfall_Settefrati[match(canneto_filtered$Date[is.na(canneto_filtered$Rainfall_Settefrati)],
+                                                                                                                              rain_canneto$Date)]
+
+#summary(canneto_filtered)
+
+
+## Checking visually that all NAs have gone 
+
+# Rainfall 
+rain_filled <- ggplot_na_distribution(canneto_filtered$Rainfall_Settefrati,
+                       title = "",
+                       subtitle = "",
+                       ylab="Rainfall (mm)\n",
+                       theme= ggplot2::theme_classic())
+rain_filled
+
+# Temperature 
+temp_filled <- ggplot_na_distribution(canneto_filtered$Temperature_Settefrati,
+                       title = "",
+                       subtitle = "",
+                       ylab="Temperature (°C)\n",
+                       theme =ggplot2::theme_classic())
+temp_filled
+
+meteo <- gridExtra::arrangeGrob(rain_filled,temp_filled)
+ggsave("img/canneto/panel_meteo_canneto.jpg", meteo, dpi = 500,
+       width=10, height=8)
+
+
+### outliers ###
+
+
+## Checking distributions 
+
+# Feature 1: Rainfall 
+
+(canneto_rain_box <- ggplot(canneto_filtered,
+                            aes(y = Rainfall_Settefrati))+
+    geom_boxplot()+
+    theme_classic()) # few data outside top whisker
+
+## Checking for outliers statistically 
+outr_canneto <- boxplot.stats(canneto_filtered$Rainfall_Settefrati)$out
+
+# Grubbs test 
+grubbs.test(canneto_filtered$Rainfall_Settefrati)
+# max value seems to be an outlier - statistically speaking
+
+outr_canneto_ind <- which(canneto_filtered$Rainfall_Settefrati %in% c(outr_canneto))
+
+df_outr_canneto <- canneto_filtered[outr_canneto_ind,]
+
+## Let's visualise outliers over time
+
+# plot
+(outr_canneto_vis <- ggplot(df_outr_canneto, aes(Date, Rainfall_Settefrati))+
+    geom_point()+
+    theme_classic())
+# spread out over time
+# keeping them all 
+
+# Feature 2: Temperature 
+
+(canneto_temp_box <- ggplot(canneto_filtered,
+                            aes(y = Temperature_Settefrati))+
+    geom_boxplot()+
+    theme_classic()) # no outliers here 
+
+## Checking statistically 
+outt_canneto <- boxplot.stats(canneto_filtered$Temperature_Settefrati)
+outt_canneto
+# no out 
+
+## Grubbs test 
+testt_canneto <- grubbs.test(canneto_filtered$Temperature_Settefrati)
+testt_canneto # confirmed stats - no out 
+
+
+#### feature engineering ####
+
+## adding new features: seasons and presence/absence of snow
+
+canneto_featured <- add.seasons(canneto_filtered) %>%
+  rename(fl_rate.Ls = imp_flow_rate) %>% 
+  mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <=0 & Rainfall_Settefrati > 0, 1,0)),
+         snow.no = as.factor(ifelse(Temperature_Settefrati >0,1,0))) 
+
+str(canneto_featured)
+
+### changing effect of rain on target, and lagging the effect of rain on the target ###
+
+canneto_orig <- canneto_featured %>% 
+  mutate(lag1 = Lag(Rainfall_Settefrati, +1),
+         lag3 = Lag(Rainfall_Settefrati,+3),
+         lag5 = Lag(Rainfall_Settefrati,+5),
+         lag7 = Lag(Rainfall_Settefrati,+7),
+         lag9 = Lag(Rainfall_Settefrati, +9)) 
+
+canneto_orig1 <- canneto_orig %>% 
+  dplyr::select(-Date)
+
+## creating 5 new datasets with different min rainfall levels 
+## and with new time lags (trying to represent true effect of rain over target)
+
+canneto0.5 <- canneto_orig %>% 
+  mutate(rain0.5 = ifelse(Rainfall_Settefrati <= 0.5, 0, 
+                          Rainfall_Settefrati),
+         lag1 = Lag(rain0.5, +1),
+         lag3 = Lag(rain0.5,+3),
+         lag5 = Lag(rain0.5,+5),
+         lag7 = Lag(rain0.5,+7),
+         lag9 = Lag(rain0.5, +9)) %>% 
+  dplyr::select(-Rainfall_Settefrati)
+
+canneto0.5_1 <- canneto0.5 %>%  dplyr::select(-Date)
+
+canneto1.5 <- canneto_orig %>% 
+  mutate(rain1.5 = ifelse(Rainfall_Settefrati <= 1.5, 0, 
+                          Rainfall_Settefrati),
+         lag1 = Lag(rain1.5, +1),
+         lag3 = Lag(rain1.5, +3),
+         lag5 = Lag(rain1.5, +5),
+         lag7 = Lag(rain1.5, +7),
+         lag9 = Lag(rain1.5, +9)) %>% 
+  dplyr::select(-Rainfall_Settefrati)
+
+canneto1.5_1 <- canneto1.5 %>%   dplyr::select(-Date)
+
+canneto3 <- canneto_orig %>% 
+  mutate(rain3 = ifelse(Rainfall_Settefrati <= 3,0,
+                        Rainfall_Settefrati),
+         lag1 = Lag(rain3, +1),
+         lag3 = Lag(rain3, +3),
+         lag5 = Lag(rain3, +5),
+         lag7 = Lag(rain3, +7),
+         lag9 = Lag(rain3, +9)) %>% 
+  dplyr::select(-Rainfall_Settefrati)
+
+canneto3_1 <- canneto3 %>%  dplyr::select(-Date)
+
+canneto5 <- canneto_orig %>% 
+  mutate(rain5 = ifelse(Rainfall_Settefrati <= 5, 0, 
+                        Rainfall_Settefrati),
+         lag1 = Lag(rain5, +1),
+         lag3 = Lag(rain5, +3),
+         lag5 = Lag(rain5, +5),
+         lag7 = Lag(rain5, +7),
+         lag9 = Lag(rain5, +9)) %>%
+  dplyr::select(-Rainfall_Settefrati)
+
+canneto5_1 <- canneto5 %>%   dplyr::select(-Date)
 
 ## checking for missing data after filtering 
 canneto_filtered_missing <- canneto_filtered %>% 
@@ -223,23 +464,23 @@ temp_canneto <- meteo_canneto %>%
 ## Filling dataset to model with new meteorological data 
 
 # temp
-canneto_nomissing$Temperature_Settefrati[is.na(canneto_nomissing$Temperature_Settefrati)] <- temp_canneto$Temperature_Settefrati[match(canneto_nomissing$Date[is.na(canneto_nomissing$Temperature_Settefrati)],
+canneto_filtered$Temperature_Settefrati[is.na(canneto_filtered$Temperature_Settefrati)] <- temp_canneto$Temperature_Settefrati[match(canneto_filtered$Date[is.na(canneto_filtered$Temperature_Settefrati)],
                                                                                                                                        temp_canneto$Date)]
 
 # rain 
-canneto_nomissing$Rainfall_Settefrati[is.na(canneto_nomissing$Rainfall_Settefrati)] <- rain_canneto$Rainfall_Settefrati[match(canneto_nomissing$Date[is.na(canneto_nomissing$Rainfall_Settefrati)],
+canneto_filtered$Rainfall_Settefrati[is.na(canneto_filtered$Rainfall_Settefrati)] <- rain_canneto$Rainfall_Settefrati[match(canneto_filtered$Date[is.na(canneto_filtered$Rainfall_Settefrati)],
                                                                                                                               rain_canneto$Date)]
 
-#summary(canneto_nomissing)
+#summary(canneto_filtered)
 
 
 ## Checking visually that all NAs have gone 
 
 # Rainfall 
-ggplot_na_distribution(canneto_nomissing$Rainfall_Settefrati)
+ggplot_na_distribution(canneto_filtered$Rainfall_Settefrati)
 
 # Temperature 
-ggplot_na_distribution(canneto_nomissing$Temperature_Settefrati)
+ggplot_na_distribution(canneto_filtered$Temperature_Settefrati)
 
 
 ### outliers ###
@@ -255,15 +496,15 @@ ggplot_na_distribution(canneto_nomissing$Temperature_Settefrati)
     theme_classic()) # few data outside top whisker
 
 ## Checking for outliers statistically 
-outr_canneto <- boxplot.stats(canneto_nomissing$Rainfall_Settefrati)$out
+outr_canneto <- boxplot.stats(canneto_filtered$Rainfall_Settefrati)$out
 
 # Grubbs test 
-grubbs.test(canneto_nomissing$Rainfall_Settefrati)
+grubbs.test(canneto_filtered$Rainfall_Settefrati)
 # max value seems to be an outlier - statistically speaking
 
-outr_canneto_ind <- which(canneto_nomissing$Rainfall_Settefrati %in% c(outr_canneto))
+outr_canneto_ind <- which(canneto_filtered$Rainfall_Settefrati %in% c(outr_canneto))
 
-df_outr_canneto <- canneto_nomissing[outr_canneto_ind,]
+df_outr_canneto <- canneto_filtered[outr_canneto_ind,]
 
 ## Let's visualise outliers over time
 
@@ -282,12 +523,12 @@ df_outr_canneto <- canneto_nomissing[outr_canneto_ind,]
     theme_classic()) # no outliers here 
 
 ## Checking statistically 
-outt_canneto <- boxplot.stats(canneto_nomissing$Temperature_Settefrati)
+outt_canneto <- boxplot.stats(canneto_filtered$Temperature_Settefrati)
 outt_canneto
 # no out 
 
 ## Grubbs test 
-testt_canneto <- grubbs.test(canneto_nomissing$Temperature_Settefrati)
+testt_canneto <- grubbs.test(canneto_filtered$Temperature_Settefrati)
 testt_canneto # confirmed stats - no out 
 
 
@@ -295,7 +536,7 @@ testt_canneto # confirmed stats - no out
 
 ## adding new features: seasons and presence/absence of snow
 
-canneto_featured <- add.seasons(canneto_nomissing) %>%
+canneto_featured <- add.seasons(canneto_filtered) %>%
   rename(fl_rate.Ls = imp_flow_rate) %>% 
   mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <=0 & Rainfall_Settefrati > 0, 1,0)),
          snow.no = as.factor(ifelse(Temperature_Settefrati >0,1,0))) 
@@ -366,7 +607,7 @@ canneto5 <- canneto_orig %>%
 canneto5_1 <- canneto5 %>%   dplyr::select(-Date)
 
 ## checking for missing data after filtering 
-canneto_filtered_missing <- canneto_nomissing %>% 
+canneto_filtered_missing <- canneto_filtered %>% 
   miss_var_summary()
 print(canneto_filtered_missing)
 # there are missing data for all variables but Date
@@ -435,23 +676,23 @@ temp_canneto <- meteo_canneto %>%
 ## Filling dataset to model with new meteorological data 
 
 # temp
-canneto_nomissing$Temperature_Settefrati[is.na(canneto_nomissing$Temperature_Settefrati)] <- temp_canneto$Temperature_Settefrati[match(canneto_nomissing$Date[is.na(canneto_nomissing$Temperature_Settefrati)],
+canneto_filtered$Temperature_Settefrati[is.na(canneto_filtered$Temperature_Settefrati)] <- temp_canneto$Temperature_Settefrati[match(canneto_filtered$Date[is.na(canneto_filtered$Temperature_Settefrati)],
                                                                                                                                        temp_canneto$Date)]
 
 # rain 
-canneto_nomissing$Rainfall_Settefrati[is.na(canneto_nomissing$Rainfall_Settefrati)] <- rain_canneto$Rainfall_Settefrati[match(canneto_nomissing$Date[is.na(canneto_nomissing$Rainfall_Settefrati)],
+canneto_filtered$Rainfall_Settefrati[is.na(canneto_filtered$Rainfall_Settefrati)] <- rain_canneto$Rainfall_Settefrati[match(canneto_filtered$Date[is.na(canneto_filtered$Rainfall_Settefrati)],
                                                                                                                               rain_canneto$Date)]
 
-#summary(canneto_nomissing)
+#summary(canneto_filtered)
 
 
 ## Checking visually that all NAs have gone 
 
 # Rainfall 
-ggplot_na_distribution(canneto_nomissing$Rainfall_Settefrati)
+ggplot_na_distribution(canneto_filtered$Rainfall_Settefrati)
 
 # Temperature 
-ggplot_na_distribution(canneto_nomissing$Temperature_Settefrati)
+ggplot_na_distribution(canneto_filtered$Temperature_Settefrati)
 
 
 ### outliers ###
@@ -467,15 +708,15 @@ ggplot_na_distribution(canneto_nomissing$Temperature_Settefrati)
     theme_classic()) # few data outside top whisker
 
 ## Checking for outliers statistically 
-outr_canneto <- boxplot.stats(canneto_nomissing$Rainfall_Settefrati)$out
+outr_canneto <- boxplot.stats(canneto_filtered$Rainfall_Settefrati)$out
 
 # Grubbs test 
-grubbs.test(canneto_nomissing$Rainfall_Settefrati)
+grubbs.test(canneto_filtered$Rainfall_Settefrati)
 # max value seems to be an outlier - statistically speaking
 
-outr_canneto_ind <- which(canneto_nomissing$Rainfall_Settefrati %in% c(outr_canneto))
+outr_canneto_ind <- which(canneto_filtered$Rainfall_Settefrati %in% c(outr_canneto))
 
-df_outr_canneto <- canneto_nomissing[outr_canneto_ind,]
+df_outr_canneto <- canneto_filtered[outr_canneto_ind,]
 
 ## Let's visualise outliers over time
 
@@ -494,12 +735,12 @@ df_outr_canneto <- canneto_nomissing[outr_canneto_ind,]
     theme_classic()) # no outliers here 
 
 ## Checking statistically 
-outt_canneto <- boxplot.stats(canneto_nomissing$Temperature_Settefrati)
+outt_canneto <- boxplot.stats(canneto_filtered$Temperature_Settefrati)
 outt_canneto
 # no out 
 
 ## Grubbs test 
-testt_canneto <- grubbs.test(canneto_nomissing$Temperature_Settefrati)
+testt_canneto <- grubbs.test(canneto_filtered$Temperature_Settefrati)
 testt_canneto # confirmed stats - no out 
 
 
@@ -507,219 +748,7 @@ testt_canneto # confirmed stats - no out
 
 ## adding new features: seasons and presence/absence of snow
 
-canneto_featured <- add.seasons(canneto_nomissing) %>%
-  rename(fl_rate.Ls = imp_flow_rate) %>% 
-  mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <=0 & Rainfall_Settefrati > 0, 1,0)),
-         snow.no = as.factor(ifelse(Temperature_Settefrati >0,1,0))) 
-
-str(canneto_featured)
-
-### changing effect of rain on target, and lagging the effect of rain on the target ###
-
-canneto_orig <- canneto_featured %>% 
-  mutate(lag1 = Lag(Rainfall_Settefrati, +1),
-         lag3 = Lag(Rainfall_Settefrati,+3),
-         lag5 = Lag(Rainfall_Settefrati,+5),
-         lag7 = Lag(Rainfall_Settefrati,+7),
-         lag9 = Lag(Rainfall_Settefrati, +9)) 
-
-canneto_orig1 <- canneto_orig %>% 
-  dplyr::select(-Date)
-
-## creating 5 new datasets with different min rainfall levels 
-## and with new time lags (trying to represent true effect of rain over target)
-
-canneto0.5 <- canneto_orig %>% 
-  mutate(rain0.5 = ifelse(Rainfall_Settefrati <= 0.5, 0, 
-                          Rainfall_Settefrati),
-         lag1 = Lag(rain0.5, +1),
-         lag3 = Lag(rain0.5,+3),
-         lag5 = Lag(rain0.5,+5),
-         lag7 = Lag(rain0.5,+7),
-         lag9 = Lag(rain0.5, +9)) %>% 
-  dplyr::select(-Rainfall_Settefrati)
-
-canneto0.5_1 <- canneto0.5 %>%  dplyr::select(-Date)
-
-canneto1.5 <- canneto_orig %>% 
-  mutate(rain1.5 = ifelse(Rainfall_Settefrati <= 1.5, 0, 
-                          Rainfall_Settefrati),
-         lag1 = Lag(rain1.5, +1),
-         lag3 = Lag(rain1.5, +3),
-         lag5 = Lag(rain1.5, +5),
-         lag7 = Lag(rain1.5, +7),
-         lag9 = Lag(rain1.5, +9)) %>% 
-  dplyr::select(-Rainfall_Settefrati)
-
-canneto1.5_1 <- canneto1.5 %>%   dplyr::select(-Date)
-
-canneto3 <- canneto_orig %>% 
-  mutate(rain3 = ifelse(Rainfall_Settefrati <= 3,0,
-                        Rainfall_Settefrati),
-         lag1 = Lag(rain3, +1),
-         lag3 = Lag(rain3, +3),
-         lag5 = Lag(rain3, +5),
-         lag7 = Lag(rain3, +7),
-         lag9 = Lag(rain3, +9)) %>% 
-  dplyr::select(-Rainfall_Settefrati)
-
-canneto3_1 <- canneto3 %>%  dplyr::select(-Date)
-
-canneto5 <- canneto_orig %>% 
-  mutate(rain5 = ifelse(Rainfall_Settefrati <= 5, 0, 
-                        Rainfall_Settefrati),
-         lag1 = Lag(rain5, +1),
-         lag3 = Lag(rain5, +3),
-         lag5 = Lag(rain5, +5),
-         lag7 = Lag(rain5, +7),
-         lag9 = Lag(rain5, +9)) %>%
-  dplyr::select(-Rainfall_Settefrati)
-
-canneto5_1 <- canneto5 %>%   dplyr::select(-Date)
-
-## checking for missing data after filtering 
-canneto_filtered_missing <- canneto_nomissing %>% 
-  miss_var_summary()
-print(canneto_filtered_missing)
-# there are missing data for all variables but Date
-
-## manipulating rainfall data (3bmeteo)
-rain_canneto <- meteo_canneto %>% 
-  rename(date1 = filename) %>% 
-  mutate(date1 = gsub("../input/madonna-di-canneto-3bmeteo", "", date1),
-         date1 = gsub(".csv", "", date1),
-         date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
-  separate(date, into = c("weekday", "day")) %>%
-  dplyr::select(-weekday) %>%
-  unite(date_final, day,date1, sep = " ") %>%
-  mutate(date_final = str_replace(date_final,"ago","08"),
-         date_final = str_replace(date_final, "gen", "01"),
-         date_final = str_replace(date_final, "feb", "02"),
-         date_final = str_replace(date_final, "mar", "03"),
-         date_final = str_replace(date_final, "apr", "04"),
-         date_final = str_replace(date_final, "mag", "05"),
-         date_final = str_replace(date_final, "giu", "06"),
-         date_final = str_replace(date_final, "lug", "07"),
-         date_final = str_replace(date_final, "set", "09"),
-         date_final = str_replace(date_final, "ott", "10"),
-         date_final = str_replace(date_final, "nov","11"),
-         date_final = str_replace(date_final, "dic", "12"),
-         date_final = gsub(" ", "/", date_final),
-         date_final = dmy(date_final)) %>%
-  rename(Date = date_final,
-         Rainfall_Settefrati = prec) %>%
-  dplyr::select(Date, Rainfall_Settefrati)
-
-#summary(rain_canneto)
-
-## manipulating temperature data (3bmeteo)
-
-temp_canneto <- meteo_canneto %>% 
-  rename(date1 = filename) %>% 
-  mutate(date1 = gsub("../input/madonna-di-canneto-3bmeteo", "", date1),
-         date1 = gsub(".csv", "", date1),
-         date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
-  separate(date, into = c("weekday", "day")) %>%
-  dplyr::select(-weekday) %>%
-  unite(date_final, day,date1, sep = " ") %>%
-  mutate(date_final = str_replace(date_final,"ago","08"),
-         date_final = str_replace(date_final, "gen", "01"),
-         date_final = str_replace(date_final, "feb", "02"),
-         date_final = str_replace(date_final, "mar", "03"),
-         date_final = str_replace(date_final, "apr", "04"),
-         date_final = str_replace(date_final, "mag", "05"),
-         date_final = str_replace(date_final, "giu", "06"),
-         date_final = str_replace(date_final, "lug", "07"),
-         date_final = str_replace(date_final, "set", "09"),
-         date_final = str_replace(date_final, "ott", "10"),
-         date_final = str_replace(date_final, "nov","11"),
-         date_final = str_replace(date_final, "dic", "12"),
-         date_final = gsub(" ", "/", date_final),
-         date_final = dmy(date_final)) %>%
-  rename(Date = date_final) %>%
-  dplyr::select(Date, tmin, tmax) %>%
-  mutate(Temperature_Settefrati = rowMeans(subset(., select = c(tmin,tmax)),
-                                           na.rm = T)) %>%
-  dplyr::select(-tmin, -tmax)
-
-#summary(temp_canneto)
-
-## Filling dataset to model with new meteorological data 
-
-# temp
-canneto_nomissing$Temperature_Settefrati[is.na(canneto_nomissing$Temperature_Settefrati)] <- temp_canneto$Temperature_Settefrati[match(canneto_nomissing$Date[is.na(canneto_nomissing$Temperature_Settefrati)],
-                                                                                                                                       temp_canneto$Date)]
-
-# rain 
-canneto_nomissing$Rainfall_Settefrati[is.na(canneto_nomissing$Rainfall_Settefrati)] <- rain_canneto$Rainfall_Settefrati[match(canneto_nomissing$Date[is.na(canneto_nomissing$Rainfall_Settefrati)],
-                                                                                                                              rain_canneto$Date)]
-
-#summary(canneto_nomissing)
-
-
-## Checking visually that all NAs have gone 
-
-# Rainfall 
-ggplot_na_distribution(canneto_nomissing$Rainfall_Settefrati)
-
-# Temperature 
-ggplot_na_distribution(canneto_nomissing$Temperature_Settefrati)
-
-
-### outliers ###
-
-
-## Checking distributions 
-
-# Feature 1: Rainfall 
-
-(canneto_rain_box <- ggplot(canneto_filtered,
-                            aes(y = Rainfall_Settefrati))+
-    geom_boxplot()+
-    theme_classic()) # few data outside top whisker
-
-## Checking for outliers statistically 
-outr_canneto <- boxplot.stats(canneto_nomissing$Rainfall_Settefrati)$out
-
-# Grubbs test 
-grubbs.test(canneto_nomissing$Rainfall_Settefrati)
-# max value seems to be an outlier - statistically speaking
-
-outr_canneto_ind <- which(canneto_nomissing$Rainfall_Settefrati %in% c(outr_canneto))
-
-df_outr_canneto <- canneto_nomissing[outr_canneto_ind,]
-
-## Let's visualise outliers over time
-
-# plot
-(outr_canneto_vis <- ggplot(df_outr_canneto, aes(Date, Rainfall_Settefrati))+
-    geom_point()+
-    theme_classic())
-# spread out over time
-# keeping them all 
-
-# Feature 2: Temperature 
-
-(canneto_temp_box <- ggplot(canneto_filtered,
-                            aes(y = Temperature_Settefrati))+
-    geom_boxplot()+
-    theme_classic()) # no outliers here 
-
-## Checking statistically 
-outt_canneto <- boxplot.stats(canneto_nomissing$Temperature_Settefrati)
-outt_canneto
-# no out 
-
-## Grubbs test 
-testt_canneto <- grubbs.test(canneto_nomissing$Temperature_Settefrati)
-testt_canneto # confirmed stats - no out 
-
-
-#### feature engineering ####
-
-## adding new features: seasons and presence/absence of snow
-
-canneto_featured <- add.seasons(canneto_nomissing) %>%
+canneto_featured <- add.seasons(canneto_filtered) %>%
   rename(fl_rate.Ls = imp_flow_rate) %>% 
   mutate(snow.yes = as.factor(ifelse(Temperature_Settefrati <=0 & Rainfall_Settefrati > 0, 1,0)),
          snow.no = as.factor(ifelse(Temperature_Settefrati >0,1,0))) 
