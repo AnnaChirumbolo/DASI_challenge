@@ -865,20 +865,3 @@ ggsave("img/canneto/rel_infl.gbm.jpg",plot_rel.infl,
        dpi = 500, width = 8, height = 6)
 
 
-
-
-### Time series forecasting - SARIMA ### This could be considered too --> univariate TS analysis though (only target var and date)
-
-
-canneto_ts.fit <- Arima(window(canneto_ts, end = c(2020,7)), order = c(2,0,0),
-                        seasonal = list(order = c(2,0,0), period = 12))
-
-tsdisplay(residuals(canneto_ts.fit))
-
-plot(forecast(canneto_ts.fit, h = 12))
-lines(canneto_ts.fit)
-
-forecast_fit <- forecast(canneto_ts.fit)
-
-RMSE(canneto_ts.fit$mean,validation)  # RMSE = 7 --> better model than gbm...? Less variables considered.
-MAPE(canneto_ts.fit$mean,validation) * 100 
