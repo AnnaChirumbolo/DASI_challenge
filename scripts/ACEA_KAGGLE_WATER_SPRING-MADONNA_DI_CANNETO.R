@@ -468,6 +468,66 @@ canneto4.4_cor <- canneto4.4_1 %>%
 
 par(mfrow =c (1,1))
 
+#### visualise the time lags ####
+
+canneto_tot <- canneto_featured %>%
+  left_join(canneto0.8) %>% 
+  left_join(., canneto1.5) %>% 
+  left_join(., canneto2.8) %>% 
+  left_join(., canneto4.4) %>% 
+  gather(., key = "canneto_type",value="rain.mm", Rainfall_Settefrati,
+         rain0.8,rain1.5,rain2.8,rain4.4) %>%
+  dplyr::select(Date,canneto_type,rain.mm)
+
+rain_boxplot <- ggplot(canneto_featured, aes(y = Rainfall_Settefrati))+
+    geom_boxplot(color = "steelblue")+
+    xlab("")+
+    ylab("Rainfall (mm)")+
+    ggtitle("Boxplot rainfall variable: Madonna di Canneto\n")+
+    theme_classic()
+
+vis_rain <- ggplot(canneto_featured, aes(Date, Rainfall_Settefrati))+
+    geom_line(color = "steelblue")+
+    scale_y_continuous(limits = c(0,141),expand = c(0,0))+
+    ylab("")+
+    xlab("")+
+    geom_hline(aes(yintercept = 0.8,linetype = "0.8"),color = "darkred")+
+    geom_hline(aes(yintercept = 1.5, linetype = "1.5"),color = "darkgreen")+
+    geom_hline(aes(yintercept=2.8, linetype = "2.8"),color = "darkorange")+
+    geom_hline(aes(yintercept = 4.4, linetype = "4.4"),color ="brown")+
+    scale_linetype_manual(name = "Rainfall (mm)", 
+                          values = c(1,2,3,4),
+                          guide = guide_legend(override.aes = list(color = c("darkred",
+                                                                             "darkgreen",
+                                                                             "darkorange",
+                                                                             "brown"))))+
+  theme_classic()+
+  theme(legend.position = c(0.9,0.9))+
+  labs(title = "Distribution of rainfall over time: Madonna di Canneto\n",
+       subtitle = "Lines show set minimum weekly rainfall thresholds\n")
+
+
+## panel
+
+#install.packages("cowplot")
+library(cowplot)
+
+panelled_rain <- plot_grid(rain_boxplot,
+                           vis_rain,
+                           align = "h",
+                           nrow = 1,ncol =2,
+                           rel_widths = c(1/4,1/2))
+
+panelled_rain
+
+ggsave("img/canneto/panelled_rain.jpg",panelled_rain,
+       dpi = 500, width =12, height = 6)
+
+?arrangeGrob
+
+
+
+
 #####------------------------------------------------------------------------------------------------------------------------------------------####
 ### Running stepwise ###
 
@@ -499,21 +559,13 @@ coef(canneto4.4.sw$finalModel,7)
 
 #####----------------------------------------------------------------------------------------------------------------------------------------#####
 ### Running autoML from h2o package ###
-# The following two commands remove any previously installed H2O packages for R.
-if ("package:h2o" %in% search()) { detach("package:h2o", unload=TRUE) }
-if ("h2o" %in% rownames(installed.packages())) { remove.packages("h2o") }
-
-# Next, we download packages that H2O depends on.
-pkgs <- c("RCurl","jsonlite")
-for (pkg in pkgs) {
-  if (! (pkg %in% rownames(installed.packages()))) { install.packages(pkg) }
-}
 
 # Now we download, install and initialize the H2O package for R.
 install.packages("h2o", type="source", repos="http://h2o-release.s3.amazonaws.com/h2o/rel-zeno/2/R")
 
 # Finally, let's load H2O and start up an H2O cluster
 library(h2o)
+
 h2o.init()
 
 h2o.no_progress()  # Turn off progress bars for notebook readability
