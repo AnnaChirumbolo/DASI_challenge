@@ -1,4 +1,4 @@
-#### River Arno Analisi / Cinzia Schiavuta ####
+#### River Arno Analisi / CS ####
 #### inizializzo il codice ####
 getwd()
 rm(list = ls(all=TRUE)) 
@@ -6,6 +6,9 @@ rm(list = ls(all=TRUE))
 #### carico le librerie ####
 #install.packages("recipes")
 #install.packages("fastDummies")
+
+library(fastDummies)
+library(fastDummies)
 #library(fastDummies)
 #library(reshape)
 library(reshape2)
@@ -41,7 +44,7 @@ library(visdat)
 library(forecast)
 library(xts)
 library(caTools)
-library(data.table)
+#library(data.table)
 library(dplyr)
 #install.packages("metR")
 #library(metR)
@@ -88,6 +91,9 @@ River_Arno$Date<-as.Date(River_Arno$Date, format = "%d/%m/%Y")
 
 ### N/A Visualization
 visdat::vis_dat(River_Arno)
+ggsave("img/arno/01River_Arno_Inizio.jpg", dpi = 500, width = 10, height=7)
+#01River_Arno_Inizio.jpg
+
 
 str(River_Arno) 
 names(River_Arno)
@@ -104,6 +110,8 @@ cutdata <- as.Date("2004-01-01")
 River_Arno_cut <- River_Arno[(River_Arno$Date > cutdata), ]
 ### N/A Visualization
 visdat::vis_dat(River_Arno_cut)
+ggsave("img/arno/02River_Arno_missing.jpg", dpi = 500, width = 10, height=7)
+#02River_Arno_cut_missing.jpg
 
 #### missing seconda parte ####
 statsNA(River_Arno_cut$Rainfall_Le_Croci) #ok non ci sono missing
@@ -123,36 +131,65 @@ ggplot_na_distribution(River_Arno_cut$Rainfall_S_Piero)
 
 statsNA(River_Arno_cut$Rainfall_Vernio)# richiede intervento 1743 mising
 ggplot_na_distribution(River_Arno_cut$Rainfall_Vernio)
+ggsave("img/arno/03Rainfall_Vernio_missing.jpg", dpi = 500, width = 10, height=7)
+#03Rainfall_Vernio_missing.jpg
 
 statsNA(River_Arno_cut$Rainfall_Stia) # richiede intervento 4742 missing
 ggplot_na_distribution(River_Arno_cut$Rainfall_Stia)
+ggsave("img/arno/04Rainfall_Stia_missing.jpg", dpi = 500, width = 10, height=7)
+#04Rainfall_Stia_missing.jpg
 
 statsNA(River_Arno_cut$Rainfall_Consuma) # richiede intervento 4743 missing
 ggplot_na_distribution(River_Arno_cut$Rainfall_Consuma)
+ggsave("img/arno/05Rainfall_Consuma_missing.jpg", dpi = 500, width = 10, height=7)
+#05Rainfall_Consuma_missing.jpg
 
 statsNA(River_Arno_cut$Rainfall_Incisa) # richiede intervento 1457 missing
 ggplot_na_distribution(River_Arno_cut$Rainfall_Incisa)
+ggsave("img/arno/06Rainfall_Incisa_missing.jpg", dpi = 500, width = 10, height=7)
+#06Rainfall_Incisa_missing.jpg
+
 
 statsNA(River_Arno_cut$Rainfall_Montevarchi) # richiede intervento 4378 missing
 ggplot_na_distribution(River_Arno_cut$Rainfall_Montevarchi)
+ggsave("img/arno/07Rainfall_Montevarchi_missing.jpg", dpi = 500, width = 10, height=7)
+#07Rainfall_Montevarchi_missing.jpg
 
 statsNA(River_Arno_cut$Rainfall_S_Savino) # richiede intervento 4743 missing
 ggplot_na_distribution(River_Arno_cut$Rainfall_S_Savino)
+ggsave("img/arno/08Rainfall_S_Savino_missing.jpg", dpi = 500, width = 10, height=7)
+#08Rainfall_S_Savino_missing
+
+
 
 statsNA(River_Arno_cut$Rainfall_Laterina) # richiede intervento 4743 missing
 ggplot_na_distribution(River_Arno_cut$Rainfall_Laterina)
+ggsave("img/arno/09Rainfall_Laterina_missing.jpg", dpi = 500, width = 10, height=7)
+#09Rainfall_Laterina_missing
+
+
 
 statsNA(River_Arno_cut$Rainfall_Bibbiena) # richiede intervento 3648 missing
 ggplot_na_distribution(River_Arno_cut$Rainfall_Bibbiena)
+ggsave("img/arno/10Rainfall_Bibbiena_missing.jpg", dpi = 500, width = 10, height=7)
+#10Rainfall_Bibbiena_missing
+
 
 statsNA(River_Arno_cut$Rainfall_Camaldoli) # richiede intervento 4743 missing
 ggplot_na_distribution(River_Arno_cut$Rainfall_Camaldoli)
+ggsave("img/arno/11Rainfall_Camaldoli_missing.jpg", dpi = 500, width = 10, height=7)
+#11Rainfall_Camaldoli_missing
+
 
 statsNA(River_Arno_cut$Temperature_Firenze) # richiede intervento 1062 missing
 ggplot_na_distribution(River_Arno_cut$Temperature_Firenze)
+ggsave("img/arno/12Temperature_Firenze_missing.jpg", dpi = 500, width = 10, height=7)
+#12Temperature_Firenze_missing
 
 statsNA(River_Arno_cut$Hydrometry_Nave_di_Rosano)# ok
 ggplot_na_distribution(River_Arno_cut$Hydrometry_Nave_di_Rosano)
+ggsave("img/arno/13Hydrometry_Nave_di_Rosano_missing.jpg", dpi = 500, width = 10, height=7)
+#13Hydrometry_Nave_di_Rosano_missing
 
 # scarico i dati dal 2011 al 2020 su 3bmeteo
 
@@ -193,7 +230,7 @@ temp_firenze <- temp_firenze_ls %>%
          date_final = stringr::str_replace(date_final, "nov","11"),
          date_final = stringr::str_replace(date_final, "dec", "12"),
          date_final = gsub(" ", "/", date_final),
-         date_final = dmy(date_final)) %>% 
+         date_final = lubridate::dmy(date_final)) %>% 
   dplyr::rename(Date = date_final) %>%
   dplyr::select(Date, tmin, tmax) %>%
   dplyr::mutate(Temperature_Firenze = rowMeans(subset(., select = c(tmin,tmax)),
@@ -208,6 +245,7 @@ summary(temp_firenze)
 (vis_temp_firenze <- ggplot(temp_firenze, aes(Date, Temperature_Firenze))+
     geom_line()+
     theme_classic())
+#non salvo il grfico in questo caso
 
 #### Rain_fall Bibbiena aggiungo i dati scaricati da 3bmeteo dal 2011
 
@@ -654,20 +692,20 @@ River_Arno_cut$Rainfall_Vernio[is.na(River_Arno_cut$Rainfall_Vernio)] <-
 ####controllo ulteriori NA ####
 ### N/A Visualization
 visdat::vis_dat(River_Arno_cut)
+ggsave("img/arno/14River_Arno_cut_fewmissing.jpg", dpi = 500, width = 10, height=7)
+
 # delete rows with NA  non posso recuperare i dati dal
 # 05-07-2007 al 01-01-2011
 #cutdata_1 <- as.Date("2007-07-05")
 cutdata_2 <- as.Date("2011-01-01")
 River_Arno_cut1 <- River_Arno_cut[(River_Arno_cut$Date > cutdata_2), ]
+
 #River_Arno_cut1 e' il dataframe con una interruzione temporale dal
 #2007 al 2011 e decido di prendere i dati solo dal 2011 in poi
 
-visdat::vis_dat(River_Arno_cut1)
 
 summary(River_Arno_cut1)
 statsNA(River_Arno_cut1$Hydrometry_Nave_di_Rosano)
-
-
 
 max(River_Arno_cut1$Date[is.na(River_Arno_cut1$Hydrometry_Nave_di_Rosano )])
 #ho un unico valore mancante nella variabile target Hydrometry_Nave_di_Rosano
@@ -677,9 +715,10 @@ max(River_Arno_cut1$Date[is.na(River_Arno_cut1$Hydrometry_Nave_di_Rosano )])
 ####interpolo il valore mancante####
 # interpolation
 #River_Arno_cut1$Hydrometry_Nave_di_Rosano <-as.numeric(na.approx(River_Arno_cut1$Hydrometry_Nave_di_Rosano))
-
-#oppure
+#
 River_Arno_cut1$Hydrometry_Nave_di_Rosano <-as.numeric(na.interp(River_Arno_cut1$Hydrometry_Nave_di_Rosano))
+visdat::vis_dat(River_Arno_cut1)
+ggsave("img/arno/15River_Arno_cut_NOmissing.jpg", dpi = 500, width = 10, height=7)
 
 
 
@@ -697,8 +736,10 @@ ggplot(df, aes(x = Date, y = Val, col = Var)) +
   ggtitle("River Arno: Hydrometry (meters)") +
   ylab("Hydrometry") +
   xlab("Date")
-rm(df)
+ggsave("img/arno/16Hydrometry_Nave_di_Rosano_target.jpg", dpi = 500, width = 10, height=7)
 
+rm(df)
+#Hydrometry_Nave_di_Rosano_target.jpg
 
 
 #### Correlation Matrix ####
@@ -706,7 +747,10 @@ df <- River_Arno_cut1
 df$Date <- NULL
 ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, 
        layout.exp = 4, label_size = 3)
+ggsave("img/arno/17Correlation_matrix.jpg", dpi = 500, width = 10, height=7)
+
 rm(df)
+#plot 17Correlation_Matrix.jpg
 #La matrice di correlazione mostra una serie di correlazioni 
 #positive tra precipitazioni e correlazioni negative tra 
 # la temperatura e precipitazioni.
@@ -728,30 +772,38 @@ rm(df)
 #### Rainfall analysis ####
 # Rainfall analysis per le localita' lungo l'affluente 
 # principale del fiume Arno, il Sieve
-River_Arno_cut1$Rainfall_mean_Sieve <- rowMeans(River_Arno_cut1[,c("Rainfall_Le_Croci", "Rainfall_Cavallina", 
+#quando piove nella stessa giornata, la quantita' di pioggia si somma
+#nel fiume e sicuramente influenzera' il flusso
+df<-River_Arno_cut1
+df$Rainfall_mean_Sieve <- rowMeans(River_Arno_cut1[,c("Rainfall_Le_Croci", "Rainfall_Cavallina", 
                                                    "Rainfall_S_Agata", "Rainfall_Mangona",
                                                    "Rainfall_S_Piero","Rainfall_Vernio")])
 
 
 # Rainfall analysis per le localita' dalla sorgente dell'arno
-River_Arno_cut1$Rainfall_mean_Sorgente <- rowMeans(River_Arno_cut1[,c("Rainfall_Camaldoli", "Rainfall_Bibbiena", 
+#stesso dicorso per la pioggia ceh si accumula nella stessa
+#giornata dala sorgente dell'arno in giu'
+df$Rainfall_mean_Sorgente <- rowMeans(River_Arno_cut1[,c("Rainfall_Camaldoli", "Rainfall_Bibbiena", 
                                                                    "Rainfall_Laterina", "Rainfall_S_Savino",
                                                                    "Rainfall_Montevarchi","Rainfall_Consuma",
                                                                    "Rainfall_Incisa", "Rainfall_Stia" )])
-df <- River_Arno_cut1
-##rm(df)
+
+
 ################### 
 
 #ho preso i dati da 3B meteo, dal 2011 reali
 #visualizzo le medie di pioggia divise in zone, lungo affluente Sieve
 #e lungo l'Arno, dalla sorgente
+
 df <- df %>% dplyr::select(Date,  Rainfall_mean_Sieve, Rainfall_mean_Sorgente) %>%
   pivot_longer(., cols = c( Rainfall_mean_Sieve, Rainfall_mean_Sorgente),
                names_to = "Var", values_to = "Val", values_drop_na = FALSE)
 ggplot(df, aes(x = Date, y = Val, col = Var)) +
   geom_line() + ggtitle("Rainfall (mm) - River Arno") +
   ylab("Rainfall") +   xlab("Date")
+ggsave("img/arno/18mean_rainfall.jpg", dpi = 500, width = 10, height=7)
 rm(df)
+#18River_arno_mean_rainfall
 
 #### visualizzo la pioggia per localita'####
 River_Arno_cut1 %>%
@@ -768,16 +820,20 @@ River_Arno_cut1 %>%
        subtitle = "explanatory variables on river Arno (from 01-2011)") + 
   theme_21+
   theme(legend.position = "none")
+ggsave("img/arno/19rainfall_localita.jpg", dpi = 500, width = 10, height=7)
 #abbiamo due gruppi (affluente Sieve e sorgente dell'arno) in cui le precipitazioni sono correlate tra loro, 
 #ma non sono correlate tra i gruppi diversi.
 #nella  maggior parte dei casi non superano i 100 mm  di pioggia 
 #e a volte, in certe localita', raramente superano anche i 50 mm. 
-#Decidiamo di scegliere due variabili, una per ogni gruppo: 
+#Decidiamo di scegliere due variabili la somma delle piogge tra sorgente e affluente Sieve
+#
+#Faro il confronto con il test, guardano la correlzione tra i gruppi pioggia
+#Prendo una localita per gruppo per per un test:
 #dal primo gruppo, dell'affluente Sieve, scegliamo le precipitazioni da "Le Croci" 
 #e dal secondo gruppo, della sorgente dell'Arno, scelgo "Stia" per la posizione geografica centrale, e per
 #alta correlazione tra le altre componenti del proprio gruppo.
 
-#poi, per fare un secondo test di forecast, possiam prendere
+#poi, per fare un terzo test di forecast, possiam prendere
 # due diverse localita' com eesempio Cavallina (dal grupo dell'Affluente Sieve)
 # e Bibbiena per il gruppo della sorgente dell'Arno.
 
@@ -794,6 +850,7 @@ ggplot(df, aes(x = Date, y = Val, col = Var)) +
   geom_line() + ggtitle("Temperature (°C) -  River Arno") +
   ylab("Temperature") + xlab("Date")
 rm(df)
+ggsave("img/arno/20temp.jpg", dpi = 500, width = 10, height=7)
 #La temperatura della regione di Firenze è l'unica variabile 
 #sulla temperatura del dataset Arno. 
 #Ha una distribuzione stagionale e la maggior parte dei valori è 
@@ -816,6 +873,10 @@ River_Arno_cut1$Season<-factor(River_Arno_cut1$Season,
 # salvo il mio dataset River_Arno_cut1 ripulito con le stagioni:
 write.csv(River_Arno_cut1,"processed_data/ARNO_to_model.csv")
 
+####OUTLIERS####
+
+
+
 ###correlazione seconda tabella di visibilita' con il metodo di spearman 
 #+ le stagioni
 River_Arno_cut1 %>%
@@ -823,6 +884,7 @@ River_Arno_cut1 %>%
   cor(., method = "spearman", use = "complete.obs") %>%
   corrplot(., method = "color", type = "upper", col = core_col(100),
            tl.col = "black",tl.srt = 35, diag = T, tl.cex = 0.72)
+#ggsave("img/arno/17Correlation_matrix_spearman.jpg", dpi = 500, width = 10, height=7)
 ##Matrice di correlazione: anche in questa tabella,sono presenti due cluster di precipitazioni, 
 #quelli sulla sorgente (Stia, Camaldoli, Bibbiena, Laterina, San Savino
 # Montevarchi, Incisa, Consuma) e quelli lungo l'affluente principale
@@ -832,7 +894,7 @@ River_Arno_cut1 %>%
 #analizzo la variabile target in base alla stagione:
 
 River_Arno_cut1 %>%
-  select(Season, Hydrometry_Nave_di_Rosano) %>%
+  dplyr::select(Season, Hydrometry_Nave_di_Rosano) %>%
   melt(., id.vars = "Season") %>%
   ggplot(., aes(Season, value))+
   facet_wrap(variable~., ncol = 1, scales = "free_y")+
@@ -842,6 +904,7 @@ River_Arno_cut1 %>%
   labs(x = "Season", y = "Value", title = "The distribution of the explained variables by season",
        subtitle = "river Arno") + 
   theme_21
+ggsave("img/arno/21target+seasons.jpg", dpi = 500, width = 10, height=7)
 #valori superiori a 5, che rappresentano piogge intense,
 #si vedono solo in autunno e in inverno.
 #le stagioni spiegano poco la variabile target: la mediana e' leggerment
@@ -853,7 +916,7 @@ River_Arno_cut1 %>%
 
 ### andamento della variabile target####
 River_Arno_cut1%>%
-  select(Date, Hydrometry_Nave_di_Rosano) %>%
+  dplyr::select(Date, Hydrometry_Nave_di_Rosano) %>%
   melt(., id.vars = "Date") %>%
   ggplot(., aes(Date, value))+
   facet_wrap(variable~., ncol = 1, scales = "free_y")+
@@ -861,8 +924,19 @@ River_Arno_cut1%>%
   geom_smooth(method = "loess", color = "firebrick3", size = 2.2, formula = y ~ x, fill = "firebrick4", alpha = 0.32)+
   scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2011-01-01", "2020-06-30")))+
   labs(x = "Date", y = "Value", title = "The distribution of the explained variables (along with the loess curve)",
-       subtitle = "in river Arno (from 01-2011)") + 
+       subtitle = "in river Arno from 01-2011") + 
   theme_21
+
+
+ggsave("img/arno/16Hydrometry_Nave_di_Rosano_target+mean.jpg", dpi = 500, width = 10, height=7)
+#16Hydrometry_Nave_di_Rosano_target+mean
+
+
+ggsave("img/arno/16Hydrometry_Nave_di_Rosano_target+mean.jpg", dpi = 500, width = 10, height=7)
+#16Hydrometry_Nave_di_Rosano_target+mean
+
+# Livello idrometrico: indica l’altezza d’acqua del fiume rispetto a un riferimento fisso,
+#denominato zero idrometrico (m). 
 #La variabile target esplicita  il livello del fiume espresso in metri 
 #misurato dalla stazione idrometrica "Nave_di_Rosano". 
 #I valori di questa variabile sono compresi tra 0 e 7 metri.
@@ -870,6 +944,37 @@ River_Arno_cut1%>%
 #Dopo qualche stagione irregolare, ci sono diversi cali 
 #fino a 0 nel 2013, 2014 e 2019, che tornano rapidamente alla normalità.
 
+
+
+#boxplot
+df<-River_Arno_cut1
+(hist_df <- ggplot(df,
+                  aes(y = Hydrometry_Nave_di_Rosano
+                                     ))+
+    geom_boxplot()+
+    theme_classic())
+ggsave("img/arno/22Hydrometry_Nave_di_Rosano_boxplot.jpg", dpi = 500, width = 10, height=7)
+
+out_arno <- boxplot.stats(df$Hydrometry_Nave_di_Rosano)$out 
+out_arno
+out_ind_arno <- which(df$Hydrometry_Nave_di_Rosano %in% c(out_arno))
+out_ind_arno # rows where outliers are found
+
+upper_bound <- quantile(df$Hydrometry_Nave_di_Rosano, 0.975)
+upper_bound # 3.10325
+
+upper_bound99 <- quantile(df$Hydrometry_Nave_di_Rosano, 0.99)
+upper_bound99 # 3.96
+
+## checking stats to verify it's an outlier
+# grubbs test
+test <- grubbs.test(df$Hydrometry_Nave_di_Rosano)
+test # data:  df$Hydrometry_Nave_di_Rosano
+#G = 8.59604, U = 0.97868, p-value < 2.2e-16
+#alternative hypothesis: highest value 6.75 is an outlier
+
+## dopo l'analisi decido di mantenere gli outlieers della variabile target, non e' possibile sostituire
+rm(df)
 
 
 
@@ -885,25 +990,7 @@ River_Arno_cut1%>%
 
 ### changing effect of rain on target, and lagging the effect 
 #of rain on the target ###
-#cancella
-arno_orig_LagSieve <- River_Arno_cut1 %>% 
-  mutate(lag1 = lag(Rainfall_mean_Sieve, +1),
-         lag3 = lag(Rainfall_mean_Sieve,+3),
-         lag5 = lag(Rainfall_mean_Sieve,+5),
-         lag7 = lag(Rainfall_mean_Sieve,+7)) 
 
-arno_orig_LagSieve1 <- arno_orig_LagSieve %>% 
-  dplyr::select(-Date)
-
-#cancella
-arno_orig_LagSorgente <- River_Arno_cut1 %>% 
-  mutate(lag1 = lag(Rainfall_mean_Sorgente, +1),
-         lag3 = lag(Rainfall_mean_Sorgente,+3),
-         lag5 = lag(Rainfall_mean_Sorgente,+5),
-         lag7 = lag(Rainfall_mean_Sorgente,+7)) 
-
-arno_orig_LagSorgente1 <- arno_orig_LagSorgente %>% 
-  dplyr::select(-Date)
 
 #Le_Croci
 arno_orig_LagLC <- River_Arno_cut1 %>% 
@@ -949,110 +1036,18 @@ arno_orig_LagS1 <- arno_orig_LagS %>%
 
 
 
-## creating 5 new datasets Sieve with different min rainfall levels 
-## and with new time lags (trying to represent true effect of rain over target)
 
-arno0.5_Sieve <- arno_orig_LagSieve %>% 
-  mutate(rain0.5 = ifelse(Rainfall_mean_Sieve <= 0.5, 0, 
-                          Rainfall_mean_Sieve),
-         lag1 = lag(rain0.5, +1),
-         lag3 = lag(rain0.5,+3),
-         lag5 = lag(rain0.5,+5),
-         lag7 = lag(rain0.5,+7),
-         lag9 = lag(rain0.5, +9)) %>% 
-  dplyr::select(-Rainfall_mean_Sieve)
-
-arno0.5_Sieve_1 <- arno0.5_Sieve %>%  dplyr::select(-Date)
-
-arno1.5_Sieve <- arno_orig_LagSieve %>% 
-  mutate(rain1.5 = ifelse(Rainfall_mean_Sieve <= 1.5, 0, 
-                          Rainfall_mean_Sieve),
-         lag1 = lag(rain1.5, +1),
-         lag3 = lag(rain1.5, +3),
-         lag5 = lag(rain1.5, +5),
-         lag7 = lag(rain1.5, +7)
-         ) %>% 
-  dplyr::select(-Rainfall_mean_Sieve)
-
-arno1.5_Sieve_1 <- arno1.5_Sieve %>%   dplyr::select(-Date)
-
-arno3_Sieve <- arno_orig_LagSieve %>% 
-  mutate(rain3 = ifelse(Rainfall_mean_Sieve <= 3,0,
-                        Rainfall_mean_Sieve),
-         lag1 = lag(rain3, +1),
-         lag3 = lag(rain3, +3),
-         lag5 = lag(rain3, +5),
-         lag7 = lag(rain3, +7)
-         ) %>% 
-  dplyr::select(-Rainfall_mean_Sieve)
-
-arno3_Sieve_1 <- arno3_Sieve %>%  dplyr::select(-Date)
-
-arno5_Sieve <- arno_orig_LagSieve %>% 
-  mutate(rain5 = ifelse(Rainfall_mean_Sieve <= 5, 0, 
-                        Rainfall_mean_Sieve),
-         lag1 = lag(rain5, +1),
-         lag3 = lag(rain5, +3),
-         lag5 = lag(rain5, +5),
-         lag7 = lag(rain5, +7),
-         lag9 = lag(rain5, +9)) %>%
-  dplyr::select(-Rainfall_mean_Sieve)
-
-arno5_Sieve5_1 <- arno5_Sieve %>%   dplyr::select(-Date)
+#
 
 
-## creating 5 new datasets Sorgente with different min rainfall levels 
-## and with new time lags (trying to represent true effect of rain over target)
 
-arno0.5_Sorgente <- arno_orig_LagSorgente %>% 
-  mutate(rain0.5 = ifelse(Rainfall_mean_Sorgente <= 0.5, 0, 
-                          Rainfall_mean_Sorgente),
-         lag1 = lag(rain0.5, +1),
-         lag3 = lag(rain0.5,+3),
-         lag5 = lag(rain0.5,+5),
-         lag7 = lag(rain0.5,+7),
-         lag9 = lag(rain0.5, +9)) %>% 
-  dplyr::select(-Rainfall_mean_Sorgente)
 
-arno0.5_Sorgente_1 <- arno0.5_Sorgente %>%  dplyr::select(-Date)
 
-arno1.5_Sorgente <- arno_orig_LagSorgente %>% 
-  mutate(rain1.5 = ifelse(Rainfall_mean_Sorgente <= 1.5, 0, 
-                          Rainfall_mean_Sorgente),
-         lag1 = lag(rain1.5, +1),
-         lag3 = lag(rain1.5, +3),
-         lag5 = lag(rain1.5, +5),
-         lag7 = lag(rain1.5, +7)
-  ) %>% 
-  dplyr::select(-Rainfall_mean_Sorgente)
 
-arno1.5_Sorgente_1 <- arno1.5_Sorgente %>%   dplyr::select(-Date)
 
-arno3_Sorgente <- arno_orig_LagSorgente %>% 
-  mutate(rain3 = ifelse(Rainfall_mean_Sorgente <= 3,0,
-                        Rainfall_mean_Sorgente),
-         lag1 = lag(rain3, +1),
-         lag3 = lag(rain3, +3),
-         lag5 = lag(rain3, +5),
-         lag7 = lag(rain3, +7)
-  ) %>% 
-  dplyr::select(-Rainfall_mean_Sorgente)
 
-arno3_Sorgente_1 <- arno3_Sorgente %>%  dplyr::select(-Date)
-
-arno5_Sorgente <- arno_orig_LagSorgente %>% 
-  mutate(rain5 = ifelse(Rainfall_mean_Sorgente <= 5, 0, 
-                        Rainfall_mean_Sorgente),
-         lag1 = lag(rain5, +1),
-         lag3 = lag(rain5, +3),
-         lag5 = lag(rain5, +5),
-         lag7 = lag(rain5, +7),
-         lag9 = lag(rain5, +9)) %>%
-  dplyr::select(-Rainfall_mean_Sorgente)
-
-arno5_Sorgente5_1 <- arno5_Sorgente %>%   dplyr::select(-Date)
-
-## creating 5 new datasets Sieve with different min rainfall levels 
+#
+## creating 5 new datasets  with different min rainfall levels 
 ## and with new time lags (trying to represent true effect of rain over target)
 #####Le_Croci+lag####
 arno0.5_LC <- arno_orig_LagLC %>% 
@@ -1061,8 +1056,8 @@ arno0.5_LC <- arno_orig_LagLC %>%
          lag1 = lag(rain0.5, +1),
          lag3 = lag(rain0.5,+3),
          lag5 = lag(rain0.5,+5),
-         lag7 = lag(rain0.5,+7),
-         lag9 = lag(rain0.5, +9)) %>% 
+         lag7 = lag(rain0.5,+7))  %>% 
+ 
   dplyr::select(-Rainfall_Le_Croci)
 
 arno0.5_LC_1 <- arno0.5_LC %>%  dplyr::select(-Date)
@@ -1097,8 +1092,8 @@ arno5_LC <- arno_orig_LagLC %>%
          lag1 = lag(rain5, +1),
          lag3 = lag(rain5, +3),
          lag5 = lag(rain5, +5),
-         lag7 = lag(rain5, +7),
-         lag9 = lag(rain5, +9)) %>%
+         lag7 = lag(rain5, +7)) %>% 
+
   dplyr::select(-Rainfall_Le_Croci)
 
 arno5_LC_1 <- arno5_LC %>%   dplyr::select(-Date)
@@ -1106,33 +1101,40 @@ arno5_LC_1 <- arno5_LC %>%   dplyr::select(-Date)
 ## creating 5 new datasets per dataset...le_Croci 
 ## ... or 5 new variables 
 
-arno0.5_LC.lag <- arno0.5_LC  %>% 
-  dplyr::mutate(lag1 = lag(rain1, +1),
-                lag3 = lag(rain1,+3),
-                lag5 = lag(rain1,+5),
-                lag7 = lag(rain1,+7)) %>%
-  write.csv(., "processed_data/arno0.5_LC+lag.csv")
+#arno0.5_LC.lag <- arno0.5_LC  %>% 
+ # dplyr::mutate(lag1 = lag(rain1, +1),
+  #              lag3 = lag(rain1,+3),
+  #              lag5 = lag(rain1,+5),
+  #              lag7 = lag(rain1,+7)) %>%
+  #write.csv(., "processed_data/arno0.5_LC+lag.csv")
 
-arno1.5_LC.lag <- arno1.5_LC %>% 
-  mutate(lag1 = lag(rain2, +1),
-         lag3 = lag(rain2, +3),
-         lag5 = lag(rain2, +5),
-         lag7 = lag(rain2, +7))%>% 
-  write.csv(., "processed_data/bilancino_rain1_Mangona+lag.csv")
+#arno1.5_LC.lag <- arno1.5_LC %>% 
+ # mutate(lag1 = lag(rain2, +1),
+  #       lag3 = lag(rain2, +3),
+   #      lag5 = lag(rain2, +5),
+    #     lag7 = lag(rain2, +7))%>% 
+  #write.csv(., "processed_data/bilancino_rain1_Mangona+lag.csv")
 
-bilancino_rain3_Mangona.lag <- bilancino_rain3_Mangona %>% 
-  dplyr::mutate(lag1 = lag(rain3, +1),
-                lag3 = lag(rain3, +3),
-                lag5 = lag(rain3, +5),
-                lag7 = lag(rain3, +7)) %>% 
-  write.csv(., "processed_data/bilancino_rain1_Mangona+lag.csv")
+#bilancino_rain3_Mangona.lag <- bilancino_rain3_Mangona %>% 
+ # dplyr::mutate(lag1 = lag(rain3, +1),
+ #               lag3 = lag(rain3, +3),
+ #               lag5 = lag(rain3, +5),
+ #               lag7 = lag(rain3, +7)) %>% 
+ # write.csv(., "processed_data/bilancino_rain1_Mangona+lag.csv")
 
-bilancino_rain5_Mangona.lag <- bilancino_rain5_Mangona %>% 
-  dplyr::mutate(lag1 = lag(rain4, +1),
-                lag3 = lag(rain4, +3),
-                lag5 = lag(rain4, +5),
-                lag7 = lag(rain4, +7)) %>% 
-  write.csv(., "processed_data/bilancino_rain5_Mangona+lag.csv")
+#bilancino_rain5_Mangona.lag <- bilancino_rain5_Mangona %>% 
+ # dplyr::mutate(lag1 = lag(rain4, +1),
+  #              lag3 = lag(rain4, +3),
+   #             lag5 = lag(rain4, +5),
+   #             lag7 = lag(rain4, +7)) %>% 
+ # write.csv(., "processed_data/bilancino_rain5_Mangona+lag.csv")
+
+
+
+
+## creating 5 new datasets  with different min rainfall levels 
+
+
 
 
 
@@ -1140,6 +1142,7 @@ bilancino_rain5_Mangona.lag <- bilancino_rain5_Mangona %>%
 
 
 ## creating 5 new datasets Sieve with different min rainfall levels 
+
 ## and with new time lags (trying to represent true effect of rain over target)
 #Cavallina
 arno0.5_CA <- arno_orig_LagCA %>% 
@@ -1148,8 +1151,9 @@ arno0.5_CA <- arno_orig_LagCA %>%
          lag1 = lag(rain0.5, +1),
          lag3 = lag(rain0.5,+3),
          lag5 = lag(rain0.5,+5),
-         lag7 = lag(rain0.5,+7),
-         lag9 = lag(rain0.5, +9)) %>% 
+         lag7 = lag(rain0.5,+7)
+         ) %>% 
+
   dplyr::select(-Rainfall_Cavallina)
 
 arno0.5_CA_1 <- arno0.5_CA %>%  dplyr::select(-Date)
@@ -1199,8 +1203,7 @@ arno0.5_B <- arno_orig_LagB %>%
          lag1 = lag(rain0.5, +1),
          lag3 = lag(rain0.5,+3),
          lag5 = lag(rain0.5,+5),
-         lag7 = lag(rain0.5,+7),
-         lag9 = lag(rain0.5, +9)) %>% 
+         lag7 = lag(rain0.5,+7)) %>% 
   dplyr::select(-Rainfall_Bibbiena)
 
 arno0.5_B_1 <- arno0.5_B %>%  dplyr::select(-Date)
@@ -1235,8 +1238,7 @@ arno5_B <- arno_orig_LagB %>%
          lag1 = lag(rain5, +1),
          lag3 = lag(rain5, +3),
          lag5 = lag(rain5, +5),
-         lag7 = lag(rain5, +7),
-         lag9 = lag(rain5, +9)) %>%
+         lag7 = lag(rain5, +7)) %>%
   dplyr::select(-Rainfall_Bibbiena)
 
 arno5_B_1 <- arno5_B %>%   dplyr::select(-Date)
@@ -1250,8 +1252,7 @@ arno0.5_S <- arno_orig_LagS %>%
          lag1 = lag(rain0.5, +1),
          lag3 = lag(rain0.5,+3),
          lag5 = lag(rain0.5,+5),
-         lag7 = lag(rain0.5,+7),
-         lag9 = lag(rain0.5, +9)) %>% 
+         lag7 = lag(rain0.5,+7)) %>% 
   dplyr::select(-Rainfall_Stia)
 
 arno0.5_S_1 <- arno0.5_S %>%  dplyr::select(-Date)
@@ -1286,11 +1287,56 @@ arno5_S <- arno_orig_LagS %>%
          lag1 = lag(rain5, +1),
          lag3 = lag(rain5, +3),
          lag5 = lag(rain5, +5),
-         lag7 = lag(rain5, +7),
-         lag9 = lag(rain5, +9)) %>%
+         lag7 = lag(rain5, +7)) %>%
   dplyr::select(-Rainfall_Stia)
 
 arno5_S_1 <- arno5_S %>%   dplyr::select(-Date)
+
+
+#### nuova analisi Arno + LAG +####
+#divisione dellle  zone delle rainfall in base alla distanza da Rosano (FI)
+#
+# Studiando la geografia e la disposizione idrogeologica delle localita"
+# divido in gurppi le zone:
+# Gruppo 1: Incisa(fiume arno), Consuma (fiume arno), Montevarchi (fiume arno),
+#S. PIero (affluente SIeve)
+# non imposto lag perche' hanno una distanza inferiore ai 50km dal 
+#punto idrometrico Nave di ROsano
+# Gruppo 2: Laterina (fiume arno),  S. Agata (affluente Sieve),
+# Le Croci (affluente Sieve), Cavallina (affluente Sieve), Mangona inserisco un lag di un giorno
+# perche' hanno una distanza fino a circa 100 km dal punto idrometrico
+# Per le localita' di distanza superiore ai 100km: Stia, Camaldoli, Bibbiena, S. Avinro (per il fiume arno),
+# e Vernio  (affluente Sieve) sinserisco un lag di 3 giorni
+
+arno_LAG <- River_Arno_cut1 %>% 
+  mutate(lag_Laterina = lag(Rainfall_Laterina, +1),
+         lag_Cavallina = lag(Rainfall_Cavallina, +1),
+         lag_Le_Croci = lag(Rainfall_Le_Croci, +1),
+         lag_S_Agata = lag(Rainfall_S_Agata, +1),
+         lag_Mangona = lag(Rainfall_Mangona, +1),
+         lag_Stia = lag(Rainfall_Stia, +2),
+         lag_Camaldoli = lag(Rainfall_Camaldoli, +2),
+         lag_Bibbiena= lag(Rainfall_Bibbiena, +2),
+         lag_S_Savino = lag(Rainfall_S_Savino, +2),
+         lag_Vernio= lag(Rainfall_Vernio, +2),
+         ) 
+
+
+arno_LAG <- arno_LAG %>% 
+  dplyr::select(-Date,-Rainfall_Laterina, -Rainfall_Cavallina, -Rainfall_Le_Croci,
+               -Rainfall_S_Agata, -Rainfall_Mangona, -Rainfall_Stia,
+               -Rainfall_Camaldoli, -Rainfall_Bibbiena, -Rainfall_S_Savino,
+               -Rainfall_Vernio)
+
+#rimane da studiare il random forest e gboost deii dataset
+
+
+
+
+
+
+
+
 
 
 
@@ -1310,6 +1356,10 @@ arno5_S_1 <- arno5_S %>%   dplyr::select(-Date)
 
 
 #### RAndom Forest test ####
+
+
+
+
 #### test 1 con localita Le_Croci e Stia ####
 
 River_Arno_Season <- dummyVars(~Season, data = River_Arno_cut1, fullRank = F)
@@ -1332,12 +1382,18 @@ cat("Number of rows in the test set:", nrow(test_River_Arno))
 #Ho diviso il dataset in training e tes, test 1156 obs, train 2312 obs
 
 rf_River_Arno_Hydrometry_Nave_di_Rosano <- 
-  rfsrc(Hydrometry_Nave_di_Rosano~Season.Autumn+Season.Spring+Season.Summer+Season.Winter+Temperature_Firenze+
-                                                   Rainfall_Le_Croci+Rainfall_Stia, 
+  rfsrc(Hydrometry_Nave_di_Rosano~
+          Season.Autumn+Season.Spring+Season.Summer+Season.Winter+
+          Temperature_Firenze+Rainfall_Le_Croci+Rainfall_Stia, 
         data = train_River_Arno, block.size = 1, importance = T, samptype = "swr", var.used = "all.trees", ntree = 200)
 
 #procedo alla verifica del modello
-plot(rf_River_Arno_Hydrometry_Nave_di_Rosano, verbose = F)
+plotrf1<-plot(rf_River_Arno_Hydrometry_Nave_di_Rosano, verbose = F)
+
+#jpeg("img/arno/23RF_Stia_Croci1.jpg",  width = 5000, height=3500)
+ggsave("img/arno/23RF_Stia_Croci.jpg",plot=plotrf1, dpi = 500, width = 10, height=7)
+#non salva
+
 
 #L'errore diminuisce molto rapidamente aggiungendo più alberi,
 #la variabile che ha avuto piu' impatto e' la temperatura dell'aria
@@ -1353,8 +1409,13 @@ plot(rf_River_Arno_Hydrometry_Nave_di_Rosano, verbose = F)
 pred_rf_River_Arno_Hydrometry_Nave_di_Rosano <- predict(rf_River_Arno_Hydrometry_Nave_di_Rosano, newdata = test_River_Arno)
 pred_rf_River_Arno_Hydrometry_Nave_di_Rosano
 
-cat("RMSE Test:", round(rmse(pred_rf_River_Arno_Hydrometry_Nave_di_Rosano$predicted, test_River_Arno$Hydrometry_Nave_di_Rosano),2))
-#RMSE Test: 0.48
+RMSE_RF1<-cat("RMSE Test:", round(rmse(pred_rf_River_Arno_Hydrometry_Nave_di_Rosano$predicted, test_River_Arno$Hydrometry_Nave_di_Rosano),2))
+
+
+#RMSE_RF1
+
+#RMSE_RF1
+#####RMSE Test: 0.48 le croci e Stia RF ####
 #
 #L'RMSE sul set di prova è 0,48.
 #Si tratta di un risultato abbastanza buono che tiene conto 
@@ -1371,15 +1432,22 @@ pred_River_Arno_Hydrometry_Nave_di_Rosano$above <- ifelse(pred_River_Arno_Hydrom
 ggplot(pred_River_Arno_Hydrometry_Nave_di_Rosano, aes(real, pred, fill = above))+
   geom_point(size = 4, shape = 21, alpha = 0.8)+ 
   scale_fill_viridis_d(option = "inferno", begin = 0.20, end = 0.90, name = "")+
-  geom_abline(intercept = 0, slope = 1, col = "red1", size = 1.25)+
+
+  geom_abline(intercept = 0, slope = 1, col = "red1", size = 1)+
   labs(x = "Real values in the test set", y = "Predicted values in the test set", 
        title = "The predicted and true values on the test set", fill = "",
-       subtitle = "Random forest model for Hydrometry_Nave_di_Rosano variable in Arno_river") + 
-  theme_21+
+       subtitle = "Random forest model Hydrometry_Nave_di_Rosano variable in Arno_river") + 
+  theme_classic()+
   theme(legend.position = "bottom", legend.direction = "vertical")
+ggsave("img/arno/24Predictet_value_RF1.jpg", dpi = 500, width = 10, height=7)
+
+      
+
 # Possiamo osservare che la maggioranza dei valorisi trova vicino alla linea 
 #di previsione e questo va bene dove ci sono errori#
 #piccoli. Tuttavia ci sono dei valori con errore piu' grande
+
+
 
 #### test 2 con localita Cavallina e Bibbiena ####
 River_Arno_Season <- dummyVars(~Season, data = River_Arno_cut1, fullRank = F)
@@ -1402,12 +1470,17 @@ cat("Number of rows in the test set:", nrow(test_River_Arno3))
 #Ho diviso il dataset in training e tes, test 1156 obs, train 2312 obs
 
 rf_River_Arno_Hydrometry_Nave_di_Rosano3 <- 
-  rfsrc(Hydrometry_Nave_di_Rosano~Season.Autumn+Season.Spring+Season.Summer+Season.Winter+Temperature_Firenze+
+  rfsrc(Hydrometry_Nave_di_Rosano~Season.Autumn+Season.Spring+
+          Season.Summer+Season.Winter+Temperature_Firenze+
           Rainfall_Cavallina+Rainfall_Bibbiena, 
         data = train_River_Arno3, block.size = 1, importance = T, samptype = "swr", var.used = "all.trees", ntree = 200)
 
 #procedo alla verifica del modello
 plot(rf_River_Arno_Hydrometry_Nave_di_Rosano3, verbose = F)
+
+#ggsave("img/arno/25RF_Cavallina_Bibbiena.jpg",plot=plotrf1, dpi = 500, width = 10, height=7)
+#non salva
+
 
 #L'errore diminuisce molto rapidamente aggiungendo più alberi,
 #la variabile che ha avuto piu' impatto e' la temperatura dell'aria
@@ -1423,9 +1496,9 @@ plot(rf_River_Arno_Hydrometry_Nave_di_Rosano3, verbose = F)
 pred_rf_River_Arno_Hydrometry_Nave_di_Rosano3 <- predict(rf_River_Arno_Hydrometry_Nave_di_Rosano3, newdata = test_River_Arno3)
 pred_rf_River_Arno_Hydrometry_Nave_di_Rosano3
 
-RMSE_RF<-cat("RMSE Test:", round(rmse(pred_rf_River_Arno_Hydrometry_Nave_di_Rosano3$predicted, test_River_Arno3$Hydrometry_Nave_di_Rosano),2))
-RMSE_RF
-#RMSE Test : 0.48
+RMSE_RF2<-cat("RMSE Test:", round(rmse(pred_rf_River_Arno_Hydrometry_Nave_di_Rosano3$predicted, test_River_Arno3$Hydrometry_Nave_di_Rosano),2))
+RMSE_RF2
+#####RMSE Test : 0.48 Cavallina e Bibbiena RF ####
 #ibrary(Metrics)
 #rmse(testing$medv,predValues)
 #
@@ -1450,6 +1523,64 @@ ggplot(pred_River_Arno_Hydrometry_Nave_di_Rosano3, aes(real, pred, fill = above)
        subtitle = "Random forest model for Hydrometry_Nave_di_Rosano variable in Arno_river") + 
   theme_21+
   theme(legend.position = "bottom", legend.direction = "vertical")
+
+
+#### test con nuovi lag ####
+River_Arno_Season <- dummyVars(~Season, data = arno_LAG, fullRank = F)
+River_Arno_Season <- as.data.frame(predict(River_Arno_Season, newdata = arno_LAG))
+
+arno_LAG2<- arno_LAG %>% 
+  dplyr::select(-Season)
+
+arno_LAG2 <- cbind(arno_LAG2, River_Arno_Season)
+
+arno_LAG2 <- arno_LAG2[complete.cases(arno_LAG2),]
+
+set.seed(2021)
+rand_arno_LAG <- sample(nrow(arno_LAG2), nrow(arno_LAG2)* 1/3, replace = F)
+test_arno_LAG <- arno_LAG2[rand_arno_LAG,]
+train_arno_LAG <- arno_LAG2[-rand_arno_LAG,]
+
+cat("Number of rows in the training set:", nrow(train_arno_LAG), "\n")
+cat("Number of rows in the test set:", nrow(test_arno_LAG))
+#Ho diviso il dataset in training e tes, test 1156 obs, train 2312 obs
+
+rf_River_Arno_Hydrometry_Nave_di_Rosano_LAG <- 
+  rfsrc(Hydrometry_Nave_di_Rosano~Temperature_Firenze+lag_Laterina+
+          lag_S_Savino+Rainfall_Incisa+lag_Vernio+lag_Le_Croci+
+          lag_Camaldoli+lag_Vernio+Rainfall_Montevarchi+
+          lag_Mangona+lag_S_Agata+lag_Cavallina+lag_Stia+lag_Bibbiena+
+          Rainfall_Consuma+Season.Autumn+Season.Spring+Season.Winter+
+          Season.Summer, 
+        data = train_arno_LAG, block.size = 1, importance = T, samptype = "swr", var.used = "all.trees", ntree = 300)
+
+#procedo alla verifica del modello
+#as.tibble(importance(rf_River_Arno_Hydrometry_Nave_di_Rosano_LAG))
+#rank(importance(rf_River_Arno_Hydrometry_Nave_di_Rosano_LAG))
+#varImpPlot(rf_River_Arno_Hydrometry_Nave_di_Rosano_LAG,  pch=8)
+
+plot(rf_River_Arno_Hydrometry_Nave_di_Rosano_LAG,verbose = F ) 
+ggsave("img/arno/25RF_lag.jpg", dpi = 500, width = 10, height=7)
+
+
+
+
+
+
+#L'errore diminuisce molto rapidamente aggiungendo più alberi
+
+
+#### rmse test LAG train_arno_LAG ####
+
+pred_rf_River_Arno_Hydrometry_Nave_di_Rosano_LAG <- predict(rf_River_Arno_Hydrometry_Nave_di_Rosano_LAG, newdata = test_arno_LAG)
+pred_rf_River_Arno_Hydrometry_Nave_di_Rosano_LAG
+
+RMSE_RF_LAG<-cat("RMSE Test:", round(rmse(pred_rf_River_Arno_Hydrometry_Nave_di_Rosano_LAG$predicted, test_arno_LAG$Hydrometry_Nave_di_Rosano),2))
+RMSE_RF_LAG
+####RMSE Test: 0.37 con arno_LAG ####
+#
+
+
 
 
 
@@ -1494,8 +1625,10 @@ ggplot(pred_River_Arno_Hydrometry_Nave_di_Rosano3, aes(real, pred, fill = above)
 ##### GRADIENT BOOST MACHINE  #####
 
 ## libraries 
-
-#library(rsample)
+install.packages("remotes") #per initial_split
+install.packages(h2o)
+library(h2o)
+library(rsample)
 library(caret)
 library(ggthemes)
 library(scales)
@@ -1509,17 +1642,137 @@ library(leaps)
 library(purrr)
 
 ##
-###ánche qui faro due test
-#### testgb 1 con localita XXXXXXX mean cancello ####
+###anche qui faro vari test
+#### test GB con LAG personalizzati ####
+
+## reading files 
+River_Arno_Season_Lag <- dummyVars(~Season, data = arno_LAG, fullRank = F)
+River_Arno_Season_Lag <- as.data.frame(predict(River_Arno_Season_Lag, newdata = arno_LAG))
+
+arno_LAG2<- arno_LAG %>% 
+  dplyr::select(-Season)
+
+arno_LAG2 <- cbind(arno_LAG2, River_Arno_Season_Lag)
+
+arno_LAG2 <- arno_LAG2[complete.cases(arno_LAG2),]
+
+
+#River_Arno_cut_gb2<- River_Arno_cut1 %>%
+#3  dplyr::select( Rainfall_sum_Sieve, Rainfall_sum_Sorgente,  Temperature_Firenze,
+#                 Hydrometry_Nave_di_Rosano) 
+
+
+#River_Arno_cut_GB_LAG <- cbind(arno_LAG2, River_Arno_Season)
+
+#River_Arno_cut_GB_LAG <- arno_LAG2[complete.cases(arno_LAG2),]
+
+
+#spread(key = imp, value = depth_to_gw.m) # 
+str(arno_LAG2)
+
+
+
+
+
+
+#### computing stepwise regression for variable selection ####
+# creating function
+step.wisef <- function(x, DATA){
+  set.seed(123)
+  train.control <- trainControl(method = "cv", number = 10)
+  step.model <- train(as.formula(paste(x,"~.")), data = DATA, 
+                      method = "leapSeq", 
+                      tuneGrid = data.frame(nvmax = 1:6),
+                      trControl = train.control,
+                      na.action = na.omit)
+  return(step.model)
+}
+
+
+#### Hydrometry_Nave_diRosano target####
+
+Hydrometry_Nave_di_Rosano_sw <- step.wisef("Hydrometry_Nave_di_Rosano", arno_LAG2)
+Hydrometry_Nave_di_Rosano_sw$bestTune 
+Hydrometry_Nave_di_Rosano_sw$finalModel
+coef(Hydrometry_Nave_di_Rosano_sw$finalModel, 6)
+
+### let's stick to three variables (?) ###
+## question: model chooses the two temperatures even if they're highly correlated to one another...?
+# why? 
+
+#### testing and training split ####
+
+set.seed(123)
+Hydrometry_Nave_di_Rosano.split <- initial_split(arno_LAG2, prop = .7)
+Hydrometry_Nave_di_Rosano.train <- training(Hydrometry_Nave_di_Rosano.split)
+Hydrometry_Nave_di_Rosano.test <- testing(Hydrometry_Nave_di_Rosano.split)
+
+Hydrometry_Nave_di_Rosano_fit1 <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
+                                           data = arno_LAG2,
+                                           verbose = T, 
+                                           shrinkage = 0.01,
+                                           interaction.depth = 3, 
+                                           n.minobsinnode = 5,
+                                           n.trees = 1000,
+                                           cv.folds = 10)
+perf_gbm1 <- gbm.perf(Hydrometry_Nave_di_Rosano_fit1, method = "cv")
+#ggsave("img/arno/26.jpg", dpi = 500, width = 10, height=7)
+#26Square_error_LAG_GB.jpg
+## make predictions 
+
+Hydrometry_Nave_di_Rosano_pred2 <- stats::predict(object = Hydrometry_Nave_di_Rosano_fit1,
+                                                  newdata = Hydrometry_Nave_di_Rosano.test,
+                                                  n.trees = perf_gbm1)
+rmse_fit1 <- Metrics::rmse(actual = Hydrometry_Nave_di_Rosano.test$Hydrometry_Nave_di_Rosano,
+                           predicted = Hydrometry_Nave_di_Rosano_pred2)
+print(rmse_fit1) 
+#### RMSE 0.3385 Test con LAG PERSONALIZZATI ####
+#
+
+#plot 
+# summarise model 
+
+Hydrometry_Nave_di_Rosano_effects <- tibble::as_tibble(gbm::summary.gbm(Hydrometry_Nave_di_Rosano_fit1,
+                                                                        plotit = F))
+Hydrometry_Nave_di_Rosano_effects %>% utils::head()
+# plot top 6 features
+Hydrometry_Nave_di_Rosano_effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # 
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  scale_color_brewer(palette = "Dark2")
+ggsave("img/arno/27.jpg", dpi = 500, width = 10, height=7)
+#### il primo classificato ####
+
+
+
+
+
+
+
+
 
 
 #### testgb 2 con localita Le_Croci Cavallina  per il primo gruppo e Bibbiena Stia per il secondo gruppo ####
 
 ## reading files 
+River_Arno_Season<- dummyVars(~Season, data = River_Arno_cut1, fullRank = F)
+River_Arno_Season<- as.data.frame(predict(River_Arno_Season, newdata = River_Arno_cut1))
+#rm(River_Arno_cut_gb2)
 River_Arno_cut_gb2<- River_Arno_cut1 %>%
   dplyr::select( Rainfall_Cavallina,Rainfall_Le_Croci, Rainfall_Stia, Rainfall_Bibbiena, Temperature_Firenze,
-                 Hydrometry_Nave_di_Rosano,
-                 Season) 
+                 Hydrometry_Nave_di_Rosano) 
+
+River_Arno_cut_gb2 <- cbind(River_Arno_cut_gb2, River_Arno_Season)
+
+River_Arno_cut_gb2 <- River_Arno_cut_gb2[complete.cases(River_Arno_cut_gb2),]
+
+
 #spread(key = imp, value = depth_to_gw.m) # in regression date doesnt really matter 
 str(River_Arno_cut_gb2)
 
@@ -1566,7 +1819,7 @@ Hydrometry_Nave_di_Rosano_fit1 <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
                         shrinkage = 0.01,
                         interaction.depth = 3, 
                         n.minobsinnode = 5,
-                        n.trees = 5000,
+                        n.trees = 1000,
                         cv.folds = 10)
 perf_gbm1 <- gbm.perf(Hydrometry_Nave_di_Rosano_fit1, method = "cv")
 
@@ -1577,7 +1830,7 @@ Hydrometry_Nave_di_Rosano_pred2 <- stats::predict(object = Hydrometry_Nave_di_Ro
                                n.trees = perf_gbm1)
 rmse_fit2 <- Metrics::rmse(actual = Hydrometry_Nave_di_Rosano.test$Hydrometry_Nave_di_Rosano,
                            predicted = Hydrometry_Nave_di_Rosano_pred2)
-print(rmse_fit1) 
+print(rmse_fit2) 
 #### RMSE 0.3423 Test2 con Le_Croci, Cavallina, Bibbiena, Stia ####
 #
 
@@ -1629,7 +1882,7 @@ Hydrometry_Nave_di_Rosano_effects %>%
   geom_col()+
   coord_flip()+
   scale_color_brewer(palette = "Dark2")
-
+ggsave("img/arno/29Variabili_GB1.jpg", dpi = 500, width = 10, height=7)
 
 ######  confronto i dataset con i lag
 ####arno0.5_LC_1 rain LE CROCI ####
@@ -1637,10 +1890,19 @@ Hydrometry_Nave_di_Rosano_effects %>%
 #dplyr::select( Rainfall_Cavallina,Rainfall_Le_Croci, Rainfall_Stia, Rainfall_Bibbiena, Temperature_Firenze,
 #               Hydrometry_Nave_di_Rosano,
 #               Season, rain0.5) 
+
+River_Arno_Season<- dummyVars(~Season, data = arno0.5_LC_1, fullRank = F)
+River_Arno_Season<- as.data.frame(predict(River_Arno_Season, newdata = arno0.5_LC_1))
+#rm(River_Arno_cut_gb2)
+
+
 LC0 <- arno0.5_LC_1 %>%
   dplyr::select( Rainfall_Cavallina, Rainfall_Stia, Rainfall_Bibbiena, Temperature_Firenze,
-                 Hydrometry_Nave_di_Rosano,
-                 Season, rain0.5) 
+                 Hydrometry_Nave_di_Rosano, rain0.5) 
+
+LC0  <- cbind(LC0 , River_Arno_Season)
+LC0 <- LC0[complete.cases(LC0),]
+
 
 LC0.split <- initial_split(LC0,prop =.7)
 
@@ -1657,7 +1919,7 @@ LC0.fit <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
                    cv.folds = 12)
 
 LC0.perf <- gbm.perf(LC0.fit, method = "cv")
-
+#ggsave("img/arno/30Sq_error_lag_GB2.jpg", dpi = 500, width = 10, height=7)
 ## make predictions 
 
 LC0.pred<- stats::predict(object = LC0.fit,
@@ -1667,6 +1929,27 @@ LC0.rmse <- Metrics::rmse(actual = LC0.test$Hydrometry_Nave_di_Rosano,
                          predicted = LC0.pred)
 print(LC0.rmse) 
 #### 0.4397 # RMSE LCO= Le croci rain0 ####
+
+Hydrometry_Nave_di_Rosano_effects <- tibble::as_tibble(gbm::summary.gbm(LC0.fit,
+                                                                        plotit = F))
+Hydrometry_Nave_di_Rosano_effects %>% utils::head()
+# this creates new dataset with var, factor variable with variables 
+# in our model, and rel.inf - relative influence each var has on model pred 
+
+# plot top 6 features
+Hydrometry_Nave_di_Rosano_effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # it's already only 3 vars
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  scale_color_brewer(palette = "Dark2")
+ggsave("img/arno/31Variabili_GB2.jpg", dpi = 500, width = 10, height=7)
+
+
 
 ## rain 1 le croci 
 
