@@ -1,3 +1,5 @@
+{% include navigation.html%}
+
 # DASI Challenge - ACEA Smart Water Analytics
 
 
