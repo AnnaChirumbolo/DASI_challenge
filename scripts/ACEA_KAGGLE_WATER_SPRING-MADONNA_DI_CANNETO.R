@@ -47,6 +47,49 @@ step.wisef <- function(x, DATA){
   return(step.model)
 }
 
+getbestmodel.modif <- function (dates, values, freq, complete = 0, n_test = NA, graph = TRUE, 
+          algos = list("my.prophet", "my.ets", "my.sarima", 
+                       "my.tbats", "my.bats", "my.stlm", "my.shortterm"), 
+          bagged = "auto", metric.error = my.rmse) 
+{
+  . <- NULL
+  freq.num <- getFrequency(freq)
+  if (is.na(n_test)) 
+    n_test <- freq.num[1]
+  if (bagged == "auto") 
+    algos <- list("my.prophet", "my.ets", "my.sarima", 
+                  "my.tbats", "my.bats", "my.stlm", 
+                  "my.shortterm")
+  df <- complete.ts(dates, values, freq, complete = 0)
+  fin <- max(df$dates[1:(length(df$dates) - n_test)])
+  df_filter <- dplyr::filter(df, dates <= fin)
+  full.TS <- prepare.ts(df$dates, df$val, freq, complete)
+  filtered.TS <- prepare.ts(df_filter$dates, df_filter$val, 
+                            freq, complete)
+  train <- my.predictions(prepedTS = filtered.TS, algos = algos, 
+                          n_pred = n_test) %>% dplyr::select(-.data$actual.value) %>% 
+    dplyr::full_join(df, by = "dates") %>% dplyr::rename(actual.value = .data$val)
+  errors <- dplyr::filter(train, .data$type == "mean") %>% 
+    dplyr::summarise_if(is.numeric, list(~metric.error(., 
+                                                       .data$actual.value))) %>% dplyr::select(-.data$actual.value)
+  best <- names(errors)[apply(errors, which.min, MARGIN = 1)] %>% 
+    paste("my", ., sep = ".")
+  ddd <- dplyr::filter(train, .data$type %in% c(NA, "mean")) %>% 
+    dplyr::select(-.data$type) %>% tidyr::gather(key = "algo", 
+                                                 value = "val", -.data$dates)
+  gg <- ggplot2::ggplot(ddd, ggplot2::aes(.data$dates, .data$val, 
+                                          color = .data$algo)) + 
+    ggplot2::geom_line(size = 1) + 
+    ggplot2::theme_minimal() +
+    ggplot2::xlab("")+
+    ggplot2::ylab("Flow Rate (L/s)")
+  if (graph == TRUE) {
+    print(gg)
+  }
+  return(list(prepedTS = full.TS, best = best, train.errors = errors, 
+              res.train = train, algos = algos, graph.train = gg))
+}
+
 
 #### libraries ####
 
@@ -470,15 +513,6 @@ par(mfrow =c (1,1))
 
 #### visualise the time lags ####
 
-canneto_tot <- canneto_featured %>%
-  left_join(canneto0.8) %>% 
-  left_join(., canneto1.5) %>% 
-  left_join(., canneto2.8) %>% 
-  left_join(., canneto4.4) %>% 
-  gather(., key = "canneto_type",value="rain.mm", Rainfall_Settefrati,
-         rain0.8,rain1.5,rain2.8,rain4.4) %>%
-  dplyr::select(Date,canneto_type,rain.mm)
-
 rain_boxplot <- ggplot(canneto_featured, aes(y = Rainfall_Settefrati))+
     geom_boxplot(color = "steelblue")+
     xlab("")+
@@ -491,10 +525,10 @@ vis_rain <- ggplot(canneto_featured, aes(Date, Rainfall_Settefrati))+
     scale_y_continuous(limits = c(0,141),expand = c(0,0))+
     ylab("")+
     xlab("")+
-    geom_hline(aes(yintercept = 0.8,linetype = "0.8"),color = "darkred")+
-    geom_hline(aes(yintercept = 1.5, linetype = "1.5"),color = "darkgreen")+
-    geom_hline(aes(yintercept=2.8, linetype = "2.8"),color = "darkorange")+
-    geom_hline(aes(yintercept = 4.4, linetype = "4.4"),color ="brown")+
+    geom_hline(aes(yintercept = 0.8,linetype = "0.8"),color = "darkred",size=.5)+
+    geom_hline(aes(yintercept = 1.5, linetype = "1.5"),color = "darkgreen",size=.5)+
+    geom_hline(aes(yintercept=2.8, linetype = "2.8"),color = "darkorange",size=.5)+
+    geom_hline(aes(yintercept = 4.4, linetype = "4.4"),color ="brown",size=.5)+
     scale_linetype_manual(name = "Rainfall (mm)", 
                           values = c(1,2,3,4),
                           guide = guide_legend(override.aes = list(color = c("darkred",
@@ -521,11 +555,7 @@ panelled_rain <- plot_grid(rain_boxplot,
 panelled_rain
 
 ggsave("img/canneto/panelled_rain.jpg",panelled_rain,
-       dpi = 500, width =12, height = 6)
-
-?arrangeGrob
-
-
+       dpi = 500, width =8, height = 5)
 
 
 #####------------------------------------------------------------------------------------------------------------------------------------------####
@@ -585,7 +615,7 @@ aml <- h2o.automl(y = y, x = x,
                   seed = 1)
 
 lb <- aml@leaderboard
-#print(lb)
+print(lb)
 
 # Get model ids for all models in the AutoML Leaderboard
 model_ids <- as.data.frame(aml@leaderboard$model_id)[,1]
@@ -596,16 +626,15 @@ metalearner <- h2o.getModel(se@model$metalearner$name)
 
 h2o.varimp_plot(metalearner) # best model - gbm
 
-
 ## canneto original ##
 
-res <- getBestModel(
+res <- getbestmodel.modif(
   canneto_featured$Date[1:600],
   canneto_featured$fl_rate.Ls[1:600],
   "day",
   complete = 0,
   n_test = 7, # prediction horizon (i.e. n. of days)
-  graph = TRUE,
+  graph = T,
   algos = list("my.prophet", "my.sarima","my.tbats",
                "my.bats", "my.stlm", "my.stlf","my.stl",
                "my.shortterm"),
@@ -613,6 +642,10 @@ res <- getBestModel(
   metric.error = my.rmse)
 
 res$best # TBATS
+
+print(res$graph.train)
+
+?getBestModel
 
 # getting predictions of best model
 pred <- res %>%
@@ -622,13 +655,18 @@ pred <- res %>%
 dates_test <- as.Date(canneto_featured$Date, format = "%Y-%m-%d")[501:507]
 values_test <- canneto_featured$fl_rate.Ls[501:507]
 
-ggplot() +
-  geom_line(data=pred[!is.na(pred$sarima) & pred$type == "mean",], aes(x=dates, 
-                                                                       y=sarima), 
+(tbats <- ggplot() +
+  geom_line(data=pred[!is.na(pred$tbats) & pred$type == "mean",], aes(x=dates, 
+                                                                       y=tbats), 
             color = "blue") +
   geom_line(aes(x = dates_test, y = values_test), color = "red") +
-  xlab('Dates') +
-  ylab('Flow Rate Madonna di Canneto') 
+  xlab('') +
+  ylab('Flow rate (L/s)') +
+  ggtitle("Predicted (TBATS) vs Actual values: Madonna di Canneto")+
+  theme_classic())
+
+ggsave("img/canneto/tbats.jpg", tbats, 
+       dpi=500, width=8,height=5)
 
 ### GBM ###
 
@@ -636,18 +674,23 @@ ggplot() +
 
 # testing and training split
 
+par(mar=c(5,5,5,5))
+
+str(canneto_featured1)
+canneto_featured2 <- canneto_featured1 %>% dplyr::select(-mean_rain)
+
 set.seed(123)
-canneto_featured.split <- initial_split(canneto_featured, prop = .7)
+canneto_featured.split <- initial_split(canneto_featured2, prop = .7)
 canneto_featured.train <- training(canneto_featured.split)
 canneto_featured.test <- testing(canneto_featured.split)
 
 canneto_featured.fit <- gbm::gbm(fl_rate.Ls ~ .,
-                             data = canneto_featured,
+                             data = canneto_featured2, # removed date
                              verbose = T, 
                              shrinkage = 0.01,
                              interaction.depth = 3, 
                              n.minobsinnode = 5,
-                             n.trees = 1000,
+                             n.trees = 1500,
                              cv.folds = 12)
 
 canneto_featured.fit.perf <- gbm.perf(canneto_featured.fit, method = "cv")
@@ -659,7 +702,8 @@ canneto_featured.fit.pred <- stats::predict(object = canneto_featured.fit,
                                         n.trees = canneto_featured.fit.perf)
 canneto_featured.fit.rmse <- Metrics::rmse(actual = canneto_featured.test$fl_rate.Ls,
                                        predicted = canneto_featured.fit.pred)
-print(canneto_featured.fit.rmse) # 26.59
+
+print(canneto_featured.fit.rmse) # 26.05
 
 
 # summarise model 
@@ -667,6 +711,64 @@ print(canneto_featured.fit.rmse) # 26.59
 canneto_featured.effects <- tibble::as_tibble(gbm::summary.gbm(canneto_featured.fit,
                                                            plotit = F))
 canneto_featured.effects %>% utils::head() 
+
+
+## plotting pred vs actual 
+
+canneto_featured.test$predicted <- as.integer(predict(canneto_featured.fit,
+                                                      newdata = canneto_featured.test,
+                                                      n.trees = canneto_featured.fit.perf))
+
+str(canneto_featured.test)
+
+reg <- lm(predicted ~ fl_rate.Ls, data = canneto_featured.test)
+reg
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),"\n",r.sq)
+
+# plot
+(gbm_actualvspred <- ggplot(canneto_featured.test) +
+  geom_point(aes(x = predicted,
+                 y = fl_rate.Ls,
+                 color = predicted - fl_rate.Ls),
+             alpha = .7, size = 2) +
+  geom_abline(intercept = 196,slope = 0.3, 
+              color = "darkred", linetype ="dashed")+
+  geom_text(x = 240, y = 260, label = eq, color = "darkred")+
+  ggtitle("Predicted vs Actual values (GBM): Madonna di Canneto\n")+
+  ylab("Actual\n")+
+  xlab("\nPredicted")+
+  scale_color_continuous(name = "Difference\npredicted - actual")+
+  theme_classic())
+
+ggsave("img/canneto/gbm_act_pred.jpg",gbm_actualvspred,
+       dpi = 500, width = 10,height=7)
+
+# plotting 5 best vars by rel importance 
+
+plot_rel.infl <- canneto_featured.effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # it's already only 3 vars
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  xlab("Features")+
+  ylab("Relative Influence")+
+  ggtitle("Relative influence of features on target variable (GBM): Madonna di Canneto\n")+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+
+ggsave("img/canneto/rel_infl.gbm.jpg",plot_rel.infl,
+       dpi = 500, width = 8, height = 6)
+
 
 ### comparing with values suggested by stepwise ###
 canneto_featured_tm <- canneto_featured %>% 
