@@ -515,34 +515,9 @@ panel_meteo
 ggsave("img/doganella/panel_meteo.jpg",panel_meteo,
        dpi = 500, width = 10, height = 9)
 
-## perfettooooooo
 
-################################################################################
-#### looking at last feature: volume ####
+#### to model #### 
 
-# volume is of the water pumped OUT from the drinking water plant 
-# thus removed from the aquifer
 
-doganella_vol <- doganella %>% 
-  select(Date, Volume_Pozzo_1: Volume_Pozzo_9)  %>%
-  gather(key = "pozzo", value = "volume.mc", -Date) %>%
-  mutate(Date = ymd(Date))
-str(doganella_vol)
 
-(vol_dog <- ggplot(doganella_vol, aes(Date, volume.mc, color = pozzo,
-                                      group = pozzo))+
-    geom_line()+
-    theme_classic()+
-    scale_x_date(date_breaks = "1 year", date_labels = "%Y"))
 
-# boxplots 
-
-(vol_box_dog <- ggplot(doganella_vol, aes(y = volume.mc, color = pozzo))+
-    geom_boxplot()+
-    theme_classic())
-
-# hist 
-(vol_hist_dog <- ggplot(doganella_vol, aes(volume.mc))+
-    geom_histogram()+
-    facet_wrap(vars(pozzo))+
-    theme_classic())

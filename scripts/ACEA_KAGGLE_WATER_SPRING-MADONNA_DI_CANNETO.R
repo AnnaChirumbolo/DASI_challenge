@@ -517,7 +517,7 @@ rain_boxplot <- ggplot(canneto_featured, aes(y = Rainfall_Settefrati))+
     geom_boxplot(color = "steelblue")+
     xlab("")+
     ylab("Rainfall (mm)")+
-    ggtitle("Boxplot rainfall variable: Madonna di Canneto\n")+
+    ggtitle("Boxplot rainfall variable\n")+
     theme_classic()
 
 vis_rain <- ggplot(canneto_featured, aes(Date, Rainfall_Settefrati))+
