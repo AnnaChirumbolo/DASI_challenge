@@ -1560,7 +1560,11 @@ rf_River_Arno_Hydrometry_Nave_di_Rosano_LAG <-
 #varImpPlot(rf_River_Arno_Hydrometry_Nave_di_Rosano_LAG,  pch=8)
 
 plot(rf_River_Arno_Hydrometry_Nave_di_Rosano_LAG,verbose = F ) 
+<<<<<<< HEAD
 ggsave("img/arno/25RF_lag.jpg", dpi = 500, width = 10, height=7)
+=======
+
+>>>>>>> e8d869f7920d3ec6492db0533d355ef2e471f81a
 
 
 
@@ -1643,7 +1647,11 @@ library(purrr)
 
 ##
 ###anche qui faro vari test
+<<<<<<< HEAD
 #### test GB con LAG personalizzati ####
+=======
+#### test GB con LAG personalizzari ####
+>>>>>>> e8d869f7920d3ec6492db0533d355ef2e471f81a
 
 ## reading files 
 River_Arno_Season_Lag <- dummyVars(~Season, data = arno_LAG, fullRank = F)
@@ -1716,8 +1724,12 @@ Hydrometry_Nave_di_Rosano_fit1 <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
                                            n.trees = 1000,
                                            cv.folds = 10)
 perf_gbm1 <- gbm.perf(Hydrometry_Nave_di_Rosano_fit1, method = "cv")
+<<<<<<< HEAD
 #ggsave("img/arno/26.jpg", dpi = 500, width = 10, height=7)
 #26Square_error_LAG_GB.jpg
+=======
+
+>>>>>>> e8d869f7920d3ec6492db0533d355ef2e471f81a
 ## make predictions 
 
 Hydrometry_Nave_di_Rosano_pred2 <- stats::predict(object = Hydrometry_Nave_di_Rosano_fit1,
@@ -1726,7 +1738,11 @@ Hydrometry_Nave_di_Rosano_pred2 <- stats::predict(object = Hydrometry_Nave_di_Ro
 rmse_fit1 <- Metrics::rmse(actual = Hydrometry_Nave_di_Rosano.test$Hydrometry_Nave_di_Rosano,
                            predicted = Hydrometry_Nave_di_Rosano_pred2)
 print(rmse_fit1) 
+<<<<<<< HEAD
 #### RMSE 0.3385 Test con LAG PERSONALIZZATI ####
+=======
+#### RMSE 0.3470 Test2 con LAG PERSONALIZZATI ####
+>>>>>>> e8d869f7920d3ec6492db0533d355ef2e471f81a
 #
 
 #plot 
@@ -1746,8 +1762,12 @@ Hydrometry_Nave_di_Rosano_effects %>%
   geom_col()+
   coord_flip()+
   scale_color_brewer(palette = "Dark2")
+<<<<<<< HEAD
 ggsave("img/arno/27.jpg", dpi = 500, width = 10, height=7)
 #### il primo classificato ####
+=======
+#### il secondo classificato ####
+>>>>>>> e8d869f7920d3ec6492db0533d355ef2e471f81a
 
 
 
@@ -1761,6 +1781,7 @@ ggsave("img/arno/27.jpg", dpi = 500, width = 10, height=7)
 #### testgb 2 con localita Le_Croci Cavallina  per il primo gruppo e Bibbiena Stia per il secondo gruppo ####
 
 ## reading files 
+<<<<<<< HEAD
 River_Arno_Season<- dummyVars(~Season, data = River_Arno_cut1, fullRank = F)
 River_Arno_Season<- as.data.frame(predict(River_Arno_Season, newdata = River_Arno_cut1))
 #rm(River_Arno_cut_gb2)
@@ -1773,6 +1794,12 @@ River_Arno_cut_gb2 <- cbind(River_Arno_cut_gb2, River_Arno_Season)
 River_Arno_cut_gb2 <- River_Arno_cut_gb2[complete.cases(River_Arno_cut_gb2),]
 
 
+=======
+River_Arno_cut_gb2<- River_Arno_cut1 %>%
+  dplyr::select( Rainfall_Cavallina,Rainfall_Le_Croci, Rainfall_Stia, Rainfall_Bibbiena, Temperature_Firenze,
+                 Hydrometry_Nave_di_Rosano,
+                 Season) 
+>>>>>>> e8d869f7920d3ec6492db0533d355ef2e471f81a
 #spread(key = imp, value = depth_to_gw.m) # in regression date doesnt really matter 
 str(River_Arno_cut_gb2)
 
@@ -1819,7 +1846,11 @@ Hydrometry_Nave_di_Rosano_fit1 <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
                         shrinkage = 0.01,
                         interaction.depth = 3, 
                         n.minobsinnode = 5,
+<<<<<<< HEAD
                         n.trees = 1000,
+=======
+                        n.trees = 5000,
+>>>>>>> e8d869f7920d3ec6492db0533d355ef2e471f81a
                         cv.folds = 10)
 perf_gbm1 <- gbm.perf(Hydrometry_Nave_di_Rosano_fit1, method = "cv")
 
@@ -1830,7 +1861,11 @@ Hydrometry_Nave_di_Rosano_pred2 <- stats::predict(object = Hydrometry_Nave_di_Ro
                                n.trees = perf_gbm1)
 rmse_fit2 <- Metrics::rmse(actual = Hydrometry_Nave_di_Rosano.test$Hydrometry_Nave_di_Rosano,
                            predicted = Hydrometry_Nave_di_Rosano_pred2)
+<<<<<<< HEAD
 print(rmse_fit2) 
+=======
+print(rmse_fit1) 
+>>>>>>> e8d869f7920d3ec6492db0533d355ef2e471f81a
 #### RMSE 0.3423 Test2 con Le_Croci, Cavallina, Bibbiena, Stia ####
 #
 
@@ -1882,7 +1917,11 @@ Hydrometry_Nave_di_Rosano_effects %>%
   geom_col()+
   coord_flip()+
   scale_color_brewer(palette = "Dark2")
+<<<<<<< HEAD
 ggsave("img/arno/29Variabili_GB1.jpg", dpi = 500, width = 10, height=7)
+=======
+
+>>>>>>> e8d869f7920d3ec6492db0533d355ef2e471f81a
 
 ######  confronto i dataset con i lag
 ####arno0.5_LC_1 rain LE CROCI ####
@@ -1890,6 +1929,7 @@ ggsave("img/arno/29Variabili_GB1.jpg", dpi = 500, width = 10, height=7)
 #dplyr::select( Rainfall_Cavallina,Rainfall_Le_Croci, Rainfall_Stia, Rainfall_Bibbiena, Temperature_Firenze,
 #               Hydrometry_Nave_di_Rosano,
 #               Season, rain0.5) 
+<<<<<<< HEAD
 
 River_Arno_Season<- dummyVars(~Season, data = arno0.5_LC_1, fullRank = F)
 River_Arno_Season<- as.data.frame(predict(River_Arno_Season, newdata = arno0.5_LC_1))
@@ -1903,6 +1943,12 @@ LC0 <- arno0.5_LC_1 %>%
 LC0  <- cbind(LC0 , River_Arno_Season)
 LC0 <- LC0[complete.cases(LC0),]
 
+=======
+LC0 <- arno0.5_LC_1 %>%
+  dplyr::select( Rainfall_Cavallina, Rainfall_Stia, Rainfall_Bibbiena, Temperature_Firenze,
+                 Hydrometry_Nave_di_Rosano,
+                 Season, rain0.5) 
+>>>>>>> e8d869f7920d3ec6492db0533d355ef2e471f81a
 
 LC0.split <- initial_split(LC0,prop =.7)
 
@@ -1919,7 +1965,11 @@ LC0.fit <- gbm::gbm(Hydrometry_Nave_di_Rosano ~ .,
                    cv.folds = 12)
 
 LC0.perf <- gbm.perf(LC0.fit, method = "cv")
+<<<<<<< HEAD
 #ggsave("img/arno/30Sq_error_lag_GB2.jpg", dpi = 500, width = 10, height=7)
+=======
+
+>>>>>>> e8d869f7920d3ec6492db0533d355ef2e471f81a
 ## make predictions 
 
 LC0.pred<- stats::predict(object = LC0.fit,
@@ -1930,6 +1980,7 @@ LC0.rmse <- Metrics::rmse(actual = LC0.test$Hydrometry_Nave_di_Rosano,
 print(LC0.rmse) 
 #### 0.4397 # RMSE LCO= Le croci rain0 ####
 
+<<<<<<< HEAD
 Hydrometry_Nave_di_Rosano_effects <- tibble::as_tibble(gbm::summary.gbm(LC0.fit,
                                                                         plotit = F))
 Hydrometry_Nave_di_Rosano_effects %>% utils::head()
@@ -1951,6 +2002,8 @@ ggsave("img/arno/31Variabili_GB2.jpg", dpi = 500, width = 10, height=7)
 
 
 
+=======
+>>>>>>> e8d869f7920d3ec6492db0533d355ef2e471f81a
 ## rain 1 le croci 
 
 LC1 <- arno1.5_LC %>%
