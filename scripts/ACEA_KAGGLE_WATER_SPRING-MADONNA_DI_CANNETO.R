@@ -748,7 +748,7 @@ eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),"\n",r.sq)
 ggsave("img/canneto/gbm_act_pred.jpg",gbm_actualvspred,
        dpi = 500, width = 10,height=7)
 
-# plotting 5 best vars by rel importance 
+# plotting 6 best vars by rel importance 
 
 plot_rel.infl <- canneto_featured.effects %>% 
   arrange(desc(rel.inf)) %>% 
@@ -773,7 +773,7 @@ ggsave("img/canneto/rel_infl.gbm.jpg",plot_rel.infl,
 ### comparing with values suggested by stepwise ###
 canneto_featured_tm <- canneto_featured %>% 
   dplyr::select(Rainfall_Settefrati,Temperature_Settefrati,
-                Spring,Summer,lag1,lag7,
+                Spring,Winter,lag8,
                 fl_rate.Ls, Autumn,snow.no)
 
 set.seed(123)
@@ -787,8 +787,9 @@ canneto_featured_tm.fit <- gbm::gbm(fl_rate.Ls ~ .,
                                 shrinkage = 0.01,
                                 interaction.depth = 3, 
                                 n.minobsinnode = 5,
-                                n.trees = 500,
+                                n.trees = 2000,
                                 cv.folds = 12)
+
 canneto_featured_tm.fit.perf <- gbm.perf(canneto_featured_tm.fit, method = "cv")
 
 ## make predictions 
@@ -798,36 +799,53 @@ canneto_featured_tm.fit.pred <- stats::predict(object = canneto_featured_tm.fit,
                                            n.trees = canneto_featured_tm.fit.perf)
 canneto_featured_tm.fit.rmse <- Metrics::rmse(actual = canneto_featured_tm.test$fl_rate.Ls,
                                           predicted = canneto_featured_tm.fit.pred)
-print(canneto_featured_tm.fit.rmse) 
-# 28.83 - larger error than without removing some features. 
+print(canneto_featured_tm.fit.rmse) ## 25.97 - slightly smaller than with all the features.
 
-### USING CANNETO ORIGINAL - KEEPING ALL THE FEATURES.
+# summarise model 
 
-
-### plotting model fit - canneto original ###
-
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
-
-# predicted 
-
-canneto_featured.test$predicted <- as.integer(predict(canneto_featured.fit,
-                                                  newdata = canneto_featured.test,
-                                                  n.trees = canneto_featured.fit.perf))
-
-# plot predicted vs actual
-
-ggplot(canneto_featured.test) +
-  geom_point(aes(x = predicted,
-                 y = fl_rate.Ls,
-                 color = predicted - fl_rate.Ls),
-             alpha = .7, size = 2) +
-  theme_classic()
+canneto_featured.effects <- tibble::as_tibble(gbm::summary.gbm(canneto_featured_tm.fit,
+                                                               plotit = F))
+canneto_featured.effects %>% utils::head() 
 
 
-## plotting top 6 features by importance
+## plotting pred vs actual 
 
-p9.effects %>% 
+canneto_featured_tm.test$predicted <- as.integer(predict(canneto_featured_tm.fit,
+                                                      newdata = canneto_featured_tm.test,
+                                                      n.trees = canneto_featured_tm.fit.perf))
+str(canneto_featured_tm.test)
+
+reg <- lm(predicted ~ fl_rate.Ls, data = canneto_featured_tm.test)
+reg
+summary(reg)
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),"\n",r.sq)
+
+# plot
+(gbm_actualvspred <- ggplot(canneto_featured_tm.test) +
+    geom_point(aes(x = predicted,
+                   y = fl_rate.Ls,
+                   color = predicted - fl_rate.Ls),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 196,slope = 0.3, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 240, y = 260, label = eq, color = "darkred")+
+    ggtitle("Predicted vs Actual values (GBM): Madonna di Canneto\n")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+
+ggsave("img/canneto/gbm_act_pred.jpg",gbm_actualvspred,
+       dpi = 500, width = 10,height=7)
+
+# plotting 6 best vars by rel importance 
+
+plot_rel.infl <- canneto_featured.effects %>% 
   arrange(desc(rel.inf)) %>% 
   top_n(6) %>%  # it's already only 3 vars
   ggplot(aes(x = fct_reorder(.f = var,
@@ -836,9 +854,17 @@ p9.effects %>%
              fill = rel.inf))+
   geom_col()+
   coord_flip()+
+  xlab("Features")+
+  ylab("Relative Influence")+
+  ggtitle("Relative influence of features on target variable (GBM): Madonna di Canneto\n")+
   scale_color_brewer(palette = "Dark2") +
   theme_classic()+
-  scale_fill_discrete(name = "Relative Influence")
+  scale_fill_continuous(name = "Relative Influence")
+
+ggsave("img/canneto/rel_infl.gbm.jpg",plot_rel.infl,
+       dpi = 500, width = 8, height = 6)
+
+
 
 
 ### Time series forecasting - SARIMA ### This could be considered too --> univariate TS analysis though (only target var and date)
