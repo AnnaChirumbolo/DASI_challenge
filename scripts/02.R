@@ -58,35 +58,6 @@ doganella <- doganella1 %>%
     geom_line(size = 1)+
     theme_classic())
 
-## if i wanted to count how many nas following in a row?
-
-group.na <- function(x){
-  group <- if_else(is.na(x), 1, 0)
-  return(group)
-}
-
-
-# creating a function that counts sequence of nas in a row for each variable 
-count.na <- function(x){
-  group_na <- if_else(is.na(x), 1,0)
-  grp <- with(rle(group_na), rep(seq_along(lengths), lengths))
-  counter <- ave(grp,grp, FUN = seq_along)
-  return(counter)
-}
-
-###
-#with(mtcars, ave(mpg, cyl, FUN=mean))
-# ave is baseR equivalent of group_by() %>% mutate()!!! YAS
-####
-
-#doganella2 <- data.frame(doganella, lapply(doganella[,14:22], count.na))
-
-#doganella3 <- data.frame(doganella2, lapply(doganella2[,14:22],
-                                          #  function(x) if_else(is.na(x),1,0)))
-  
-
-## all this was to try and find a way to impute missing data
-
 ## imputeTS
 
 ggplot_na_distribution(doganella$Pozzo_1)+
