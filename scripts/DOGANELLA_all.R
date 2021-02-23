@@ -348,7 +348,7 @@ ggplot_na_distribution(doganella_spread$Temperature_Velletri)
 
 #### temperature Velletri
 
-temp_dog_ls <- list.files(path = "./data/DOGANELLA_3BMETEO/", ### NEED TO DOWNLOAD THESE FROM KAGGLE!
+temp_dog_ls <- list.files(path = "./data/DOGANELLA_3BMETEO_Velletri/", 
                           pattern = "*.csv$", 
                           full.names = T) %>%
   map_df(~read_plus(.)) 
