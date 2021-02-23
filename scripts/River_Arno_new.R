@@ -7,8 +7,7 @@ rm(list = ls(all=TRUE))
 #install.packages("recipes")
 #install.packages("fastDummies")
 
-library(fastDummies)
-library(fastDummies)
+
 #library(fastDummies)
 #library(reshape)
 library(reshape2)
@@ -67,6 +66,7 @@ library(randomForestSRC)
 library(scales)
 library(Metrics)
 library(mgcv)
+library(tidyr)
 
 
 
@@ -113,83 +113,168 @@ visdat::vis_dat(River_Arno_cut)
 ggsave("img/arno/02River_Arno_missing.jpg", dpi = 500, width = 10, height=7)
 #02River_Arno_cut_missing.jpg
 
+#######plot rainfall:
+pal <- brewer.pal(n = 12, name = "Paired")
+
+#Tabella riepilogativa
+arno_missing <- River_Arno_cut %>% 
+  miss_var_summary()
+print(arno_missing)
+
+
 #### missing seconda parte ####
 statsNA(River_Arno_cut$Rainfall_Le_Croci) #ok non ci sono missing
-ggplot_na_distribution(River_Arno_cut$Rainfall_Le_Croci)
+ggplot_na_distribution(River_Arno_cut$Rainfall_Le_Croci, 
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values Le Croci")
+ggsave("img/arno/02_1Rainfall_Le_Croci.jpg", dpi = 500, width = 10, height=7)
 
 statsNA(River_Arno_cut$Rainfall_Cavallina) #ok non ci sono missing
-ggplot_na_distribution(River_Arno_cut$Rainfall_Cavallina)
+ggplot_na_distribution(River_Arno_cut$Rainfall_Cavallina,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values Cavallina")
+ggsave("img/arno/02_2Rainfall_Cavallina.jpg", dpi = 500, width = 10, height=7)
+
+
 
 statsNA(River_Arno_cut$Rainfall_S_Agata) #ok non ci sono missing
-ggplot_na_distribution(River_Arno_cut$Rainfall_S_Agata)
+ggplot_na_distribution(River_Arno_cut$Rainfall_S_Agata,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values S_Agata")
+ggsave("img/arno/02_3Rainfall_S_Agata.jpg", dpi = 500, width = 10, height=7)
+
 
 statsNA(River_Arno_cut$Rainfall_Mangona) #ok non ci sono missing
-ggplot_na_distribution(River_Arno_cut$Rainfall_Mangona)
+ggplot_na_distribution(River_Arno_cut$Rainfall_Mangona,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values Mangona")
+ggsave("img/arno/02_4Rainfall_Mangona.jpg", dpi = 500, width = 10, height=7)
+
 
 statsNA(River_Arno_cut$Rainfall_S_Piero) #ok non ci sono missing
-ggplot_na_distribution(River_Arno_cut$Rainfall_S_Piero)
+ggplot_na_distribution(River_Arno_cut$Rainfall_S_Piero,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values S_Piero")
+ggsave("img/arno/02_5Rainfall_S_Piero.jpg", dpi = 500, width = 10, height=7)
+
 
 statsNA(River_Arno_cut$Rainfall_Vernio)# richiede intervento 1743 mising
-ggplot_na_distribution(River_Arno_cut$Rainfall_Vernio)
+ggplot_na_distribution(River_Arno_cut$Rainfall_Vernio,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values Vernio"
+                       )
 ggsave("img/arno/03Rainfall_Vernio_missing.jpg", dpi = 500, width = 10, height=7)
 #03Rainfall_Vernio_missing.jpg
 
 statsNA(River_Arno_cut$Rainfall_Stia) # richiede intervento 4742 missing
-ggplot_na_distribution(River_Arno_cut$Rainfall_Stia)
+ggplot_na_distribution(River_Arno_cut$Rainfall_Stia,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values Stia")
 ggsave("img/arno/04Rainfall_Stia_missing.jpg", dpi = 500, width = 10, height=7)
 #04Rainfall_Stia_missing.jpg
 
 statsNA(River_Arno_cut$Rainfall_Consuma) # richiede intervento 4743 missing
-ggplot_na_distribution(River_Arno_cut$Rainfall_Consuma)
+ggplot_na_distribution(River_Arno_cut$Rainfall_Consuma,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values Consuma")
 ggsave("img/arno/05Rainfall_Consuma_missing.jpg", dpi = 500, width = 10, height=7)
 #05Rainfall_Consuma_missing.jpg
 
 statsNA(River_Arno_cut$Rainfall_Incisa) # richiede intervento 1457 missing
-ggplot_na_distribution(River_Arno_cut$Rainfall_Incisa)
+ggplot_na_distribution(River_Arno_cut$Rainfall_Incisa,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values Incisa")
 ggsave("img/arno/06Rainfall_Incisa_missing.jpg", dpi = 500, width = 10, height=7)
 #06Rainfall_Incisa_missing.jpg
 
 
 statsNA(River_Arno_cut$Rainfall_Montevarchi) # richiede intervento 4378 missing
-ggplot_na_distribution(River_Arno_cut$Rainfall_Montevarchi)
+ggplot_na_distribution(River_Arno_cut$Rainfall_Montevarchi,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values Montevarchi")
 ggsave("img/arno/07Rainfall_Montevarchi_missing.jpg", dpi = 500, width = 10, height=7)
 #07Rainfall_Montevarchi_missing.jpg
 
 statsNA(River_Arno_cut$Rainfall_S_Savino) # richiede intervento 4743 missing
-ggplot_na_distribution(River_Arno_cut$Rainfall_S_Savino)
+ggplot_na_distribution(River_Arno_cut$Rainfall_S_Savino,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values S_Savino")
 ggsave("img/arno/08Rainfall_S_Savino_missing.jpg", dpi = 500, width = 10, height=7)
 #08Rainfall_S_Savino_missing
 
 
 
 statsNA(River_Arno_cut$Rainfall_Laterina) # richiede intervento 4743 missing
-ggplot_na_distribution(River_Arno_cut$Rainfall_Laterina)
+ggplot_na_distribution(River_Arno_cut$Rainfall_Laterina,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values Laterina")
 ggsave("img/arno/09Rainfall_Laterina_missing.jpg", dpi = 500, width = 10, height=7)
 #09Rainfall_Laterina_missing
 
 
 
 statsNA(River_Arno_cut$Rainfall_Bibbiena) # richiede intervento 3648 missing
-ggplot_na_distribution(River_Arno_cut$Rainfall_Bibbiena)
+ggplot_na_distribution(River_Arno_cut$Rainfall_Bibbiena,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values Bibbiena")
 ggsave("img/arno/10Rainfall_Bibbiena_missing.jpg", dpi = 500, width = 10, height=7)
 #10Rainfall_Bibbiena_missing
 
 
 statsNA(River_Arno_cut$Rainfall_Camaldoli) # richiede intervento 4743 missing
-ggplot_na_distribution(River_Arno_cut$Rainfall_Camaldoli)
+ggplot_na_distribution(River_Arno_cut$Rainfall_Camaldoli, 
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values Camaldoli")
 ggsave("img/arno/11Rainfall_Camaldoli_missing.jpg", dpi = 500, width = 10, height=7)
 #11Rainfall_Camaldoli_missing
 
 
+
 statsNA(River_Arno_cut$Temperature_Firenze) # richiede intervento 1062 missing
-ggplot_na_distribution(River_Arno_cut$Temperature_Firenze)
+ggplot_na_distribution(River_Arno_cut$Temperature_Firenze,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values Temp_Firenze")
 ggsave("img/arno/12Temperature_Firenze_missing.jpg", dpi = 500, width = 10, height=7)
 #12Temperature_Firenze_missing
 
 statsNA(River_Arno_cut$Hydrometry_Nave_di_Rosano)# ok
-ggplot_na_distribution(River_Arno_cut$Hydrometry_Nave_di_Rosano)
+ggplot_na_distribution(River_Arno_cut$Hydrometry_Nave_di_Rosano,
+                       x_axis_labels=River_Arno_cut$Date,
+                       title = "Distribution of Missing Values Hydrometry_N_d_Rosano ")
 ggsave("img/arno/13Hydrometry_Nave_di_Rosano_missing.jpg", dpi = 500, width = 10, height=7)
 #13Hydrometry_Nave_di_Rosano_missing
+
+df<-River_Arno_cut%>% 
+  dplyr::select(-Temperature_Firenze, -Hydrometry_Nave_di_Rosano,
+                -Rainfall_Le_Croci, -Rainfall_Cavallina, -Rainfall_S_Agata,
+                -Rainfall_Mangona, -Rainfall_S_Piero)
+
+River_Arno_cut.rf <- gather(data=df, 
+                      key="Localita", value="Rainfall", colnames(df)[-1])
+
+ggplot(River_Arno_cut.rf, aes(x=Date,y=Rainfall,colour=Localita)) +
+  geom_line() + geom_point() +
+  facet_wrap(~Localita)+
+  ggtitle("River Arno: Rainfall_Localita'- con Missing - (mm)") +
+ggsave("img/arno/11_1All_rain_missing.jpg", 
+       dpi = 500, height = 6, width = 8)
+rm(df)
+#localita no missing
+df<-River_Arno_cut%>% 
+  dplyr::select(Date,
+                Rainfall_Le_Croci, Rainfall_Cavallina, Rainfall_S_Agata,
+                Rainfall_Mangona, Rainfall_S_Piero)
+
+River_Arno_cut.rf <- gather(data=df, 
+                            key="Localita", value="Rainfall", colnames(df)[-1])
+
+ggplot(River_Arno_cut.rf, aes(x=Date,y=Rainfall,colour=Localita)) +
+  geom_line() + geom_point() +
+  facet_wrap(~Localita)+
+  ggtitle("River Arno: Rainfall_Localita'- NO Missing - (mm)") +
+ggsave("img/arno/11_2All_rain_NOmissing.jpg", 
+       dpi = 500, height = 6, width = 8)
+rm(df)
 
 # scarico i dati dal 2011 al 2020 su 3bmeteo
 
@@ -806,6 +891,22 @@ rm(df)
 #18River_arno_mean_rainfall
 
 #### visualizzo la pioggia per localita'####
+
+df<-River_Arno_cut1%>% 
+  dplyr::select(-Temperature_Firenze, -Hydrometry_Nave_di_Rosano)
+
+River_Arno_cut.rf <- gather(data=df, 
+                            key="Localita", value="Rainfall", colnames(df)[-1])
+
+ggplot(River_Arno_cut.rf, aes(x=Date,y=Rainfall,colour=Localita)) +
+  geom_line() + geom_point() +
+  facet_wrap(~Localita)+
+  ggtitle("River Arno: Rainfall_Localita'- NO Missing - (mm)") 
+
+  ggsave("img/arno/19_0All_rain_NO_missing.jpg", 
+         dpi = 500, height = 6, width = 8)
+rm(df)
+
 River_Arno_cut1 %>%
   dplyr::select(Date, Rainfall_Le_Croci, Rainfall_Cavallina, Rainfall_S_Agata, Rainfall_Mangona, Rainfall_S_Piero,
          Rainfall_Vernio, Rainfall_Stia, Rainfall_Consuma, Rainfall_Incisa, Rainfall_Montevarchi,
@@ -1141,7 +1242,7 @@ arno5_LC_1 <- arno5_LC %>%   dplyr::select(-Date)
 
 
 
-## creating 5 new datasets Sieve with different min rainfall levels 
+## creating 5 new datasets  with different min rainfall levels 
 
 ## and with new time lags (trying to represent true effect of rain over target)
 #Cavallina
@@ -1594,7 +1695,6 @@ RMSE_RF_LAG
 #Le variabili delle precipitazioni si dividono in due gruppi, 
 #non correlate tra loro ma internamente correlate.
 
-#il gruppo che influisce di maggiormente riguarda la sorgente.
 
 # La temperatura ha la maggiore influenza sul flusso d'acqua, tra le
 #variabili studiate.
