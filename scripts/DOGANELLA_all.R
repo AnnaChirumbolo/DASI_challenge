@@ -225,8 +225,6 @@ doganella7 <- doganella_filled %>%
   gather(key="imp", value = "target",31:39) %>%
   mutate(Date = ymd(Date))
 
-str(doganella7)
-
 
 ## vis with imputation 
 (imp_vis <- ggplot(doganella7, aes(Date, target, color = imp,
@@ -246,24 +244,22 @@ ggsave("img/doganella/imp_vis.jpg", imp_vis, dpi = 500,
 
 #### imputing volumes ####
 
-doganella_vols <-setnames(doganella7, 
-                       old = colnames(doganella7[,23:30]),
+doganella_vols <- doganella7[,1:30]
+doganella_vols <-setnames(doganella_vols, 
+                       old = colnames(doganella_vols[,23:30]),
                        new = c("1","2",
                                "3","4",
                                "5","6",
-                               "7","8"))
+                               "7","8")) %>% 
+  gather(key = "imp.vols", value = "volumes",23:30)
 
-doganella8 <- doganella_vols %>% 
-  gather(key="imp.vols", value = "volumes",23:30) %>%
-  mutate(Date = ymd(Date))
-
-(imp_vis_vols <- ggplot(doganella8, aes(Date, volumes, color = imp.vols,
-                                        group = imp))+
+(imp_vis_vols <- ggplot(doganella_vols, aes(Date, volumes, color = imp.vols,
+                                        group = imp.vols))+
    geom_line()+
    theme_classic()+
    scale_x_date(date_breaks = "1 year", date_labels = "%Y")+
    scale_color_manual(name = "",values =pal)+
-   ylab("Depth to groundwater (m)\n")+
+   ylab("Volume (m3)\n")+
   scale_y_continuous(limits = c(0,9000),expand = c(0,0))+
    xlab("")+
    ggtitle("Imputed volumes\nDistribution over time: Doganella\n"))
@@ -271,13 +267,14 @@ doganella8 <- doganella_vols %>%
 ggsave("img/doganella/imp_volumes.jpg", imp_vis_vols, dpi = 500,
        width = 8, height = 6)
 
-str(doganella8)
 
-#### checking for outliers ####
+#### checking for outliers #### 
 
-doganella_spread <- doganella8 %>% 
+doganella_spread <- doganella7 %>% 
   mutate(target = abs(target)) %>% 
-  spread(key = "imp", value = "target") 
+  spread(key = "imp", value = "target") %>% 
+  dplyr::select(Date, contains("temp"),
+                contains("rain"), 23:39)
 
 ## boxplots
 
@@ -354,9 +351,9 @@ temp_dog_ls <- list.files(path = "./data/DOGANELLA_3BMETEO_Velletri/",
   map_df(~read_plus(.)) 
 
 ## manipulating temp data 
-temp_dog <- temp_dog_ls %>% 
+meteo_dog <- temp_dog_ls %>% 
   rename(date1 = filename) %>% 
-  mutate(date1 = gsub("./data/DOGANELLA_3BMETEO/", "", date1),
+  mutate(date1 = gsub("./data/DOGANELLA_3BMETEO_Velletri/", "", date1),
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
@@ -376,36 +373,42 @@ temp_dog <- temp_dog_ls %>%
          date_final = str_replace(date_final, "dec", "12"),
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>%
-  rename(Date = date_final) %>%
+  rename(Date = date_final) 
+
+### temperature ### 
+
+temp_dog <- meteo_dog %>%
   dplyr::select(Date, tmin, tmax) %>%
   mutate(Temperature_Velletri = rowMeans(subset(., select = c(tmin,tmax)),
                                          na.rm = T)) %>%
   dplyr::select(-tmin, -tmax) %>%
-  arrange(Date)
+  arrange(Date) %>% 
+  filter(Date >= "2016-10-07")
 
-#summary(temp_dog)
+### rainfall ###
 
-# visualising trend in newly added temperature 
-
-(vis_temp_dog <- ggplot(temp_dog, aes(Date, Temperature_Velletri))+
-    geom_line()+
-    theme_classic())
+rain_dog <- meteo_dog %>% 
+  dplyr::select(Date, prec) %>% 
+  mutate(Rainfall_Velletri = rowMeans(subset(., select = prec),na.rm=T)) %>%
+  dplyr::select(-prec) %>% 
+  arrange(Date) %>% 
+  filter(Date >= "2016-10-07")
 
 #### temperature Monteporzio
 
-temp_monte_dog_ls <- list.files(path = "./data/DOGANELLA_MONTEPORZIO_3BMETEO/",
+temp_monte_dog_ls <- list.files(path = "./data/DOGANELLA_3BMETEO_Monteporzio/",
                                 pattern = "*.csv$", 
                                 full.names = T) %>%
   map_df(~read_plus(.)) 
 
 ## manipulating temp data 
-temp_monte_dog <- temp_monte_dog_ls %>% 
+meteo_monte_dog <- temp_monte_dog_ls %>% 
   rename(date1 = filename) %>% 
-  mutate(date1 = gsub("./data/DOGANELLA_MONTEPORZIO_3BMETEO/", "", date1),
+  mutate(date1 = gsub("./data/DOGANELLA_3BMETEO_Monteporzio/", "", date1),
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = str_replace(date_final,"ago","08"),
          date_final = str_replace(date_final, "gen", "01"),
@@ -421,84 +424,96 @@ temp_monte_dog <- temp_monte_dog_ls %>%
          date_final = str_replace(date_final, "dec", "12"),
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>%
-  rename(Date = date_final) %>%
-  select(Date, tmin, tmax) %>%
+  rename(Date = date_final) 
+
+temp_monte_dog <- meteo_monte_dog %>%
+  dplyr::select(Date, tmin, tmax) %>%
   mutate(Temperature_Monteporzio = rowMeans(subset(., select = c(tmin,tmax)),
                                             na.rm = T)) %>%
-  select(-tmin, -tmax)
+  dplyr::select(-tmin, -tmax) %>% 
+  filter(Date >= "2016-10-07")
 
-summary(temp_monte_dog)
-summary(temp_dog)
+### rainfall
 
-# vis of newly added temp data 
+rain_monte_dog <- meteo_monte_dog %>% 
+  dplyr::select(Date, prec) %>% 
+  mutate(Rainfall_Monteporzio = rowMeans(subset(.,select=prec),na.rm = T)) %>% 
+  dplyr::select(-prec) %>% 
+  arrange(Date) %>% 
+  filter(Date >= "2016-10-07")
 
-(vis_new_temp_monte <- ggplot(temp_monte_dog, aes(Date, Temperature_Monteporzio))+
-    geom_line()+
-    theme_classic())
+
+#### adding rainfall data ####
+
+
+doganella_spread$Rainfall_Velletri[is.na(doganella_spread$Rainfall_Velletri)] <- rain_dog$Rainfall_Velletri[match(doganella_spread$Date[is.na(doganella_spread$Rainfall_Velletri)],
+                                                                                                                           rain_dog$Date)]
+
+
+doganella_spread$Rainfall_Monteporzio[is.na(doganella_spread$Rainfall_Monteporzio)] <- rain_monte_dog$Rainfall_Monteporzio[match(doganella_spread$Date[is.na(doganella_spread$Rainfall_Monteporzio)],
+                                                                                                                                          rain_monte_dog$Date)]
 
 #### adding new temp data to prev dataset ####
 
-View(doganella10)
-
-doganella_new <- doganella10 %>%
-  spread(temp_sensor, temp.C) %>%
-  spread(rain_sensor, rain.mm) 
-
-doganella_new$Temperature_Velletri[is.na(doganella_new$Temperature_Velletri)] <- temp_dog$Temperature_Velletri[match(doganella_new$Date[is.na(doganella_new$Temperature_Velletri)],
+doganella_spread$Temperature_Velletri[is.na(doganella_spread$Temperature_Velletri)] <- temp_dog$Temperature_Velletri[match(doganella_spread$Date[is.na(doganella_spread$Temperature_Velletri)],
                                                                                                                      temp_dog$Date)]
-(filled_temp_velletri <- ggplot(doganella_new, aes(Date, Temperature_Velletri))+
-    geom_line()+
-    theme_classic())
 
-doganella_new$Temperature_Monteporzio[is.na(doganella_new$Temperature_Monteporzio)] <- temp_monte_dog$Temperature_Monteporzio[match(doganella_new$Date[is.na(doganella_new$Temperature_Monteporzio)],
+
+doganella_spread$Temperature_Monteporzio[is.na(doganella_spread$Temperature_Monteporzio)] <- temp_monte_dog$Temperature_Monteporzio[match(doganella_spread$Date[is.na(doganella_spread$Temperature_Monteporzio)],
                                                                                                                                     temp_monte_dog$Date)]
 
-(filled_temp_monteporzio <- ggplot(doganella_new, aes(Date, Temperature_Monteporzio))+
-    geom_line()+
-    theme_classic())
+#### filled in the data
+statsNA(doganella_spread$Temperature_Monteporzio) # still one na missing x9
+statsNA(doganella_spread$Temperature_Velletri) # one row na missing x9
 
-#### filled in the data!!
-statsNA(doganella_new$Temperature_Monteporzio) # still one na missing x9
-statsNA(doganella_new$Temperature_Velletri) # one row na missing x9
+statsNA(doganella_spread$Rainfall_Monteporzio)
+statsNA(doganella_spread$Rainfall_Velletri)
 
 ## imputing those vars 
 
-doganella11 <- doganella_new %>% 
-  mutate(imp_rain_velletri = na_ma(Rainfall_Velletri, k = 1), # rain
-         imp_rain_monteporzio = na_ma(Rainfall_Monteporzio, k = 1)) # rain
-
-summary(doganella11$imp_rain_monteporzio)
-summary(doganella11$imp_rain_velletri)
-
-statsNA(doganella11$Temperature_Monteporzio)
-ggplot_na_distribution(doganella11$Temperature_Monteporzio)
-
-View(doganella11[is.na(doganella11$Temperature_Monteporzio),])# one day 
-
-doganella11$Temperature_Monteporzio <- na_ma(doganella11$Temperature_Monteporzio, k =1)
-
-doganella11$Temperature_Monteporzio[doganella$Date == "2019-12-31"] # ok
-
-statsNA(doganella11$Temperature_Monteporzio)
-
-View(doganella11[is.na(doganella11$Temperature_Velletri),])# one day 
-
-doganella11$Temperature_Velletri <- na_ma(doganella11$Temperature_Velletri, k = 1)
-doganella11$Temperature_Velletri[doganella$Date == "2019-12-31"] # ok
+doganella_tm <- doganella_spread %>% 
+  mutate(Temperature_Monteporzio = na_ma(Temperature_Monteporzio, k = 1), # temp
+         Temperature_Velletri = na_ma(Temperature_Velletri, k = 1),
+         Rainfall_Monteporzio = na_ma(Rainfall_Monteporzio,k=1),
+         Rainfall_Velletri = na_ma(Rainfall_Velletri, k=1)) %>% 
+  gather(key ="rain",value = "mm", Rainfall_Monteporzio,Rainfall_Velletri) %>% 
+  gather(key = "temp", value = "C", Temperature_Monteporzio,Temperature_Velletri) %>% 
+  mutate(temp = gsub("Temperature_","",temp),
+         rain = gsub("Rainfall_","",rain))
 
 ## vis distrib data with imputed vars 
 
-ggplot(doganella11, aes(Date, Temperature_Monteporzio))+
-  geom_line()+
-  geom_line(data = doganella11, aes(Date, Temperature_Velletri,
-                                    color = "red"))+
-  theme_classic()
+## temperature ##
+pal.temp <- brewer.pal(3,"Spectral")
 
-ggplot(doganella11, aes(Date, Rainfall_Monteporzio))+
+temp <- ggplot(doganella_tm, aes(Date, C, group = temp, color = temp))+
   geom_line()+
-  geom_line(data = doganella11, aes(Date, Rainfall_Velletri,
-                                    color = "red"))+
+  scale_color_manual(name ="Location\n",values =pal.temp )+
+  scale_y_continuous(limits = c(0,31),expand = c(0,0))+
+  ylab("Temperature (°C)\n")+
+  xlab("")+
+  labs(title = "Distribution of meteorological variables (after enrichment): Doganella\n",
+       subtitle = "Temperature (°C)\n")+
   theme_classic()
+temp
+
+## rainfall ## 
+rain <- ggplot(doganella_tm, aes(Date, mm, group = rain, color = rain))+
+  geom_line()+
+  scale_color_manual(name = "",values = pal)+
+  scale_y_continuous(limits = c(0,131),expand = c(0,0))+
+  xlab("")+
+  ylab("Rainfall (mm)\n")+
+  labs(subtitle = "Rainfall (mm)\n")+
+  theme_classic()
+rain
+
+panel_meteo <- gridExtra::arrangeGrob(temp, rain,
+                                      nrow = 2)
+panel_meteo
+
+ggsave("img/doganella/panel_meteo.jpg",panel_meteo,
+       dpi = 500, width = 10, height = 9)
 
 ## perfettooooooo
 
