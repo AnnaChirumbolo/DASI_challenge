@@ -7,7 +7,7 @@
 
 We analysed datasets provided by Acea, to **predict the amount of available drinkable water in central Italy**.
 
-Each team member was assigned a type of water basin, in an attemp to 'specialise' in teh short-term on the characteristics and dynamics relative to that water system.
+Each team member was assigned a type of water basin, in an attemp to 'specialise' in the short-term on the characteristics and dynamics relative to that water system.
 
 During the first observational analysis, we found large gaps of data particularly in the earliest years of the timeseries at our disposal. For this reason, we adopted **a very decisive approach** in selecting and privileging the analyses towards portions of the **most recent records** the datasets, as they presented more or less continuous data, while we decided to **fill in** small gaps remaining via **weighted automatic attribution techniques** (see *imputeTs* package). 
 
