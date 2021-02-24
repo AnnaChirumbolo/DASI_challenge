@@ -1,8 +1,4 @@
- theme: jekyll-theme-minimal
-
-# Site wide configuration
-
+theme: jekyll-theme-minimal
 title: Dasi Challenge: ACEA Smart Water Analytics
 locale: en_UK
-logo: # filename of a logo image that has been placed into your images directory
-
+baseurl: /index
