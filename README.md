@@ -1,7 +1,7 @@
 # ACEA Smart Water Analytics 
 ## DASI Challenge
 
-This repository contains all the resources used to create our porject on predictive analytics of water availability in central Italy. 
+This repository contains all sources and resources used. Our project consisted in analysing datasets on four different waterbodies provided by Acea, Italian multifacility company, to predict the amount of available drinkable water in central Italy.
 
 
 ### Authors:
