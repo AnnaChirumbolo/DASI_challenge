@@ -2,7 +2,7 @@ encoding: utf-8
 lang: en-GB
 title: "ACEA Smart Water Analytics"
 logo: "/img/logo_challenge.png"
-baseurl: ""
+baseurl: /
 description: ""
 date_format: "%b %-d, %Y"  
 
