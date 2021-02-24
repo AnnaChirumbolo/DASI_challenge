@@ -1,5 +1,3 @@
-![](assets/logos/logo-challenge.png)
-
 # Executive Summary.
 
 
