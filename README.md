@@ -9,15 +9,18 @@ Authors:
 **Anna Chirumbolo**
 
 email: anna.chirumbolo@gmail.com
+
 github: AnnaChirumbolo
 
 
 **Alberto Baccari**
 
 email: albertobaccari87@gmail.com
+
 github: Menadel87
 
 **Cinzia Schiavuta**
 
 email: cinzia.schiavuta@gmail.com
+
 github: girasara
