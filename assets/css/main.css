@@ -1,3 +1,5 @@
+@import "minimal";
+
 .site-title::before {
 	content: url("/assets/logos/logo-challenge.png");
 	display: inline-block;
