@@ -24,8 +24,15 @@ authors:
     github: girasara
 
 # Enter the following platform usernames if you would like for them to appear on your site.
+owners:
+  anna: 
+    name: Anna 
+    github: AnnaChirumbolo
+    email: anna.chirumbolo@gmail.com
+  alberto:
+    name: Alberto
+    github: Menadel87
+    email: albertobaccari87@gmail.com
 
-minimal:
-  date_format: "%b %-d, %Y"
-  
 theme: jekyll-theme-minimal
+  date_format: "%b %-d, %Y"  
