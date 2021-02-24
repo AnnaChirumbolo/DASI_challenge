@@ -33,12 +33,3 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 
 
 
-
-
-# Summary: 
-
-## [0. Importing libraries and datasets](docs/0.md)
-
-## [1. Data cleaning and feature engineering](docs/1.md)
-  
-## [2. Modelling and forecasting](docs/2.md)
