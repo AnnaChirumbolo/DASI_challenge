@@ -3,9 +3,25 @@ locale: en_UK
 logo: ![](img/logo_challenge.png)
 baseurl: /  
 
-author: 
-  name:  @AnnaChirumbolo
-  email: anna.chirumbolo@gmail.com
+authors:
+  Anna:
+    name: Anna Chirumbolo
+    display_name: Anna
+    email: anna.chirumbolo@gmail.com
+    web: https://www.linkedin.com/in/anna-chirumbolo/
+    github: AnnaChirumbolo
+  Alberto:
+    name: Alberto Baccari
+    display_name: Alberto
+    email: albertobaccari87@gmail.com
+    web: https://www.linkedin.com/in/albertobaccari/
+    github: Menadel87
+  Cinzia: 
+    name: Cinzia Schiavuta
+    display_name: Cinzia 
+    email: cinzia.schiavuta@gmail.com
+    web: https://www.linkedin.com/in/cinzia-schiavuta-78177039/
+    github: girasara
 
 # Enter the following platform usernames if you would like for them to appear on your site.
 owner:
