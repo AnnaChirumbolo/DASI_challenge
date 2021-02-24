@@ -1,14 +1,11 @@
 # Belongs at: /_data/navigation.yml
 
-- title: Home
+- title: Executive Summary
   url: /
-
-- title: Group of Things
-  url: /group/
   sublinks:
-    - title: Sub-item 1
-      url: /group/si1
-    - title: Sub-item 2
-      url: /group/si2
-    - title: Sub-item 3
-      url: /group/si3
+    - title: Importing Libraries and Datasets  
+      url: /docs/0
+    - title: Data Cleaning and Feature Engineering
+      url: /docs/1
+    - title: Modelling and Forecasting
+      url: /docs/2
