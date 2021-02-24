@@ -1,6 +1,6 @@
 title: "ACEA Smart Water Analytics"
 locale: en_UK
-logo: # filename of a logo image that has been placed into your images directory
+logo: ![](img/logo_challenge.png)
 baseurl: /
 description: > 
   This website was created to present our work for ACEA Smart Water Analytics Challenge.
