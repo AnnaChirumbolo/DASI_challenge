@@ -35,4 +35,5 @@ owners:
     email: albertobaccari87@gmail.com
 
 theme: jekyll-theme-minimal
-  date_format: "%b %-d, %Y"  
+ 
+date_format: "%b %-d, %Y"  
