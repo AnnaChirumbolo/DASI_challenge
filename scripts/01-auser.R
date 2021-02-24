@@ -1,6 +1,6 @@
 ################################################################################
 ################################################################################
-###############   Cinzia                    ####################################
+###############                             ####################################
 ###############   Script prep of vars       ####################################
 ################################################################################
 ################################################################################
@@ -39,6 +39,8 @@ auser$Date<-as.Date(auser$Date, format = "%d/%m/%Y")
 
 #### N/A Visualization ###
 visdat::vis_dat(auser)
+ggsave("img/auser/01Auser.jpg",
+       dpi = 500, width = 10, height=7)
 
 str(auser) 
 names(auser)
@@ -54,7 +56,7 @@ auser_missing <- auser %>%
 print(auser_missing)
 View(auser_missing)
 
-
+#Target Sal, CoS, LT2
 auser1 <- auser %>% 
  gather(key = "well", value = "depth_to_gw.m", Depth_to_Groundwater_LT2 : Depth_to_Groundwater_DIEC) %>%
  mutate(Date = ymd(Date),
@@ -63,7 +65,8 @@ auser1 <- auser %>%
 (first_look <- ggplot(auser1, aes(x =Date, y = abs(depth_to_gw.m), color = well))+
   geom_line(size = .5)+
     theme_classic())
-
+ggsave("img/auser/03Auser.jpg",
+       dpi = 500, width = 10, height=7)
 ### missing data clearly starting from 
 
 ## removing missing for depth to gw
@@ -75,24 +78,41 @@ max(auser$Date[is.na(auser$Rainfall_Gallicano)]) # restituisce "2005-12-31"
 auser_cut<- auser %>%     
   filter(Date >= "2006-01-01")
 visdat::vis_dat(auser_cut)
-
+ggsave("img/auser/02Auser.jpg",
+       dpi = 500, width = 10, height=7)
 #continuano ad eserci missing non recuperabili, soprattutto su
-#Depth_to_Groundwater_DIEC , CoS, LT2 fino a maggio 2011
-#decido di prendere i valori da giugno 2011 in poi
-#auser_cut<- auser_cut %>%     
-#  filter(Date >= "2011-06-01")
-#visdat::vis_dat(auser_cut) # questo lo riporto nello script 02-auser
+#Depth_to_Groundwater_DIEC , CoS, LT2 (fino a maggio 2011)
 
 
-
-
-
-auser_filtered <- auser1 %>%     
+#1 plot con tutte le 5 variabili
+auser_filtered <- auser1 %>% 
+  dplyr::select(Date, well, depth_to_gw.m)%>% 
   filter(Date >= "2006-01-01")
 
-visdat::vis_dat(auser_filtered)
 
-(second_look <- ggplot(auser_filtered, aes(x=Date, y=abs(depth_to_gw.m), 
+(second_look <- ggplot(auser_filtered, aes(x=Date, y=(depth_to_gw.m), 
+                                           color = well))+
+    geom_line(size = .5)+
+    theme_classic()+
+    scale_x_date(date_breaks = "1 year", date_labels = "%Y")+
+    ylab("Abs. depth to groundwater in m")+
+    xlab("")) 
+
+ggsave("img/auser/04AUSER_filtered_depth_to_groundwater.jpg", 
+       dpi = 500, height = 7, width = 10)
+
+
+
+#2 osservo solo le variabilitarget
+
+
+auser_filtered <- auser1 %>% 
+  filter(well==c("LT2", "CoS", "SAL")) %>%
+  dplyr::select(Date, well, depth_to_gw.m)%>% 
+  filter(Date >= "2006-01-01")
+
+
+(second_look <- ggplot(auser_filtered, aes(x=Date, y=(depth_to_gw.m), 
                                                color = well))+
     geom_line(size = .5)+
     theme_classic()+
@@ -100,8 +120,8 @@ visdat::vis_dat(auser_filtered)
     ylab("Abs. depth to groundwater in m")+
     xlab("")) 
 
-ggsave("img/AUSER_filtered_depth_to_groundwater.jpg", 
-       dpi = 500, height = 5, width = 10)
+ggsave("img/auser/05AUSER_target_depth_to_groundwater.jpg", 
+       dpi = 500, height = 7, width = 10)
 
 
 

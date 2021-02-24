@@ -1,4 +1,4 @@
-#### River Arno Analisi / CS ####
+#### River Arno Analisi  ####
 #### inizializzo il codice ####
 getwd()
 rm(list = ls(all=TRUE)) 
@@ -1740,10 +1740,14 @@ library(here)
 library(MASS)
 library(leaps)
 library(purrr)
-
+library(remotes)
 ##
 ###anche qui faro vari test
 #### test GB con LAG personalizzati ####
+
+#River_Arno_cut1<-read.csv("processed_data/ARNO_to_model.csv")
+
+
 
 ## reading files 
 River_Arno_Season_Lag <- dummyVars(~Season, data = arno_LAG, fullRank = F)
@@ -1934,6 +1938,13 @@ print(rmse_fit2)
 #### RMSE 0.3423 Test2 con Le_Croci, Cavallina, Bibbiena, Stia ####
 #
 
+
+
+
+
+
+
+
 #plot - RAinfall_CAvallina
 gbm::plot.gbm(Hydrometry_Nave_di_Rosano_fit1, i.var = 1)
 # plot - RAinfall_Le_Croci
@@ -1983,6 +1994,37 @@ Hydrometry_Nave_di_Rosano_effects %>%
   coord_flip()+
   scale_color_brewer(palette = "Dark2")
 ggsave("img/arno/29Variabili_GB1.jpg", dpi = 500, width = 10, height=7)
+
+
+
+#### plotting predicted VS Actual values #### River_Arno_cut_gb2
+dates_test <- as.Date(River_Arno_cut_gb2$Date, format = "%Y-%m-%d")[501:507]
+values_test <- River_Arno_cut_gb2$fl_rate.Ls[501:507]
+
+ggplot(p2.test) +
+  geom_point(aes(x = predicted,
+                 y = imp2,
+                 color = predicted - imp2),
+             alpha = .7, size = 1) +
+  theme_fivethirtyeight()
+
+(tbats <- ggplot() +
+    geom_line(data=pred[!is.na(pred$tbats) & pred$type == "mean",], aes(x=dates, 
+                                                                        y=tbats), 
+              color = "blue") +
+    geom_line(aes(x = dates_test, y = values_test), color = "red") +
+    xlab('') +
+    ylab('Flow rate (L/s)') +
+    ggtitle("Predicted (TBATS) vs Actual values: Arno")+
+    theme_classic())
+
+ggsave("img/arno/32tbats.jpg", tbats, 
+       dpi=500, width=8,height=5)
+
+
+
+
+
 
 ######  confronto i dataset con i lag
 ####arno0.5_LC_1 rain LE CROCI ####
