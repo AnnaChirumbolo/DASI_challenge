@@ -3,10 +3,10 @@ locale: en_UK
 logo: ![](img/logo_challenge.png)
 baseurl: /
 description: > 
-  Autors: |
-  Anna Chirumbolo |
-  Alberto Baccari|
-  Cinzia Schiavuta
+  Autors:\
+  Anna Chirumbolo\
+  Alberto Baccari\
+  Cinzia Schiavuta 
 
 author: 
   name: GitHub User
