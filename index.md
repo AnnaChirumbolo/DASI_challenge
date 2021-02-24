@@ -1,10 +1,6 @@
 {% include navigation.html%}
 
-# DASI Challenge - ACEA Smart Water Analytics
-
-
-
-## Executive Summary.
+# Executive Summary.
 
 
 We analysed datasets provided by Acea, to **predict the amount of available drinkable water in central Italy**.
