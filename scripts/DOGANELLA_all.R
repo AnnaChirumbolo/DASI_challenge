@@ -39,7 +39,7 @@ step.wisef <- function(x, DATA){
   train.control <- trainControl(method = "cv", number = 10)
   step.model <- train(as.formula(paste(x,"~.")), data = DATA, 
                       method = "leapSeq", 
-                      tuneGrid = data.frame(nvmax = 1:10), # in this particular case, max 13 features for the variable
+                      tuneGrid = data.frame(nvmax = 1:9), # in this particular case, max 13 features for the variable
                       trControl = train.control,
                       na.action = na.omit)
   return(step.model)
@@ -526,53 +526,238 @@ doganella_tm <- doganella_tm %>%
   gather(key = "welln",value ="volume",6:13) %>% 
   mutate(welln = gsub(".1","",welln),
          welln = gsub("_"," ",welln)) %>% 
-  spread(welln, volume)
+  spread(welln, volume) 
+
+doganella_featured <- add.seasons(doganella_tm) %>% 
+  dplyr::select(-Rainfall_Monteporzio,-Temperature_Monteporzio) %>% # highly correlated with other sensor
+  mutate(snow.yes = as.factor(ifelse(Temperature_Velletri <= 0 & Rainfall_Velletri > 0, 1,0)),
+         snow.no = as.factor(ifelse(Temperature_Velletri,1,0)),
+         weekly = lubridate::week(Date))
+
+str(doganella_featured)
 
 ## prepping objects per target ##
 
 meteo <- c("rain","temp")
 
-pozzo1 <- doganella_tm %>% dplyr::select(., contains("1"), contains(meteo))
-pozzo2 <- doganella_tm %>% dplyr::select(., contains("2"), contains(meteo))
-pozzo3 <- doganella_tm %>% dplyr::select(., contains("3"), contains(meteo))
-pozzo4 <- doganella_tm %>% dplyr::select(., contains("4"), contains(meteo))
-pozzo5 <- doganella_tm %>% dplyr::select(., contains("5"), contains(meteo))
-pozzo6 <- doganella_tm %>% dplyr::select(., contains("6"), contains(meteo))
-pozzo7 <- doganella_tm %>% dplyr::select(., contains("7"), contains(meteo))
-pozzo8 <- doganella_tm %>% dplyr::select(., contains("8"), contains(meteo))
-pozzo9 <- doganella_tm %>% dplyr::select(., contains("9"), contains(meteo))
+pozzo1 <- doganella_featured %>% dplyr::select(., contains("1"), 
+                                               contains(meteo), 21:27,
+                                               `Volume Pozzo`)
 
-#correlations?
+pozzo2 <- doganella_featured %>% dplyr::select(., contains("2"), 
+                                               contains(meteo), 21:27)
 
-#### pozzo 1 ####
+pozzo3 <- doganella_featured %>% dplyr::select(., contains("3"), 
+                                               contains(meteo), 21:27) 
 
-pozzo1_sw <- step.wisef("imp1", pozzo1)
-pozzo1_sw$bestTune 
-pozzo1_sw$finalModel
-coef(pozzo1_sw$finalModel, 5)
+pozzo4 <- doganella_featured %>% dplyr::select(., contains("4"), 
+                                               contains(meteo), 21:27)
 
-### let's stick to three variables (?) ###
-## question: model chooses the two temperatures even if they're highly correlated to one another...?
-# why? 
+pozzo5 <- doganella_featured%>% dplyr::select(., contains("5"), 
+                                              contains(meteo), 21:27)
 
-#### testing and training split ####
+pozzo6 <- doganella_featured %>% dplyr::select(., contains("6"), 
+                                         contains(meteo), 21:27)
+
+pozzo7 <- doganella_featured %>% dplyr::select(., contains("7"), 
+                                               contains(meteo), 21:27)
+
+pozzo8 <- doganella_featured %>% dplyr::select(., contains("8"), 
+                                               contains(meteo), 21:27)
+
+pozzo9 <- doganella_featured %>% dplyr::select(., contains("9"), 
+                                               contains(meteo), 21:27)
+
+### creating a list 
+
+list.pozzi <- list(pozzo1 = pozzo1,pozzo2 = pozzo2, 
+                   pozzo3 = pozzo3, pozzo4 = pozzo4, 
+                   pozzo5 = pozzo5, pozzo6 = pozzo6, 
+                   pozzo7 = pozzo7, pozzo8 = pozzo8,
+                   pozzo9 = pozzo9)
+
+### adding other features - rainfall thresholds and lags 
+
+mean.rain <- function(DF) {
+  DF %>% group_by(weekly) %>% 
+    mutate(mean.rain = mean(Rainfall_Velletri)) %>%
+    arrange(weekly)
+}
+
+list.pozzi1 <- map(list.pozzi, mean.rain)
+
+## stats ##
+
+boxplot(list.pozzi1$pozzo1$mean.rain)$stats
+##stats:
+# min - 0
+# q1 - 1.44
+# median - 2.83
+# q3 - 4.72 
+# max - 9.06
+
+list.pozzi0.5 <- lapply(list.pozzi, function(x) cbind(x, 
+                                                      rain0.5 = ifelse(x$Rainfall_Velletri <= 0.5,
+                                                                       0, x$Rainfall_Velletri)))
+list.pozzi1 <- lapply(list.pozzi, function(x) cbind(x, 
+                                                    rain1 = ifelse(x$Rainfall_Velletri <= 1,
+                                                                   0, x$Rainfall_Velletri)))
+  
+list.pozzi1.5 <- lapply(list.pozzi, function(x) cbind(x, 
+                                                      rain1.5 = ifelse(x$Rainfall_Velletri <=1.5,
+                                                                       0, x$Rainfall_Velletri)))
+
+list.pozzi2.83 <- lapply(list.pozzi, function(x) cbind(x, 
+                                                       rain2.83 = ifelse(x$Rainfall_Velletri <= 2.83,
+                                                                         0, x$Rainfall_Velletri)))
+
+#### choosing optima lag ####
+
+pozzi.ts <- lapply(list.pozzi, function(x) ts(x, start = c(2016,2),
+                                              frequency = 7))
+pozzi.ts0.5 <- lapply(list.pozzi0.5, function(x) ts(x, start = c(2016, 2),
+                                                    frequency = 7))
+pozzi.ts1 <- lapply(list.pozzi1, function(x) ts(x, start = c(2016,2),
+                                                frequency = 7))
+pozzi.ts1.5 <- lapply(list.pozzi1.5, function(x) ts(x, start = c(2016,2),
+                                                    frequency = 7))
+pozzi.ts2.83 <- lapply(list.pozzi2.83, function(x) ts(x, start = c(2016,2),
+                                                      frequency = 7))
+
+lag.selectts <- lapply(pozzi.ts, function(x) lags.select(x, lag.max = 10))
+
+lag.selectts0.5 <- lapply(pozzi.ts0.5, function(x) lags.select(x, lag.max = 10))
+
+lag.selectts1 <- lapply(pozzi.ts1, function(x) lags.select(x, lag.max = 10))
+
+lag.selectts1.5 <- lapply(pozzi.ts1.5, function(x) lags.select(x, lag.max = 10))
+
+lags.selectts2.83 <- lapply(pozzi.ts2.83, function(x) lags.select(x, lag.max = 10))
+
+
+#### adding lags ####
+
+# ts - no threshold 
+
+print(lag.selectts)
+
+list.pozzi$pozzo1 <- cbind(list.pozzi$pozzo1, lag4 = Lag(list.pozzi$pozzo1$Rainfall_Velletri,+4))
+list.pozzi$pozzo2 <- cbind(list.pozzi$pozzo2, lag4 = Lag(list.pozzi$pozzo2$Rainfall_Velletri,+4))
+list.pozzi$pozzo3 <- cbind(list.pozzi$pozzo3, lag6 = Lag(list.pozzi$pozzo3$Rainfall_Velletri,+6))
+list.pozzi$pozzo4 <- cbind(list.pozzi$pozzo4, lag1 = Lag(list.pozzi$pozzo4$Rainfall_Velletri,+1))
+list.pozzi$pozzo5 <- cbind(list.pozzi$pozzo5, lag10 = Lag(list.pozzi$pozzo5$Rainfall_Velletri, +10))
+list.pozzi$pozzo6 <- cbind(list.pozzi$pozzo6, lag4 = Lag(list.pozzi$pozzo6$Rainfall_Velletri, +4))
+list.pozzi$pozzo7 <- cbind(list.pozzi$pozzo7, lag5 = Lag(list.pozzi$pozzo7$Rainfall_Velletri, +5))
+list.pozzi$pozzo8 <- cbind(list.pozzi$pozzo8, lag5= Lag(list.pozzi$pozzo8$Rainfall_Velletri, +5))
+list.pozzi$pozzo9 <- cbind(list.pozzi$pozzo9, lag1 = Lag(list.pozzi$pozzo9$Rainfall_Velletri, +1))
+
+# ts - 0.5
+
+print(lag.selectts0.5)
+
+list.pozzi0.5$pozzo1 <- cbind(list.pozzi0.5$pozzo1, lag10 = Lag(list.pozzi0.5$pozzo1$rain0.5,+10))
+list.pozzi0.5$pozzo2 <- cbind(list.pozzi0.5$pozzo2, lag9 = Lag(list.pozzi0.5$pozzo2$rain0.5,+9))
+list.pozzi0.5$pozzo3 <- cbind(list.pozzi0.5$pozzo3, lag3 = Lag(list.pozzi0.5$pozzo3$rain0.5,+3))
+list.pozzi0.5$pozzo4 <- cbind(list.pozzi0.5$pozzo4, lag2 = Lag(list.pozzi0.5$pozzo4$rain0.5, +2))
+list.pozzi0.5$pozzo5 <- cbind(list.pozzi0.5$pozzo5, lag5 = Lag(list.pozzi0.5$pozzo5$rain0.5,+5))
+list.pozzi0.5$pozzo6 <- cbind(list.pozzi0.5$pozzo6, lag7 = Lag(list.pozzi0.5$pozzo6$rain0.5,+7))
+list.pozzi0.5$pozzo7 <- cbind(list.pozzi0.5$pozzo7, lag1 = Lag(list.pozzi0.5$pozzo7$rain0.5, +1))
+list.pozzi0.5$pozzo8 <- cbind(list.pozzi0.5$pozzo8, lag9 = Lag(list.pozzi0.5$pozzo8$rain0.5,+9))
+list.pozzi0.5$pozzo9 <- cbind(list.pozzi0.5$pozzo9, lag5 = Lag(list.pozzi0.5$pozzo9$rain0.5,+5))
+
+# ts - 1
+
+print(lag.selectts1)
+
+list.pozzi1$pozzo1 <- cbind(list.pozzi1$pozzo1, lag3 = Lag(list.pozzi1$pozzo1$rain1, +3))
+list.pozzi1$pozzo2 <- cbind(list.pozzi1$pozzo2, lag3 = Lag(list.pozzi1$pozzo2$rain1, +3))
+list.pozzi1$pozzo3 <- cbind(list.pozzi1$pozzo3, lag9 = Lag(list.pozzi1$pozzo3$rain1,+9))
+list.pozzi1$pozzo4 <- cbind(list.pozzi1$pozzo4, lag6 = Lag(list.pozzi1$pozzo4$rain1,+6))
+list.pozzi1$pozzo5 <- cbind(list.pozzi1$pozzo5, lag8 = Lag(list.pozzi1$pozzo5$rain1,+8))
+list.pozzi1$pozzo6 <- cbind(list.pozzi1$pozzo6, lag9 = Lag(list.pozzi1$pozzo6$rain1,+9))
+list.pozzi1$pozzo7 <- cbind(list.pozzi1$pozzo7, lag5 = Lag(list.pozzi1$pozzo7$rain1,+5))
+list.pozzi1$pozzo8 <- cbind(list.pozzi1$pozzo8, lag10 = Lag(list.pozzi1$pozzo8$rain1,+10))
+list.pozzi1$pozzo9 <- cbind(list.pozzi1$pozzo9, lag2 = Lag(list.pozzi1$pozzo9$rain1,+2))
+
+# ts - 1.5 
+
+print(lag.selectts1.5)
+
+list.pozzi1.5$pozzo1 <- cbind(list.pozzi1.5$pozzo1, lag7 = Lag(list.pozzi1.5$pozzo1$rain1.5,+7))
+list.pozzi1.5$pozzo2 <- cbind(list.pozzi1.5$pozzo2, lag2 = Lag(list.pozzi1.5$pozzo2$rain1.5,+2))
+list.pozzi1.5$pozzo3 <- cbind(list.pozzi1.5$pozzo3, lag1 = Lag(list.pozzi1.5$pozzo3$rain1.5,+1))
+list.pozzi1.5$pozzo4 <- cbind(list.pozzi1.5$pozzo4, lag5 = Lag(list.pozzi1.5$pozzo4$rain1.5,+5))
+list.pozzi1.5$pozzo5 <- cbind(list.pozzi1.5$pozzo5, lag6 = Lag(list.pozzi1.5$pozzo5$rain1.5,+6))
+list.pozzi1.5$pozzo6 <- cbind(list.pozzi1.5$pozzo6, lag1 = Lag(list.pozzi1.5$pozzo6$rain1.5,+1))
+list.pozzi1.5$pozzo7 <- cbind(list.pozzi1.5$pozzo7, lag2 = Lag(list.pozzi1.5$pozzo7$rain1.5,+2))
+list.pozzi1.5$pozzo8 <- cbind(list.pozzi1.5$pozzo8, lag9 = Lag(list.pozzi1.5$pozzo8$rain1.5,+9))
+list.pozzi1.5$pozzo9 <- cbind(list.pozzi1.5$pozzo9, lag4 = Lag(list.pozzi1.5$pozzo9$rain1.5,+4))
+
+# ts - 2.83 
+
+print(lags.selectts2.83)
+
+list.pozzi2.83$pozzo1 <- cbind(list.pozzi2.83$pozzo1, lag5 = Lag(list.pozzi2.83$pozzo1$rain2.83,+5))
+list.pozzi2.83$pozzo2 <- cbind(list.pozzi2.83$pozzo2, lag5 = Lag(list.pozzi2.83$pozzo2$rain2.83,+5))
+list.pozzi2.83$pozzo3 <- cbind(list.pozzi2.83$pozzo3, lag2 = Lag(list.pozzi2.83$pozzo3$rain2.83,+2))
+list.pozzi2.83$pozzo4 <- cbind(list.pozzi2.83$pozzo4, lag10 = Lag(list.pozzi2.83$pozzo4$rain2.83,+10))
+list.pozzi2.83$pozzo5 <- cbind(list.pozzi2.83$pozzo5, lag2 = Lag(list.pozzi2.83$pozzo5$rain2.83,+2))
+list.pozzi2.83$pozzo6 <- cbind(list.pozzi2.83$pozzo6, lag1 = Lag(list.pozzi2.83$pozzo6$rain2.83,+1))
+list.pozzi2.83$pozzo7 <- cbind(list.pozzi2.83$pozzo7, lag1 = Lag(list.pozzi2.83$pozzo7$rain2.83,+1))
+list.pozzi2.83$pozzo8 <- cbind(list.pozzi2.83$pozzo8, lag6 = Lag(list.pozzi2.83$pozzo8$rain2.83,+6))
+list.pozzi2.83$pozzo9 <- cbind(list.pozzi2.83$pozzo9, lag2 = Lag(list.pozzi2.83$pozzo9$rain2.83,+2))
+
+
+## removing unnecessary variables (weekly and rainfall_velletri for those with changed thresholds)
+
+list.pozzi.all <- list(pozzi = list.pozzi,
+                       pozzi0.5 = list.pozzi0.5,
+                       pozzi1 = list.pozzi1,
+                       pozzi1.5 = list.pozzi1.5,
+                       pozzi2.83 = list.pozzi2.83)
+
+list.pozzi.all <- lapply(list.pozzi.all, function(x) lapply(x, function(y) {y["weekly"] <- NULL; y}))
+
+list.pozzi.all[2:5] <- lapply(list.pozzi.all[2:5], function(x) lapply(x, function(y) {y["Rainfall_Velletri"]<-NULL;y}))
+
+#### separating by pozzo ####
+
+list.pozzo1 <- unlist(lapply(list.pozzi.all, function(x) x["pozzo1"]),recursive = F)
+list.pozzo2 <- unlist(lapply(list.pozzi.all, function(x) x["pozzo2"]),recursive=F)
+list.pozzo3 <- unlist(lapply(list.pozzi.all, function(x) x["pozzo3"]),recursive = F)
+list.pozzo4 <- unlist(lapply(list.pozzi.all, function(x) x["pozzo4"]),recursive=F)
+list.pozzo5 <- unlist(lapply(list.pozzi.all, function(x) x["pozzo5"]),recursive = F)
+list.pozzo6 <- unlist(lapply(list.pozzi.all, function(x) x["pozzo6"]),recursive = F)
+list.pozzo7 <- unlist(lapply(list.pozzi.all, function(x) x["pozzo7"]),recursive = F)
+list.pozzo8 <- unlist(lapply(list.pozzi.all, function(x) x["pozzo8"]),recursive = F)
+list.pozzo9 <- unlist(lapply(list.pozzi.all, function(x) x["pozzo9"]),recursive = F)
+
+#### NEED TO DO AUTOTS AND AUTOML ####
+
+
+#### pozzo 1 #### 
+
+# test + train split 
 
 set.seed(123)
-pozzo1.split <- initial_split(pozzo1, prop = .7)
-pozzo1.train <- training(pozzo1.split)
-pozzo1.test <- testing(pozzo1.split)
 
-pozzo1_fit1 <- gbm::gbm(imp1 ~ .,
-                        data = pozzo1,
-                        verbose = T, 
-                        shrinkage = 0.01,
-                        interaction.depth = 3, 
-                        n.minobsinnode = 5,
-                        n.trees = 5000,
-                        cv.folds = 10)
-perf_gbm1 <- gbm.perf(pozzo1_fit1, method = "cv")
+list.pozzo1.split <- lapply(list.pozzo1, function(x) initial_split(x, prop=.7))
+list.pozzo1.train <- lapply(list.pozzo1.split, function(x) training(x))
+list.pozzo1.test <- lapply(list.pozzo1.split, function(x) testing(x))
+
+list.pozzo1.fit <- lapply(list.pozzo1, function(x) gbm::gbm(`1` ~ .,
+                                                            data = x, 
+                                                            verbose = T,
+                                                            shrinkage = 0.01,
+                                                            interaction.depth = 3,
+                                                            n.minobsinnode = 5,
+                                                            n.trees = 5000,
+                                                            cv.folds = 10))
+
+list.pozzo1.perf <- lapply(list.pozzo1.fit, function(x) gbm.perf(x,method="cv"))
 
 ## make predictions 
+
 
 pozzo1_pred1 <- stats::predict(object = pozzo1_fit1,
                                newdata = pozzo1.test,
