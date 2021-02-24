@@ -1,17 +1,5 @@
 <!-- Belongs at: /_includes/navigation.html -->
 
-<!-- This finds the current page so it can be highlighted. -->
-
-{% for entry in site.data.navigation %}
-{% capture fullurl %}{{ site.baseurl }}{{ entry.url }}{% endcapture %}
-    {% if fullurl == page.url %}
-        {% assign current_page = fullurl %}
-        {% break %}
-    {% elsif page.url contains fullurl %}
-        {% assign current_page = fullurl %}
-    {% endif %}
-{% endfor %}
-
 <!-- Then we build the nav bar. -->
 <p style="text-align: center; background-color: white;">
   <a href="{{site.baseurl}}/">Home</a> |
