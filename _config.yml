@@ -1,12 +1,18 @@
-theme: jekyll-theme-minimal
-
-# Site wide configuration
-
 title: "ACEA Smart Water Analytics"
 locale: en_UK
 logo: # filename of a logo image that has been placed into your images directory
 baseurl: /
+description: > 
+This website was created to present our work for ACEA Smart Water Analytics Challenge, which you can find on [Kaggle](https://www.kaggle.com/c/acea-water-prediction).
+author: 
+  name: GitHub User
+  email: anna.chirumbolo@gmail.com
 
 # Enter the following platform usernames if you would like for them to appear on your site.
 owner:
   name: Anna Chirumbolo
+
+minimal:
+  date_format: "%b %-d, %Y"
+  
+theme: jekyll-theme-minimal
