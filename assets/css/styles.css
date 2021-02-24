@@ -5,3 +5,4 @@
 @import
   "minima/skins/{{ site.minima.skin | default: 'classic' }}",
   "minima/initialize";
+  .rpad {padding-right: 1em;}
