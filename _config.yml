@@ -3,7 +3,9 @@ locale: en_UK
 logo: # filename of a logo image that has been placed into your images directory
 baseurl: /
 description: > 
-This website was created to present our work for ACEA Smart Water Analytics Challenge, which you can find on [Kaggle](https://www.kaggle.com/c/acea-water-prediction).
+  This website was created to present our work for ACEA Smart Water Analytics Challenge, 
+  which you can find on [Kaggle](https://www.kaggle.com/c/acea-water-prediction).
+
 author: 
   name: GitHub User
   email: anna.chirumbolo@gmail.com
