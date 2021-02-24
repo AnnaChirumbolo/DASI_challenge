@@ -3,9 +3,6 @@ lang: en-GB
 title: "ACEA Smart Water Analytics"
 logo: "/img/logo_challenge.png"
 baseurl: /
-description: ""
-date_format: "%b %-d, %Y"  
-
 
 authors:
   Anna:
