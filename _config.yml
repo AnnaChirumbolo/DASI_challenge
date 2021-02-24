@@ -3,7 +3,7 @@ locale: en_UK
 logo: ![](img/logo_challenge.png)
 baseurl: /  
 
-authors:
+owners:
   Anna:
     name: Anna Chirumbolo
     display_name: Anna
@@ -24,8 +24,6 @@ authors:
     github: girasara
 
 # Enter the following platform usernames if you would like for them to appear on your site.
-owner:
-  name: Anna Chirumbolo
 
 minimal:
   date_format: "%b %-d, %Y"
