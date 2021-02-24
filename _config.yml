@@ -1,7 +1,17 @@
+encoding: utf-8
+lang: en-GB
 title: "ACEA Smart Water Analytics"
-locale: en_UK
-logo: /img/logo_challenge.png
-baseurl: /  
+logo: "/img/logo_challenge.png"
+baseurl: ""
+description: ""
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  syntax_highlighter: rouge
+  input: GFM
+  auto_ids: true 
+date_format: "%b %-d, %Y"  
+
 
 authors:
   Anna:
@@ -36,4 +46,3 @@ owners:
 
 theme: jekyll-theme-minimal
  
-date_format: "%b %-d, %Y"  
