@@ -4,7 +4,7 @@
 This repository contains all the resources used to create our porject on predictive analytics of water availability in central Italy. 
 
 
-Authors:
+### Authors:
 
 **Anna Chirumbolo**
 
