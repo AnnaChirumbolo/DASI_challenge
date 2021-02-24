@@ -6,3 +6,10 @@
   "minima/skins/{{ site.minima.skin | default: 'classic' }}",
   "minima/initialize";
   .rpad {padding-right: 1em;}
+
+header {
+    background-color: #f1f8ff;
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+}
