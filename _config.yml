@@ -23,17 +23,7 @@ authors:
     email: cinzia.schiavuta@gmail.com
     web: https://www.linkedin.com/in/cinzia-schiavuta-78177039/
     github: girasara
-
-# Enter the following platform usernames if you would like for them to appear on your site.
-owners:
-  anna: 
-    name: Anna 
-    github: AnnaChirumbolo
-    email: anna.chirumbolo@gmail.com
-  alberto:
-    name: Alberto
-    github: Menadel87
-    email: albertobaccari87@gmail.com
+    
 
 theme: jekyll-theme-minimal
  
