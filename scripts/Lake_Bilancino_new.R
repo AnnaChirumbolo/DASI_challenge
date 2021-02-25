@@ -809,7 +809,8 @@ bilancino_orig.fl.fit <- gbm::gbm(Flow_Rate ~ .,
                                 cv.folds = 12)
 
 bilancino_orig.fl.fit.perf <- gbm.perf(bilancino_orig.fl.fit, method = "cv")
-
+ggsave("img/bilancino/20Bilancino_Sqerror1.jpg",
+       dpi = 500, width = 10, height=7)
 ## make predictions 
 
 bilancino_orig.fl.fit.pred <- stats::predict(object = bilancino_orig.fl.fit,
@@ -817,7 +818,8 @@ bilancino_orig.fl.fit.pred <- stats::predict(object = bilancino_orig.fl.fit,
                                            n.trees = bilancino_orig.fl.fit.perf)
 bilancino_orig.fl.rmse <- Metrics::rmse(actual = bilancino_orig.fl.test$Flow_Rate,
                                           predicted = bilancino_orig.fl.fit.pred)
-print(bilancino_orig.fl.rmse) # 3.14 ### BEST MODEL 
+print(bilancino_orig.fl.rmse) 
+#### RMSE 2.88 ### BEST MODEL ####
 
 
 ## rain 0 le croci 
@@ -851,7 +853,9 @@ lecroci.pred<- stats::predict(object = lecroci.fit,
                                              n.trees = lecroci.perf)
 lecroci.rmse <- Metrics::rmse(actual = lecroci.test$Flow_Rate,
                                         predicted = lecroci.pred)
-print(lecroci.rmse) # 2.13
+print(lecroci.rmse) # 
+#### 2.11 RMSE lecroci ####
+#bilancino_rain0_Le_Croci.lag
 
 
 ## rain 1 le croci 
