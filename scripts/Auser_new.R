@@ -1540,7 +1540,9 @@ rm(df)
 
 #### temperature ####
 auser8 %>%
-  dplyr::select(Date, Temperature_Orentano, Temperature_Monte_Serra, Temperature_Ponte_a_Moriano, Temperature_Lucca_Orto_Botanico) %>%
+  dplyr::select(Date, Temperature_Orentano, 
+                Temperature_Monte_Serra, Temperature_Ponte_a_Moriano, 
+                Temperature_Lucca_Orto_Botanico) %>%
   melt(., id.vars = "Date") %>%
   ggplot(., aes(Date, value, col = variable))+
   geom_line(size = 0.6, alpha = 1)+
@@ -1552,7 +1554,7 @@ auser8 %>%
   theme(legend.position = "bottom", legend.direction = "vertical")
 ggsave("img/auser/34auser_temp.jpg",
        dpi = 500, width = 10, height=7)
-## si notano le temperature di Monte  a Moriano a zero da giugno 2017
+## si notano le temperature di Ponte a Moriano a zero da giugno 2017
 # si presume un difetto nel sensore
 
 
@@ -1600,7 +1602,7 @@ ggsave("img/auser/36auser_H.jpg",
        dpi = 500, width = 10, height=7)
 ##commento: osservo piaggione 
 #nel modello si puo' pensare di rimuovere questa variabile anche perche'
-#molto correlata con altre, guardano la matrice di correlazione
+#molto correlata con l'altra, guardano la matrice di correlazione
 
 
 
@@ -1636,6 +1638,186 @@ ggsave("img/auser/37auser_season_target.jpg",
 
 
 #### MODELLI ####
+
+#### Random Forest ####
+auser8_rf <- auser8  %>%
+  mutate(Season = case_when(month(Date) %in% c(3,4,5) ~ "Spring",                      
+                            month(Date) %in% c(6,7,8) ~ "Summer",
+                            month(Date) %in% c(9,10,11) ~ "Autumn",
+                            month(Date) %in% c(1,2,12) ~ "Winter"))
+auser8_rf$Season<-factor(auser8_rf$Season,
+                                  levels=c("Winter","Spring", "Summer", "Autumn"))
+
+
+auser8_rf_Season <- dummyVars(~Season, data = auser8_rf, fullRank = F)
+auser8_rf_Season <- as.data.frame(predict(auser8_rf_Season, newdata = auser8_rf))
+
+
+#### RF con target impCoS####
+auser8_rf_CoS <- auser8_rf %>%
+  dplyr::select(impCoS, impDIEC, impPAG, 
+                Hydrometry_Monte_S_Quirico,
+                Temperature_Orentano, 
+                Temperature_Lucca_Orto_Botanico,
+                Volume_POL, Volume_CC2, Volume_CSAL,
+                Rainfall_Gallicano,
+                Rainfall_Orentano,
+                Rainfall_Tereglio_Coreglia_Antelminelli
+          )
+
+auser8_rf_CoS <- cbind(auser8_rf_CoS, auser8_rf_Season)
+
+auser8_rf_CoS <- auser8_rf_CoS[complete.cases(auser8_rf_CoS),]
+
+set.seed(2021)
+rand_auser_cos <- sample(nrow(auser8_rf_CoS), nrow(auser8_rf_CoS)* 1/3, replace = F)
+test_auser_cos <- auser8_rf_CoS[rand_auser_cos,]
+train_auser_cos <- auser8_rf_CoS[-rand_auser_cos,]
+
+
+cat("Number of rows in the training set:", nrow(train_auser_cos), "\n")
+#Number of rows in the training set: 2212
+cat("Number of rows in the test set:", nrow(test_auser_cos))
+#Number of rows in the test set: 1106
+
+#ho diviso per il set di addestramento
+#in base al rapporto di due a uno, e inizio il processo di modellazione
+
+rf_auser_cos <- rfsrc(impCoS~., 
+                      data = train_auser_cos, block.size = 1, 
+                     importance = T, samptype = "swr", 
+                     var.used = "all.trees", ntree = 500)
+plot(rf_auser_cos, verbose = F)
+
+#ggsave("img/auser/40auser_RF_cos.jpg",dpi = 500, width = 10, height=7)
+#
+#Il pozzo PAG ha maggiore influenza sul modello. 
+#Ha un impatto sul modello oltre 3 volte maggiore rispetto alla 
+#seconda variabile più importante, che è il volume POL.
+#
+#Le piogge dalle regioni incluse, si sono rivelate avere 
+#il minor impatto sul modello.
+
+#### errore RMSE Test per rf COS####
+
+pred_rf_auser_cos <- predict(rf_auser_cos , newdata = test_auser_cos)
+pred_rf_auser_cos
+
+cat("RMSE Test:", round(rmse(pred_rf_auser_cos$predicted, test_auser_cos$impCoS),2))
+#### errore RMSE Test: 0.22 COS ####
+
+
+#### RF con target impLT2####
+auser8_rf_LT2 <- auser8_rf %>%
+  dplyr::select(impLT2, impDIEC, impPAG, 
+                Hydrometry_Monte_S_Quirico,
+                Temperature_Orentano, 
+                Temperature_Lucca_Orto_Botanico,
+                Volume_POL, Volume_CC2, Volume_CSAL,
+                Rainfall_Gallicano,
+                Rainfall_Orentano,
+                Rainfall_Tereglio_Coreglia_Antelminelli
+  )
+
+auser8_rf_LT2 <- cbind(auser8_rf_LT2, auser8_rf_Season)
+
+auser8_rf_LT2 <- auser8_rf_LT2[complete.cases(auser8_rf_LT2),]
+
+set.seed(2021)
+rand_auser_LT2 <- sample(nrow(auser8_rf_LT2), nrow(auser8_rf_LT2)* 1/3, replace = F)
+test_auser_LT2 <- auser8_rf_LT2[rand_auser_LT2,]
+train_auser_LT2 <- auser8_rf_LT2[-rand_auser_LT2,]
+
+
+cat("Number of rows in the training set:", nrow(train_auser_cos), "\n")
+#Number of rows in the training set: 2212
+cat("Number of rows in the test set:", nrow(test_auser_cos))
+#Number of rows in the test set: 1106
+
+#ho diviso per il set di addestramento
+#in base al rapporto di due a uno, e inizio il processo di modellazione
+
+rf_auser_LT2 <- rfsrc(impLT2~., 
+                      data = train_auser_LT2, block.size = 1, 
+                      importance = T, samptype = "swr", 
+                      var.used = "all.trees", ntree = 500)
+plot(rf_auser_LT2, verbose = F)
+
+#ggsave("img/auser/41auser_RF_LT2.jpg",dpi = 500, width = 10, height=7)
+#
+#Il volume CSAL ha maggiore influenza sul modello. 
+#Ha un impatto sul modello oltre 3 volte maggiore rispetto alla 
+#seconda variabile più importante, che è il volume CC2.
+#
+#Le piogge dalle regioni incluse, si sono rivelate avere 
+#il minor impatto sul modello.
+
+#### errore RMSE Test per rf LT2####
+
+pred_rf_auser_LT2 <- predict(rf_auser_LT2 , newdata = test_auser_LT2)
+pred_rf_auser_LT2
+
+cat("RMSE Test:", round(rmse(pred_rf_auser_LT2$predicted, test_auser_LT2$impLT2),2))
+#### errore RMSE Test: 0.07 LT2 ####
+
+
+#### RF con target impSAL####
+auser8_rf_SAL <- auser8_rf %>%
+  dplyr::select(impSAL, impDIEC, impPAG, 
+                Hydrometry_Monte_S_Quirico,
+                Temperature_Orentano, 
+                Temperature_Lucca_Orto_Botanico,
+                Volume_POL, Volume_CC2, Volume_CSAL,
+                Rainfall_Gallicano,
+                Rainfall_Orentano,
+                Rainfall_Tereglio_Coreglia_Antelminelli
+  )
+
+auser8_rf_SAL <- cbind(auser8_rf_SAL, auser8_rf_Season)
+
+auser8_rf_SAL <- auser8_rf_SAL[complete.cases(auser8_rf_SAL),]
+
+set.seed(2021)
+rand_auser_SAL <- sample(nrow(auser8_rf_SAL), nrow(auser8_rf_SAL)* 1/3, replace = F)
+test_auser_SAL <- auser8_rf_SAL[rand_auser_SAL,]
+train_auser_SAL <- auser8_rf_SAL[-rand_auser_SAL,]
+
+
+cat("Number of rows in the training set:", nrow(train_auser_cos), "\n")
+#Number of rows in the training set: 2212
+cat("Number of rows in the test set:", nrow(test_auser_cos))
+#Number of rows in the test set: 1106
+
+#ho diviso per il set di addestramento
+#in base al rapporto di due a uno, e inizio il processo di modellazione
+
+rf_auser_SAL <- rfsrc(impSAL~., 
+                      data = train_auser_SAL, block.size = 1, 
+                      importance = T, samptype = "swr", 
+                      var.used = "all.trees", ntree = 500)
+plot(rf_auser_SAL, verbose = F)
+
+#ggsave("img/auser/42auser_RF_SAL.jpg",dpi = 500, width = 10, height=7)
+#
+#Il pozzo DIEC ha maggiore influenza sul modello. 
+#Ha un impatto sul modello oltre 3 volte maggiore rispetto alla 
+#seconda variabile più importante, che è il pozzo PAG.
+#
+#Le piogge dalle regioni incluse, si sono rivelate avere 
+#il minor impatto sul modello.
+
+#### errore RMSE Test per rf SAL####
+
+pred_rf_auser_SAL <- predict(rf_auser_SAL , newdata = test_auser_SAL)
+pred_rf_auser_SAL
+
+cat("RMSE Test:", round(rmse(pred_rf_auser_SAL$predicted, 
+                             test_auser_SAL$impSAL),2))
+#### errore RMSE Test: 0.1 SAL ####
+
+
+
+
 
 
 

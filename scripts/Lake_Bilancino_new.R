@@ -758,7 +758,7 @@ ggsave("img/bilancino/19Bilancino_RF_FL.jpg",
 ############################################################################
 ##############################################################################
 
-#### (ANNA) GBM ####
+####  GBM ####
 
 
 step.wisef <- function(x, DATA){
@@ -775,7 +775,64 @@ step.wisef <- function(x, DATA){
 
 #### flow rate ####
 
-## starting with gbm for bilancino (original) + lags 
+Lake_Bilancino_cut1 <- Lake_Bilancino_cut %>%
+  dplyr::select( Flow_Rate, Temperature_Le_Croci, 
+                Rainfall_Cavallina,
+                Rainfall_S_Piero, Rainfall_Mangona)
+
+Lake_Bilancino_cut1 <- cbind(Lake_Bilancino_cut1, Lake_Bilancino_Season)
+
+Lake_Bilancino_cut1 <- Lake_Bilancino_cut1[complete.cases(Lake_Bilancino_cut1),]
+
+set.seed(2021)
+rand_Lake_Bilancino <- sample(nrow(Lake_Bilancino_cut1), nrow(Lake_Bilancino_cut1)* 1/3, replace = F)
+test_Lake_Bilancino <- Lake_Bilancino_cut1[rand_Lake_Bilancino,]
+train_Lake_Bilancino <- Lake_Bilancino_cut1[-rand_Lake_Bilancino,]
+
+
+cat("Number of rows in the training set:", nrow(train_Lake_Bilancino), "\n")
+#Number of rows in the training set: 4017 
+cat("Number of rows in the test set:", nrow(test_Lake_Bilancino))
+#Number of rows in the test set: 2008
+
+bilancino_originale.fit <- gbm::gbm(Flow_Rate ~ .,
+                                  data = Lake_Bilancino_cut1,
+                                  verbose = T, 
+                                  shrinkage = 0.01,
+                                  interaction.depth = 3, 
+                                  n.minobsinnode = 5,
+                                  n.trees = 600,
+                                  cv.folds = 12)
+
+bilancino_orig.fl.fit.perf <- gbm.perf(bilancino_originale.fit, method = "cv")
+ggsave("img/bilancino/40Bilancino_originale_GBM.jpg",
+       dpi = 500, width = 10, height=7)
+## make predictions 
+
+bilancino_originale.fit.pred <- stats::predict(object = bilancino_originale.fit,
+                                             newdata = test_Lake_Bilancino,
+                                             n.trees = bilancino_orig.fl.fit.perf)
+bilancino_orig.fl.rmse <- Metrics::rmse(actual = bilancino_orig.fl.test$Flow_Rate,
+                                        predicted = bilancino_orig.fl.fit.pred)
+print(bilancino_orig.fl.rmse) 
+#### RMSE 2.88 ### BEST MODEL ####
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Anna with gbm for bilancino (original) + lags 
 
 library(varhandle)
 library(rsample)
@@ -821,6 +878,30 @@ bilancino_orig.fl.rmse <- Metrics::rmse(actual = bilancino_orig.fl.test$Flow_Rat
 print(bilancino_orig.fl.rmse) 
 #### RMSE 2.88 ### BEST MODEL ####
 
+#plot 
+# summarise model 
+
+bilancino_orig_effects <- tibble::as_tibble(gbm::summary.gbm(bilancino_orig.fl.fit,
+                                                                        plotit = F))
+bilancino_orig_effects %>% utils::head()
+# plot top 6 features
+bilancino_orig_effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # 
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  scale_color_brewer(palette = "Dark2")
+ggsave("img/arno/27.jpg", dpi = 500, width = 10, height=7)
+#### il primo classificato ####
+
+
+
+
+
 
 ## rain 0 le croci 
 
@@ -829,7 +910,7 @@ str(bilancino_rain0_Le_Croci.lag)
 lecroci <- read.csv("processed_data/bilancino_rain0_Le_Croci+lag.csv") %>%
   dplyr::select(-X,-Date)
 str(lecroci)
-
+set.seed(123)
 lecroci.split <- initial_split(lecroci,prop =.7)
 
 lecroci.train <- training(lecroci.split)
@@ -854,8 +935,28 @@ lecroci.pred<- stats::predict(object = lecroci.fit,
 lecroci.rmse <- Metrics::rmse(actual = lecroci.test$Flow_Rate,
                                         predicted = lecroci.pred)
 print(lecroci.rmse) # 
-#### 2.11 RMSE lecroci ####
+#### 2.04 RMSE lecroci the best ####
 #bilancino_rain0_Le_Croci.lag
+#plot 
+# summarise model 
+
+LL_effects <- tibble::as_tibble(gbm::summary.gbm(lecroci.fit,
+                                                    plotit = F))
+LL_effects %>% utils::head()
+# plot top 6 features
+LL_effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # 
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  scale_color_brewer(palette = "Dark2")
+ggsave("img/bilancino/21.jpg", dpi = 500, width = 10, height=7)
+#### il primo classificato ####
+
 
 
 ## rain 1 le croci 
