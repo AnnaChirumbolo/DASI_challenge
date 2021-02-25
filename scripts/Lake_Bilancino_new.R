@@ -257,84 +257,28 @@ ggsave("img/bilancino/06Bilancino_target_season.jpg",
 #Per il Flow_rate, le differenze non molte. 
 #Gli outlayers si trovano principalmente in primavera e in inverno.
 
-#### outliers ####
-bilancino_spread <- Lake_Bilancino_cut %>% 
-  #mutate(target = abs(target)) %>% 
-  spread(key = "imp", value = "target") %>% 
-  dplyr::select(Date, contains("temp"),
-                contains("rain"), 23:39)
+#### outliers singolarmente####
+
+(LL_bilancino <- ggplot(Lake_Bilancino_cut, aes(y = Lake_Level))+
+   geom_boxplot()+
+   theme_classic())
+ggsave("img/bilancino/07box_lakelevel.jpg", dpi = 500, width = 10, height=7)
+
+(FR_bilancino <- ggplot(Lake_Bilancino_cut, aes(y = Flow_Rate))+
+    geom_boxplot()+
+    theme_classic())
+ggsave("img/bilancino/08box_flowrate.jpg", dpi = 500, width = 10, height=7)
+
+plot1<-ggarrange(LL_bilancino, FR_bilancino)
+plot1
+ggsave("img/bilancino/09box_target.jpg", dpi = 500, width = 10, height=7)
 
 ## boxplots
-
-# target var 
-(box_target_doganella <- ggplot(doganella8,
-                                aes(y = abs(target),
-                                    color = imp))+
-    geom_boxplot()+
-    scale_color_manual(name = "",values = pal)+
-    ylab("Depth to groundwater (m)\n")+
-    ggtitle("Boxplot target variables: Doganella\n")+
-    theme_classic())
-
-# saving
-ggsave("img/bilancino/boxplot_target.jpg", box_target_doganella,
-       dpi = 500, width = 10, height=7)
-
-## extracting vals of potential outliers 
-
-# for pozzo 2
-
-# for Lake_Level
-out_LL <- boxplot.stats(Lake_Bilancino_cut$Lake_Level)$out1 # 112.5 (repeated x4)
-out_LL
-out2_ind_dog <- which(doganella_spread$`2` %in% c(out2_dog))
-out2_ind_dog # rows where outliers are found
-
-upper_bound <- quantile(doganella_spread$`2`, 0.975)
-upper_bound # 101.65
-
-## checking stats to verify it's an outlier
-# grubbs test
-test2 <- grubbs.test(doganella_spread$`2`)
-test2 # 112.5 is an outlier (at 5% significance level)
-
-## substituting with q3 value 
-doganella_spread$`2`[doganella_spread$`2` == 112.5] <- 101.65
-
-# for pozzo 8
-out8_dog <- boxplot.stats(doganella_spread$`8`) # 107.5 (rep x2)
-out8_dog
-
-test8 <- grubbs.test(doganella_spread$`8`)
-test8 # it is an outlier 
 
 
 
 
 #### Rainfall analysis ####
-#creo la colonna Rainfall_mean
-#Rainfall: the rainfall mean is 2,86 mm, the month with typically less rain is July
-Lake_Bilancino_cut$Rainfall_mean <- rowMeans(Lake_Bilancino_cut[,c("Rainfall_S_Piero","Rainfall_Mangona",
-                                                           "Rainfall_S_Agata","Rainfall_Cavallina",
-                                                           "Rainfall_Le_Croci" )])
-mean(Lake_Bilancino_cut$Rainfall_mean) # 2,86 mm
-min(Lake_Bilancino_cut$Rainfall_mean)# 0 quando non piove
-max(Lake_Bilancino_cut$Rainfall_mean) # 85,12 mm max
-##day_max_temp<-Lake_Bilancino_cut$Date[max(Lake_Bilancino_cut$Rainfall_mean)]
-##day_max_temp #"2004-03-26" giorno di picco con 85,12 mm di pioggia
-
-df <- Lake_Bilancino_cut
-df$Rainfall_mean <- runmean(df$Rainfall_mean,30)
-df <- df %>% select(Date,  Rainfall_mean) %>%
-  pivot_longer(., cols = c( Rainfall_mean),
-               names_to = "Var", values_to = "Val", values_drop_na = FALSE)
-#max(df$Val)
-#mean(df$Val)
-ggplot(df, aes(x = Date, y = Val, col = Var)) +
-  geom_line() + ggtitle("Rainfall - Lake Bilancino") +
- ylab("Rainfall") +   xlab("Date")
-rm(df)
-# ricontrollare grafico 
 
 #### PRECIPITAIZIONI comparazione tra localita'####
 #Abbiamo precipitazioni da cinque diverse regioni e 
@@ -344,7 +288,7 @@ rm(df)
 #scelgo la prima coppia delle regioni "S Piero" e "Mangona", 
 #perché questa coppia è la meno correlata (Vedi correlazione piu' avanti) e quindi ci fornisce maggiori informazioni
 Lake_Bilancino_cut %>%
-  select(Date, Rainfall_S_Piero, Rainfall_Mangona, Rainfall_S_Agata, Rainfall_Cavallina, Rainfall_Le_Croci) %>%
+  dplyr::select(Date, Rainfall_S_Piero, Rainfall_Mangona, Rainfall_S_Agata, Rainfall_Cavallina, Rainfall_Le_Croci) %>%
   melt(., id.vars = "Date") %>%
   ggplot(., aes(Date, value, col = variable))+
   facet_wrap(variable~., ncol = 2)+
@@ -355,7 +299,8 @@ Lake_Bilancino_cut %>%
        subtitle = "Rainfalls  variabilies lake Bilancino from 01-2004") + 
   theme_21+
   theme(legend.position = "none")
-
+ggsave("img/bilancino/10Bilancino_rain.jpg",
+       dpi = 500, width = 10, height=7)
 
 
 
@@ -370,7 +315,7 @@ mean(Lake_Bilancino_cut$Temperature_Le_Croci)
 #Essendo l'unica variabile sulla temperatura, 
 #la utilizzo sicuramente per creare il modello
 # Temperature analysis
-df <- Lake_Bilancino %>% select(Date, Temperature_Le_Croci ) %>%
+df <- Lake_Bilancino %>% dplyr::select(Date, Temperature_Le_Croci ) %>%
   pivot_longer(., cols = c(Temperature_Le_Croci ),
                names_to = "Var", values_to = "Val")
 df <- df[complete.cases(df), ]
@@ -380,7 +325,7 @@ ggplot(df, aes(x = Date, y = Val, col = Var)) +
 rm(df)
 #stesso grafico riplottato
 Lake_Bilancino_cut %>%
-  select(Date, Temperature_Le_Croci) %>%
+  dplyr::select(Date, Temperature_Le_Croci) %>%
   melt(., id.vars = "Date") %>%
   ggplot(., aes(Date, value, col = variable))+
   facet_wrap(variable~., ncol = 1)+
@@ -391,7 +336,8 @@ Lake_Bilancino_cut %>%
        subtitle = "explanatory variables on lake Bilancino from 01-2004") + 
   theme_classic()+
   theme(legend.position = "none")
-
+ggsave("img/bilancino/12Bilancino_temp.jpg",
+       dpi = 500, width = 10, height=7)
 #posso pensare di analizzare i casi sotto allo zero, per vedere se sono collegati
 #a precipitazioni nevose
 
@@ -403,6 +349,8 @@ write.csv(Lake_Bilancino_cut,"processed_data/BILANCINO_to_model.csv")
 df <- Lake_Bilancino_cut
 df$Date <- NULL
 ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, layout.exp = 4, label_size = 3)
+ggsave("img/bilancino/11Bilancino_correlazione.jpg",
+       dpi = 500, width = 10, height=7)
 rm(df)
 
 ####correlazione metodo di spearman####
@@ -429,65 +377,84 @@ Lake_Bilancino_cut %>%
 # correlation Lake_level - Rainfall (compare plots 1)
 
 df <- Lake_Bilancino_cut
+df$Rainfall_mean <- rowMeans(df[,c("Rainfall_S_Piero","Rainfall_Mangona",
+                                                                   "Rainfall_S_Agata","Rainfall_Cavallina",
+                                                                   "Rainfall_Le_Croci" )])
+
+
 df$Rainfall_mean <- runmean(df$Rainfall_mean,30)
 df$Lake_Level <- df$Lake_Level/20
-df <- df %>% select(Date, Lake_Level, Rainfall_mean) %>%
+df <- df %>% dplyr::select(Date, Lake_Level, Rainfall_mean) %>%
   pivot_longer(., cols = c(Lake_Level, Rainfall_mean ),
                names_to = "Var", values_to = "Val", values_drop_na = FALSE)
-ggplot(df, aes(x = Date, y = Val, col = Var)) +
+(plot4<-ggplot(df, aes(x = Date, y = Val, col = Var)) +
   geom_line() + ggtitle("Lake Level - Rainfall - Lake Bilancino") +
-  ylab("Lake Level - Rainfall") +   xlab("Date")
-rm(df)
+  ylab("Lake Level - Rainfall") +   xlab("Date"))
+
+ggsave("img/bilancino/13Bilancino_LL_rainfall.jpg",
+       dpi = 500, width = 10, height=7)
+
 
 # correlation Lake_level - Rainfall (compare plots 2) dal 2016 
 #guardo gli ultimi anni
-df <- Lake_Bilancino_cut
+
 cutdate <- as.Date("2016-01-01")
-df <- Lake_Bilancino_cut[(Lake_Bilancino_cut$Date > cutdate), ]
+df <- df[(df$Date > cutdate), ]
 df$Rainfall_mean <- runmean(df$Rainfall_mean,30)/10
 df$Lake_Level <- (df$Lake_Level/20)-12
-df <- df %>% select(Date, Lake_Level, Rainfall_mean) %>%
+df <- df %>% dplyr::select(Date, Lake_Level, Rainfall_mean) %>%
   pivot_longer(., cols = c(Lake_Level, Rainfall_mean ),
                names_to = "Var", values_to = "Val", values_drop_na = FALSE)
 ggplot(df, aes(x = Date, y = Val, col = Var)) +
   geom_line() + ggtitle("Lake Level - Rainfall - Lake Bilancino from 2016") +
   ylab("Lake Level - Rainfall") +   xlab("Date")
-rm(df)
+ggsave("img/bilancino/13_0Bilancino_rainfall_LL.jpg",
+       dpi = 500, width = 10, height=7)
+
 
 ####Correlazione Flow_Rate - Rainfall: ####
 #esiste una correlazione dello 0,17% tra 
 #la media delle precipitazioni e il livello del lago
 # correlation Flow_Rate - Rainfall (compare plots)
 df <- Lake_Bilancino_cut
+df$Rainfall_mean <- rowMeans(df[,c("Rainfall_S_Piero","Rainfall_Mangona",
+                                   "Rainfall_S_Agata","Rainfall_Cavallina",
+                                   "Rainfall_Le_Croci" )])
+
 df$Rainfall_mean <- runmean(df$Rainfall_mean,30)
 df$Flow_Rate <- df$Flow_Rate/10
-df <- df %>% select(Date, Flow_Rate, Rainfall_mean) %>%
+df <- df %>% dplyr::select(Date, Flow_Rate, Rainfall_mean) %>%
   pivot_longer(., cols = c(Flow_Rate, Rainfall_mean ),
                names_to = "Var", values_to = "Val", values_drop_na = FALSE)
-ggplot(df, aes(x = Date, y = Val, col = Var)) +
+(plot5<-ggplot(df, aes(x = Date, y = Val, col = Var)) +
   geom_line() + ggtitle("Flow Rate - Rainfall - Lake Bilancino") +
-  ylab("Flow Rate - Rainfall") +   xlab("Date")
-rm(df)
+  ylab("Flow Rate - Rainfall") +   xlab("Date"))
+ggsave("img/bilancino/14Bilancino_rainfall_FR.jpg",
+       dpi = 500, width = 10, height=7)
+
+plot6<-ggarrange (plot4, plot5)
+plot6
+ggsave("img/bilancino/15Bilancino_rainfall_FR_LL.jpg",
+       dpi = 500, width = 10, height=7)
+
 
 # correlation Flow_Rate - Rainfall (ggpair)
 df <- Lake_Bilancino_cut
+df$Rainfall_mean <- rowMeans(df[,c("Rainfall_S_Piero","Rainfall_Mangona",
+                                   "Rainfall_S_Agata","Rainfall_Cavallina",
+                                   "Rainfall_Le_Croci" )])
+
 df$Rainfall_mean <- runmean(df$Rainfall_mean,30)
 Pairvar <- c("Rainfall_mean", "Flow_Rate")
 Pairdf <- df[Pairvar]
 ggpairs(Pairdf,lower = list(continuous = wrap("smooth",color = "Green")), title = "Correlation Matrix")
 rm(df)
-# commento
-#
-#
-#
+
 
 
 #### snow ####
 #Temperature sotto lo zero / eventuale pioggia/neve, da analizzare
 
-Lake_Bilancino_cut <- read.csv("processed_data/BILANCINO_to_model.csv") %>% 
-  dplyr::select(-X,-Season)
-str(Lake_Bilancino_cut)
 
 #rm(bilancino_featured)
 bilancino_featured <- add.seasons(Lake_Bilancino_cut) %>%
@@ -499,12 +466,11 @@ str(bilancino_featured)
 ### rain le croci ###
 
 bilancino_months <- bilancino_featured %>% 
-  dplyr::select(-Rainfall_mean) %>% 
   mutate(lag1 = lag(Rainfall_Le_Croci, +1),
          lag3 = lag(Rainfall_Le_Croci,+3),
          lag5 = lag(Rainfall_Le_Croci,+5),
          lag7 = lag(Rainfall_Le_Croci,+7),
-         lag9 = lag(Rainfall_Le_Croci,+9))
+         )
 str(bilancino_months)
 
 write.csv(bilancino_months, "processed_data/BILANCINO_to_model+lags.csv")
@@ -661,13 +627,24 @@ bilancino_rain5_Mangona.lag <- bilancino_rain5_Mangona %>%
 
 
 #### Random Forest ####
+Lake_Bilancino_cut <- Lake_Bilancino_cut  %>%
+  mutate(Season = case_when(month(Date) %in% c(3,4,5) ~ "Spring",                      
+                            month(Date) %in% c(6,7,8) ~ "Summer",
+                            month(Date) %in% c(9,10,11) ~ "Autumn",
+                            month(Date) %in% c(1,2,12) ~ "Winter"))
+Lake_Bilancino_cut$Season<-factor(Lake_Bilancino_cut$Season,
+                                  levels=c("Winter","Spring", "Summer", "Autumn"))
 
 
 Lake_Bilancino_Season <- dummyVars(~Season, data = Lake_Bilancino_cut, fullRank = F)
 Lake_Bilancino_Season <- as.data.frame(predict(Lake_Bilancino_Season, newdata = Lake_Bilancino_cut))
 
+
+#### RF con Rainfall_S_Piero, Rainfall_Mangona , Rainfall_Cavallina####
 Lake_Bilancino_cut1 <- Lake_Bilancino_cut %>%
-  select(Lake_Level, Flow_Rate, Temperature_Le_Croci, Rainfall_S_Piero, Rainfall_Mangona)
+  dplyr::select(Lake_Level, Flow_Rate, Temperature_Le_Croci, 
+                Rainfall_Cavallina,
+                Rainfall_S_Piero, Rainfall_Mangona)
 
 Lake_Bilancino_cut1 <- cbind(Lake_Bilancino_cut1, Lake_Bilancino_Season)
 
@@ -689,18 +666,19 @@ cat("Number of rows in the test set:", nrow(test_Lake_Bilancino))
 
 #### random forest lake level ####
 rf_Lake_Bilancino_Lake_Level <- rfsrc(Lake_Level~Season.Autumn+Season.Spring+Season.Summer+Season.Winter+Temperature_Le_Croci+
-                                        Rainfall_S_Piero+Rainfall_Mangona, 
+                                        Rainfall_S_Piero+Rainfall_Mangona+Rainfall_Cavallina, 
                                       data = train_Lake_Bilancino, block.size = 1, 
                                       importance = T, samptype = "swr", 
                                       var.used = "all.trees", ntree = 200)
 plot(rf_Lake_Bilancino_Lake_Level, verbose = F)
 
+#ggsave("img/bilancino/16Bilancino_RF.jpg",dpi = 500, width = 10, height=7)
 #
 #L'autunno ha maggiore influenza sul modello. 
 #Ha un impatto sul modello oltre 3 volte maggiore rispetto alla 
 #seconda variabile più importante, che è la stagione della primavera.
 #
-#Le piogge da entrambe le regioni incluse,si sono rivelate avere 
+#Le piogge dalle regioni incluse,si sono rivelate avere 
 #il minor impatto sul modello.
 
 #### errore RMSE Test  per rf lake level####
@@ -709,8 +687,8 @@ pred_rf_Lake_Bilancino_Lake_Level <- predict(rf_Lake_Bilancino_Lake_Level, newda
 pred_rf_Lake_Bilancino_Lake_Level
 
 cat("RMSE Test:", round(rmse(pred_rf_Lake_Bilancino_Lake_Level$predicted, test_Lake_Bilancino$Lake_Level),2))
-### errore abbastanza elevato RMSE Test: 1.79 e
-#anche la varianza spiega circa il 32% dei casi
+#### errore RMSE Test: 1.78 LL ####
+# la varianza spiega circa il 33% dei casi
 
 
 pred_Lake_Bilancino_Lake_Level <- data.frame(pred = pred_rf_Lake_Bilancino_Lake_Level$predicted, 
@@ -728,16 +706,21 @@ ggplot(pred_Lake_Bilancino_Lake_Level, aes(real, pred, fill = above))+
        subtitle = "Random forest model / Lake_Level variable / Bilancino lake") + 
   theme_21+
   theme(legend.position = "bottom", legend.direction = "vertical")
+ggsave("img/bilancino/17Bilancino_RF_LakeLevel.jpg",
+       dpi = 500, width = 10, height=7)
+
+
+
 
 #### random forest flow rate ####
 
 rf_Lake_Bilancino_Flow_Rate <- rfsrc(Flow_Rate~Season.Autumn+Season.Spring+Season.Summer+Season.Winter+Temperature_Le_Croci+
-                                       Rainfall_S_Piero+Rainfall_Mangona, data = train_Lake_Bilancino, 
+                                       Rainfall_S_Piero+Rainfall_Mangona+Rainfall_Cavallina, data = train_Lake_Bilancino, 
                                      block.size = 1, importance = T, 
                                      samptype = "swr", var.used = "all.trees", ntree = 200)
 
 plot(rf_Lake_Bilancino_Flow_Rate, verbose = F)
-
+#ggsave("img/bilancino/18Bilancino_RF_flowrate.jpg", dpi = 500, width = 10, height=7)
 
 ###
 #### errore RMSE Test  per rf per flow rate####
@@ -746,7 +729,7 @@ pred_rf_Lake_Bilancino_Flow_Rate
 
 cat("RMSE Test:", round(rmse(pred_rf_Lake_Bilancino_Flow_Rate$predicted, test_Lake_Bilancino$Flow_Rate),2))
 
-
+#### RMSE Test: 4.22 RF flow rate####
 
 
 #### ####
@@ -766,7 +749,8 @@ ggplot(pred_Lake_Bilancino_Lake_Level, aes(real, pred, fill = above))+
        subtitle = "Random forest / Flow_Rate variable / Bilancino lake") + 
   theme_21+
   theme(legend.position = "bottom", legend.direction = "vertical")
-
+ggsave("img/bilancino/19Bilancino_RF_FL.jpg",
+       dpi = 500, width = 10, height=7)
 
 
 
