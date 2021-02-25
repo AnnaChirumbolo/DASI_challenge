@@ -1608,8 +1608,14 @@ ggsave("img/auser/36auser_H.jpg",
 
 ####The distribution of the target variables by season####
 
-auser_featured %>%
-  dplyr::select(Season, SAL, CoS, LT2) %>%
+df <-  auser_featured %>%
+  mutate(Season = case_when(month(Date) %in% c(3,4,5) ~ "Spring",                      
+                            month(Date) %in% c(6,7,8) ~ "Summer",
+                            month(Date) %in% c(9,10,11) ~ "Autumn",
+                            month(Date) %in% c(1,2,12) ~ "Winter"))
+
+df %>%
+  dplyr::select(Season, impSAL, impCoS, impLT2) %>%
   melt(., id.vars = "Season") %>%
   ggplot(., aes(Season, value))+
   facet_wrap(variable~., ncol = 1, scales = "free_y")+
@@ -1619,14 +1625,17 @@ auser_featured %>%
   labs(x = "Season", y = "Value", title = "The distribution of the target variables by season",
        subtitle = "in aq Auser") + 
   theme_classic()
+ggsave("img/auser/37auser_season_target.jpg",
+       dpi = 500, width = 10, height=7)
 #commento
-# per LT2 non ci sono differenze per stagioni
+# per LT2 non ci sono molte differenze per stagioni
 # per CoS e per Sal i pozzi sono piu' profondi in estate e autunno
 # ricordo che abbiamo preso il valore assoluto (i valori sono negativi)
 
 
 
 
+#### MODELLI ####
 
 
 
