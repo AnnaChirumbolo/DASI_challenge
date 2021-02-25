@@ -686,11 +686,6 @@ summary(rf_stia)
 
 #### Rain_fall Vernio aggiungo i dati scaricati da 3bmeteo dal 2015
 
-read_plus <- function(flnm) {
-  read_csv(flnm) %>% 
-    mutate(filename = flnm)
-}
-
 rf_vernio_ls <- list.files(path = "./data/meteoVernio/",
                               pattern = "*.csv$", 
                               full.names = T) %>%
