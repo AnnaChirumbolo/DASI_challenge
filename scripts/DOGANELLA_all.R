@@ -88,6 +88,11 @@ getbestmodel.modif <- function (dates, values, freq, complete = 0, n_test = NA, 
               res.train = train, algos = algos, graph.train = gg))
 }
 
+mean.rain <- function(DF) {
+  DF %>% group_by(weekly) %>% 
+    mutate(mean.rain = mean(Rainfall_Velletri)) %>%
+    arrange(weekly)
+}
 
 #### libraries ####
 
@@ -210,6 +215,9 @@ ggplot_na_distribution(abs(doganella_filtered$depth_to_gw.m),
 
 #### imputing missing data ####
 
+doganella_filtered1 <- doganella_filtered %>% 
+  spread(key = well, value = depth_to_gw.m)
+
 doganella_filled <- data.frame(doganella_filtered1, lapply(doganella_filtered1[,c(4:11,14:22)], 
                                            function(x) na_ma(x, k=1)))
 
@@ -279,7 +287,7 @@ doganella_spread <- doganella7 %>%
 ## boxplots
 
 # target var 
-(box_target_doganella <- ggplot(doganella8,
+(box_target_doganella <- ggplot(doganella7,
                                  aes(y = abs(target),
                                      color = imp))+
     geom_boxplot()+
@@ -578,12 +586,6 @@ list.pozzi <- list(pozzo1 = pozzo1,pozzo2 = pozzo2,
 
 ### adding other features - rainfall thresholds and lags 
 
-mean.rain <- function(DF) {
-  DF %>% group_by(weekly) %>% 
-    mutate(mean.rain = mean(Rainfall_Velletri)) %>%
-    arrange(weekly)
-}
-
 list.pozzi1 <- map(list.pozzi, mean.rain)
 
 ## stats ##
@@ -707,7 +709,6 @@ list.pozzi2.83$pozzo7 <- cbind(list.pozzi2.83$pozzo7, lag1 = Lag(list.pozzi2.83$
 list.pozzi2.83$pozzo8 <- cbind(list.pozzi2.83$pozzo8, lag6 = Lag(list.pozzi2.83$pozzo8$rain2.83,+6))
 list.pozzi2.83$pozzo9 <- cbind(list.pozzi2.83$pozzo9, lag2 = Lag(list.pozzi2.83$pozzo9$rain2.83,+2))
 
-
 ## removing unnecessary variables (weekly and rainfall_velletri for those with changed thresholds)
 
 list.pozzi.all <- list(pozzi = list.pozzi,
@@ -732,7 +733,36 @@ list.pozzo7 <- unlist(lapply(list.pozzi.all, function(x) x["pozzo7"]),recursive 
 list.pozzo8 <- unlist(lapply(list.pozzi.all, function(x) x["pozzo8"]),recursive = F)
 list.pozzo9 <- unlist(lapply(list.pozzi.all, function(x) x["pozzo9"]),recursive = F)
 
-#### NEED TO DO AUTOTS AND AUTOML ####
+#### AUTOML ####
+
+h2o.init()
+h2o.no_progress()
+
+## pozzo 1 as trial ##
+
+pozzo1.h2o <- lapply(list.pozzo1, function(x) as.h2o(x))
+
+y <-"1"
+#x <- lapply(pozzo1.h2o, function(x) setdiff(names(x), c(y)))
+
+pozzo1.aml <- lapply(pozzo1.h2o, function(z) h2o.automl(y = y, x = setdiff(names(z),c(y)),
+                                                        training_frame = z,
+                                                        max_models = 10, 
+                                                        seed = 1))
+
+pozzo1.lb <- lapply(pozzo1.aml, function(x) x@leaderboard)
+lapply(pozzo1.lb, print)
+
+# Get model ids for all models in the AutoML Leaderboard
+pozzo1.model_ids <- lapply(pozzo1.aml, function(x) as.data.frame(x@leaderboard$model_id)[,1])
+# Get the "All Models" Stacked Ensemble model
+pozzo1.se <- lapply(pozzo1.model_ids, function(x) h2o.getModel(grep("StackedEnsemble_AllModels", 
+                                                                    x, value = TRUE)[1]))
+# Get the Stacked Ensemble metalearner model
+pozzo1.metalearner <- lapply(pozzo1.se,function(x) h2o.getModel(x@model$metalearner$name))
+
+lapply(pozzo1.metalearner,function(x) h2o.varimp_plot(x))
+## best model: gbm
 
 
 #### pozzo 1 #### 
@@ -758,10 +788,10 @@ list.pozzo1.perf <- lapply(list.pozzo1.fit, function(x) gbm.perf(x,method="cv"))
 
 ## make predictions 
 
+pozzo1_pred <- stats::predict(object = pozzo1_fit1[[1]],
+                               newdata = pozzo1.test[[1]],
+                               n.trees = perf_gbm1[[1]])
 
-pozzo1_pred1 <- stats::predict(object = pozzo1_fit1,
-                               newdata = pozzo1.test,
-                               n.trees = perf_gbm1)
 rmse_fit1 <- Metrics::rmse(actual = pozzo1.test$imp1,
                            predicted = pozzo1_pred1)
 print(rmse_fit1) # 9.313319
