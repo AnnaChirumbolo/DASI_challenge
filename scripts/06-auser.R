@@ -26,11 +26,15 @@ library(purrr)
 ## reading files  
 
 auser <- read.csv("processed_data/AUSER_to_model.csv")%>%
-dplyr::select(-X, -Date,-Temperature_Ponte_a_Moriano, -DIEC, -PAG,-CoS, -LT2,-SAL,-imp2, -imp4)
+dplyr::select(-X, -Date,-Temperature_Ponte_a_Moriano, -DIEC, -PAG,-CoS, -LT2,-SAL)
 # in regression date doesnt really matter 
 #Temperature_Ponte_a_Moriano ho dovuto cancellarla per un problema sul sensore dal 2017, con tutti dati uguali a 0
 str(auser)
 
+(
+  auser$Season<-factor(auser$Season, 
+                        levels=c("Winter","Spring", "Summer", "Autumn"))
+)
 #### Correlation Matrix ####
 df <- auser
 df$Date <- NULL
@@ -47,9 +51,9 @@ auser<-auser%>%
   dplyr::select(Rainfall_Monte_Serra, Rainfall_Croce_Arcana, Rainfall_Calavorno,
                 Rainfall_Tereglio_Coreglia_Antelminelli, Temperature_Monte_Serra,
                 Temperature_Lucca_Orto_Botanico, Volume_POL, Volume_CC2, Volume_CSAL,
-                Hydrometry_Monte_S_Quirico, imp1, imp3,imp5)
+                Hydrometry_Monte_S_Quirico, imp1,imp2, imp3, imp4, imp5, Season)
 
-#auser<-auser[,-1]
+
 #imp1=CoS target
 #imp2=DIEC 
 #imp3=LT2 target
@@ -63,9 +67,12 @@ auser<-auser%>%
 #pozzo1 <- auser %>% dplyr::select(-imp3, -Volume_Pozzo_3)
 #pozzo3 <- auser %>% dplyr::select(-imp1, -Volume_Pozzo_1)
 
-pozzo_SAL <- auser %>% dplyr::select(-imp3, -imp1)
-pozzo_LT2 <- auser %>% dplyr::select(-imp1, -imp5)
-pozzo_CoS <- auser %>% dplyr::select(-imp3, -imp5)
+pozzo_SAL <- auser %>% dplyr::select(-imp3, -imp1)%>%   
+  dplyr::rename(pozzo_PAG=imp4, pozzo_DIEC=imp2 )
+pozzo_LT2 <- auser %>% dplyr::select(-imp1, -imp5)%>%   
+  dplyr::rename(pozzo_PAG=imp4, pozzo_DIEC=imp2 )
+pozzo_CoS <- auser %>% dplyr::select(-imp3, -imp5)%>%   
+  dplyr::rename(pozzo_PAG=imp4, pozzo_DIEC=imp2 )
 
 
 
@@ -83,121 +90,79 @@ step.wisef <- function(x, DATA){
 }
 
 #### pozzo 1 CoS ####
-#rm(pozzo_CoS_sw)
-pozzo_CoS_sw <- step.wisef("imp1", pozzo_CoS)
+
+pozzo_cos_gb <- pozzo_CoS  
+pozzo_cos_gb_Season <- dummyVars(~Season, data = pozzo_cos_gb, fullRank = F)
+pozzo_cos_gb_Season <- as.data.frame(predict(pozzo_cos_gb_Season, newdata = pozzo_cos_gb))
+pozzo_cos_gb <- cbind(pozzo_cos_gb, pozzo_cos_gb_Season)
+pozzo_cos_gb<-pozzo_cos_gb%>% dplyr::select(-Season)
+#### GBM con target impCoS####
+
+pozzo_CoS_sw <- step.wisef("imp1", pozzo_cos_gb)
 pozzo_CoS_sw$bestTune 
 pozzo_CoS_sw$finalModel
 coef(pozzo_CoS_sw$finalModel, 10)
 
-#### pozzo 3 LT2 ####
-
-pozzo_LT2_sw <- step.wisef("imp3", pozzo_LT2)
-pozzo_LT2_sw$bestTune 
-pozzo_LT2_sw$finalModel
-coef(pozzo_LT2_sw$finalModel, 10)
-
-
-#### pozzo 5 SAL  ####
-
-pozzo_SAL_sw <- step.wisef("imp5", pozzo_SAL)
-pozzo_SAL_sw$bestTune 
-pozzo_SAL_sw$finalModel
-coef(pozzo_SAL_sw$finalModel, 5)
-
-### let's stick to three variables (?) ###
-## question: model chooses the two temperatures even if they're highly correlated to one another...?
-# why? 
-
-
-
-#### testing and training split ####
+#### testing and training split CoS ####
 
 set.seed(123)
-pozzo_CoS.split <- initial_split(pozzo_CoS, prop = .7)
+pozzo_CoS.split <- initial_split(pozzo_cos_gb, prop = .7)
 pozzo_CoS.train <- training(pozzo_CoS.split)
 pozzo_CoS.test <- testing(pozzo_CoS.split)
 
 pozzo_CoS_fit1 <- gbm::gbm(imp1 ~ .,
-                        data = pozzo_CoS,
-                        verbose = T, 
-                        shrinkage = 0.01,
-                        interaction.depth = 3, 
-                        n.minobsinnode = 5,
-                        n.trees = 5000,
-                        cv.folds = 10)
+                           data = pozzo_cos_gb,
+                           verbose = T, 
+                           shrinkage = 0.01,
+                           interaction.depth = 3, 
+                           n.minobsinnode = 5,
+                           n.trees = 5000,
+                           cv.folds = 10)
 perf_gbm1 <- gbm.perf(pozzo_CoS_fit1, method = "cv")
+#ggsave("img/auser/43pozzo_cos_GB.jpg",dpi = 500, width = 10, height=7)
 
 ## make predictions 
 
 pozzo_CoS_pred1 <- stats::predict(object = pozzo_CoS_fit1,
-                               newdata = pozzo_CoS.test,
-                               n.trees = perf_gbm1)
+                                  newdata = pozzo_CoS.test,
+                                  n.trees = perf_gbm1)
 rmse_fit1 <- Metrics::rmse(actual = pozzo_CoS.test$imp1,
                            predicted = pozzo_CoS_pred1)
-print(rmse_fit1) # RMSE 0.3423
+print(rmse_fit1) 
+#### RMSE 0.2248 pozzo CoS GB ####
 # verificare il confronto rmse
+#### plot pozzo cos ####
+#plot - rain monte serra
+gbm::plot.gbm(pozzo_CoS_fit1, i.var = 1)
+# plot - rain croce arcano
+plot.gbm(pozzo_CoS_fit1, i.var = 2)
+# plot - rain calavorno
+plot.gbm(pozzo_CoS_fit1, i.var = 3)
+# plot - volume CC2
+plot.gbm(pozzo_CoS_fit1, i.var = 8)
+# plot - temp lucca
+plot.gbm(pozzo_CoS_fit1, i.var = 6)
 
-
-#### da aggiungere i confronti con i lag ####
-
-
-#### pozzo 3 LT2 tain/test####
-
-
-#### pozzo 5 SAL tain/test####
-
-set.seed(123)
-pozzo1.split <- initial_split(pozzo1, prop = .7)
-pozzo1.train <- training(pozzo1.split)
-pozzo1.test <- testing(pozzo1.split)
-
-pozzo1_fit1 <- gbm::gbm(imp1 ~ .,
-                        data = pozzo1,
-                        verbose = T, 
-                        shrinkage = 0.01,
-                        interaction.depth = 3, 
-                        n.minobsinnode = 5,
-                        n.trees = 5000,
-                        cv.folds = 10)
-perf_gbm1 <- gbm.perf(pozzo1_fit1, method = "cv")
-
-## make predictions 
-
-pozzo1_pred1 <- stats::predict(object = pozzo1_fit1,
-                               newdata = pozzo1.test,
-                               n.trees = perf_gbm1)
-rmse_fit1 <- Metrics::rmse(actual = pozzo1.test$imp1,
-                           predicted = pozzo1_pred1)
-print(rmse_fit1) # 9.313319
-#(higher error than when keeping all variables)
-
-#plot - rain velletri
-gbm::plot.gbm(pozzo1_fit1, i.var = 1)
-# plot - temp monteporzio
-plot.gbm(pozzo1_fit1, i.var = 2)
-# plot - temp velletri
-plot.gbm(pozzo1_fit1, i.var = 3)
 
 ## interactions of two features on the variable 
-
-gbm::plot.gbm(pozzo1_fit1, i.var = c(1,3)) # vol-rain
-plot.gbm(pozzo1_fit1, i.var = c(1,2)) # vol-temp
-plot.gbm(pozzo1_fit1, i.var = c(2,3)) # temp-rain
+gbm::plot.gbm(pozzo_CoS_fit1, i.var = c(1,3)) # rain-rain
+plot.gbm(pozzo_CoS_fit1, i.var = c(1,2)) # rain-temp
+plot.gbm(pozzo_CoS_fit1, i.var = c(6,7)) # temp-vol
 
 ### impact of different features on predicting depth to gw 
 
 # summarise model 
 
-pozzo1_effects <- tibble::as_tibble(gbm::summary.gbm(pozzo1_fit1,
+pozzo1_effects <- tibble::as_tibble(gbm::summary.gbm(pozzo_CoS_fit1,
                                                      plotit = F))
 pozzo1_effects %>% utils::head()
 # this creates new dataset with var, factor variable with variables 
 # in our model, and rel.inf - relative influence each var has on model pred 
 
-# plot top 3 features
+# plot top 6 features
 pozzo1_effects %>% 
   arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
+  top_n(6) %>%  # it's already only 3 vars
   ggplot(aes(x = fct_reorder(.f = var,
                              .x = rel.inf),
              y = rel.inf,
@@ -205,90 +170,153 @@ pozzo1_effects %>%
   geom_col()+
   coord_flip()+
   scale_color_brewer(palette = "Dark2")
-
+ggsave("img/auser/44auser_pozzocos_features.jpg",
+       dpi = 500, width = 10, height=7)
 
 ## vis distribution of predicted compared with actual target values 
 # by predicting these vals and plotting the difference 
 
 # predicted 
 
-pozzo1.test$predicted <- as.integer(predict(pozzo1_fit1,
-                                            newdata = pozzo1.test,
+pozzo_CoS.test$predicted <- as.integer(predict(pozzo_CoS_fit1,
+                                            newdata = pozzo_CoS.test,
                                             n.trees = perf_gbm1))
 
 # plot predicted vs actual
 
-ggplot(pozzo1.test) +
+ggplot(pozzo_CoS.test) +
   geom_point(aes(x = predicted,
                  y = imp1,
                  color = predicted - imp1),
              alpha = .7, size = 1) +
   theme_fivethirtyeight()
+ggsave("img/auser/45pozzo_cos_pred.jpg",
+       dpi = 500, width = 10, height=7)
 
-#### pozzo 2 #### 
 
-## stepwise 
 
-pozzo2_sw <- step.wisef("imp2", pozzo2)
-pozzo2_sw$bestTune # 5
-coef(pozzo2_sw$finalModel, 3)
+## plotting pred vs actual 
 
-## train and test  ##### how to automate this??? 
-#gmb.f(pozzo2)...
+reg <- lm(predicted ~ imp1, data = pozzo_CoS.test)
+reg
+#Coefficients:
+#(Intercept)         imp1  
+#-0.2432       0.9590 
 
-# split 
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+eq
+# plot
+(gbm_actualvspred <- ggplot(pozzo_CoS.test) +
+    geom_point(aes(x = predicted,
+                   y = imp1,
+                   color = predicted - imp1),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 8.33,slope = 0.78, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 50, y = 40, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo CoS auser\n",
+         subtitle = "Minimum rainfall threshold at 0.5 mm\n")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### pozzo 3 LT2 ####
+pozzo_lt2_gb <- pozzo_LT2  
+pozzo_lt2_gb_Season <- dummyVars(~Season, data = pozzo_lt2_gb, fullRank = F)
+pozzo_lt2_gb_Season <- as.data.frame(predict(pozzo_lt2_gb_Season, newdata = pozzo_lt2_gb))
+pozzo_lt2_gb <- cbind(pozzo_lt2_gb, pozzo_lt2_gb_Season)
+pozzo_lt2_gb<-pozzo_lt2_gb%>% dplyr::select(-Season)
+
+
+
+pozzo_LT2_sw <- step.wisef("imp3", pozzo_lt2_gb)
+pozzo_LT2_sw$bestTune 
+pozzo_LT2_sw$finalModel
+coef(pozzo_LT2_sw$finalModel, 10)
+
+#### testing and training split LT2 ####
+
 set.seed(123)
-p2.split <- initial_split(pozzo2, prop = .7)
-p2.train <- training(p2.split)
-p2.test <- testing(p2.split)
+pozzo_LT2.split <- initial_split(pozzo_lt2_gb, prop = .7)
+pozzo_LT2.train <- training(pozzo_LT2.split)
+pozzo_LT2.test <- testing(pozzo_LT2.split)
 
-p2.fit1 <- gbm(imp2 ~ .,
-               data = pozzo2,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
+pozzo_LT2_fit1 <- gbm::gbm(imp3 ~ .,
+                           data = pozzo_lt2_gb,
+                           verbose = T, 
+                           shrinkage = 0.01,
+                           interaction.depth = 3, 
+                           n.minobsinnode = 5,
+                           n.trees = 5000,
+                           cv.folds = 10)
+perf_gbm1 <- gbm.perf(pozzo_LT2_fit1, method = "cv")
 
-p2.fit1_perf <- gbm.perf(p2.fit1, method = "cv")
-p2.fit1_perf
+#ggsave("img/auser/46pozzo_LT2_GB.jpg",dpi = 500, width = 10, height=7)
 
 ## make predictions 
 
-p2_pred1 <- stats::predict(object = p2.fit1,
-                           newdata = p2.test,
-                           n.trees = p2.fit1_perf)
-p2_rmse <- Metrics::rmse(actual = p2.test$imp2,
-                         predicted = p2_pred1)
-print(p2_rmse) # 0.98
+pozzo_LT2_pred1 <- stats::predict(object = pozzo_LT2_fit1,
+                                  newdata = pozzo_LT2.test,
+                                  n.trees = perf_gbm1)
+rmse_fit1 <- Metrics::rmse(actual = pozzo_LT2.test$imp3,
+                           predicted = pozzo_LT2_pred1)
+print(rmse_fit1) 
+#### RMSE 0.0865 pozzo LT2 GB ####
+# verificare il confronto rmse
+#### plot pozzo LT2 ####
+#plot - rain monte serra
+gbm::plot.gbm(pozzo_LT2_fit1, i.var = 1)
+# plot - rain croce arcano
+plot.gbm(pozzo_LT2_fit1, i.var = 2)
+# plot - rain calavorno
+plot.gbm(pozzo_LT2_fit1, i.var = 3)
+# plot - volume CC2
+plot.gbm(pozzo_LT2_fit1, i.var = 8)
+# plot - temp lucca
+plot.gbm(pozzo_LT2_fit1, i.var = 6)
 
-gbm::plot.gbm(p2.fit1, i.var = 1)
-
-plot.gbm(p2.fit1, i.var = 2)
-
-plot.gbm(p2.fit1, i.var = 3)
 
 ## interactions of two features on the variable 
-
-gbm::plot.gbm(p2.fit1, i.var = c(1,3))
-plot.gbm(p2.fit1, i.var = c(1,2))
-plot.gbm(p2.fit1, i.var = c(2,3))
+gbm::plot.gbm(pozzo_LT2_fit1, i.var = c(1,3)) # rain-rain
+plot.gbm(pozzo_LT2_fit1, i.var = c(1,2)) # rain-temp
+plot.gbm(pozzo_LT2_fit1, i.var = c(6,7)) # temp-vol
 
 ### impact of different features on predicting depth to gw 
 
 # summarise model 
 
-p2.effects <- tibble::as_tibble(gbm::summary.gbm(p2.fit1,
-                                                 plotit = F))
-p2.effects %>% utils::head()
+pozzo3_effects <- tibble::as_tibble(gbm::summary.gbm(pozzo_LT2_fit1,
+                                                     plotit = F))
+pozzo3_effects %>% utils::head()
 # this creates new dataset with var, factor variable with variables 
 # in our model, and rel.inf - relative influence each var has on model pred 
 
-# plot top 3 features
-p2.effects %>% 
+# plot top 6 features
+pozzo3_effects %>% 
   arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
+  top_n(6) %>%  # it's already only 3 vars
   ggplot(aes(x = fct_reorder(.f = var,
                              .x = rel.inf),
              y = rel.inf,
@@ -296,180 +324,151 @@ p2.effects %>%
   geom_col()+
   coord_flip()+
   scale_color_brewer(palette = "Dark2")
-
-
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
-
-# predicted 
-
-p2.test$predicted <- as.integer(predict(p2.fit1,
-                                        newdata = p2.test,
-                                        n.trees = p2.fit1_perf))
-
-# plot predicted vs actual
-
-ggplot(p2.test) +
-  geom_point(aes(x = predicted,
-                 y = imp2,
-                 color = predicted - imp2),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
-
-
-#### pozzo 3 ####
-
-# stepwise
-
-pozzo3_sw <- step.wisef("imp3",pozzo3)
-pozzo3_sw$bestTune # 5
-coef(pozzo3_sw$finalModel, 4)
-
-
-# split 
-set.seed(123)
-p3.split <- initial_split(pozzo3, prop = .7)
-p3.train <- training(p3.split)
-p3.test <- testing(p3.split)
-
-p3.fit1 <- gbm(imp3 ~ .,
-               data = pozzo3,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
-
-p3.fit1_perf <- gbm.perf(p3.fit1, method = "cv")
-
-## make predictions 
-
-p3_pred1 <- stats::predict(object = p3.fit1,
-                           newdata = p3.test,
-                           n.trees = p3.fit1_perf)
-p3_rmse <- Metrics::rmse(actual = p3.test$imp3,
-                         predicted = p3_pred1)
-print(p3_rmse) # 1.89
-
-gbm::plot.gbm(p3.fit1, i.var = 1)
-
-plot.gbm(p3.fit1, i.var = 2)
-
-plot.gbm(p3.fit1, i.var = 3)
-
-# ecc...
-
-## interactions of two features on the variable 
-
-gbm::plot.gbm(p3.fit1, i.var = c(1,3))
-plot.gbm(p3.fit1, i.var = c(1,2))
-plot.gbm(p3.fit1, i.var = c(2,3))
-
-### impact of different features on predicting depth to gw 
-
-# summarise model 
-
-p3.effects <- tibble::as_tibble(gbm::summary.gbm(p3.fit1,
-                                                 plotit = F))
-p3.effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
-
-# plot top 3 features
-p3.effects %>% 
-  arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
-  ggplot(aes(x = fct_reorder(.f = var,
-                             .x = rel.inf),
-             y = rel.inf,
-             fill = rel.inf))+
-  geom_col()+
-  coord_flip()+
-  scale_color_brewer(palette = "Dark2")
-
+ggsave("img/auser/47auser_pozzolt2_features.jpg",
+       dpi = 500, width = 10, height=7)
 
 ## vis distribution of predicted compared with actual target values 
 # by predicting these vals and plotting the difference 
 
 # predicted 
 
-p3.test$predicted <- as.integer(predict(p3.fit1,
-                                        newdata = p3.test,
-                                        n.trees = p3.fit1_perf))
+pozzo_LT2.test$predicted <- as.integer(predict(pozzo_LT2_fit1,
+                                               newdata = pozzo_LT2.test,
+                                               n.trees = perf_gbm1))
 
 # plot predicted vs actual
 
-ggplot(p3.test) +
+ggplot(pozzo_LT2.test) +
   geom_point(aes(x = predicted,
                  y = imp3,
                  color = predicted - imp3),
              alpha = .7, size = 1) +
   theme_fivethirtyeight()
+ggsave("img/auser/48pozzo_lt2_pred.jpg",
+       dpi = 500, width = 10, height=7)
 
 
 
-#### pozzo 4 ####
+## plotting pred vs actual 
 
-# stepwise
-pozzo4_sw <- step.wisef("imp4", pozzo4)
-pozzo4_sw$bestTune # 5
-coef(pozzo4_sw$finalModel, 3)
+reg <- lm(predicted ~ imp3, data = pozzo_LT2.test)
+reg
+#Coefficients:
+#(Intercept)         imp3  
+#0.483        0.921 
 
-# split, train and test
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+eq
+# plot
+(gbm_actualvspred <- ggplot(pozzo_LT2.test) +
+    geom_point(aes(x = predicted,
+                   y = imp3,
+                   color = predicted - imp3),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 8.33,slope = 0.78, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 50, y = 40, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo LT2 auser\n",
+         subtitle = "Minimum rainfall threshold at 0.5 mm\n")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### pozzo 5 SAL  ####
+pozzo_sal_gb <- pozzo_SAL  
+pozzo_sal_gb_Season <- dummyVars(~Season, data = pozzo_sal_gb, fullRank = F)
+pozzo_sal_gb_Season <- as.data.frame(predict(pozzo_sal_gb_Season, newdata = pozzo_sal_gb))
+pozzo_sal_gb <- cbind(pozzo_sal_gb, pozzo_sal_gb_Season)
+pozzo_sal_gb<-pozzo_sal_gb%>% dplyr::select(-Season)
+
+pozzo_SAL_sw <- step.wisef("imp5", pozzo_sal_gb)
+pozzo_SAL_sw$bestTune 
+pozzo_SAL_sw$finalModel
+coef(pozzo_SAL_sw$finalModel, 7)
+
+ 
+#### testing and training split ####
+#### pozzo 5 SAL tain/test####
+
+#### testing and training split CoS ####
+
 set.seed(123)
-p4.split <- initial_split(pozzo4, prop = .7)
-p4.train <- training(p4.split)
-p4.test <- testing(p4.split)
+pozzo_SAL.split <- initial_split(pozzo_sal_gb, prop = .7)
+pozzo_SAL.train <- training(pozzo_SAL.split)
+pozzo_SAL.test <- testing(pozzo_SAL.split)
 
-p4.fit1 <- gbm(imp4 ~ .,
-               data = pozzo4,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
-
-p4.fit1_perf <- gbm.perf(p4.fit1, method = "cv")
+pozzo_SAL_fit1 <- gbm::gbm(imp5 ~ .,
+                           data = pozzo_sal_gb,
+                           verbose = T, 
+                           shrinkage = 0.01,
+                           interaction.depth = 3, 
+                           n.minobsinnode = 5,
+                           n.trees = 5000,
+                           cv.folds = 10)
+perf_gbm1 <- gbm.perf(pozzo_SAL_fit1, method = "cv")
+#ggsave("img/auser/49pozzo_SAL_GB.jpg",dpi = 500, width = 10, height=7)
 
 ## make predictions 
 
-p4_pred1 <- stats::predict(object = p4.fit1,
-                           newdata = p4.test,
-                           n.trees = p4.fit1_perf)
-p4_rmse <- Metrics::rmse(actual = p4.test$imp4,
-                         predicted = p4_pred1)
-print(p4_rmse) # 0.82
+pozzo_SAL_pred1 <- stats::predict(object = pozzo_SAL_fit1,
+                                  newdata = pozzo_SAL.test,
+                                  n.trees = perf_gbm1)
+rmse_fit1 <- Metrics::rmse(actual = pozzo_SAL.test$imp5,
+                           predicted = pozzo_SAL_pred1)
+print(rmse_fit1) 
+#### RMSE 0.1139 pozzo SAL GB ####
 
-gbm::plot.gbm(p4.fit1, i.var = 1)
+#### plot pozzo cos ####
+#plot - rain monte serra
+gbm::plot.gbm(pozzo_SAL_fit1, i.var = 1)
+# plot - rain croce arcano
+plot.gbm(pozzo_SAL_fit1, i.var = 2)
+# plot - rain calavorno
+plot.gbm(pozzo_SAL_fit1, i.var = 3)
+# plot - volume CC2
+plot.gbm(pozzo_SAL_fit1, i.var = 8)
+# plot - temp lucca
+plot.gbm(pozzo_SAL_fit1, i.var = 6)
 
-plot.gbm(p4.fit1, i.var = 2)
-
-plot.gbm(p4.fit1, i.var = 3)
-
-# ecc...
 
 ## interactions of two features on the variable 
-
-gbm::plot.gbm(p4.fit1, i.var = c(1,3))
-plot.gbm(p4.fit1, i.var = c(1,2))
-plot.gbm(p4.fit1, i.var = c(2,3))
+gbm::plot.gbm(pozzo_SAL_fit1, i.var = c(1,3)) # rain-rain
+plot.gbm(pozzo_SAL_fit1, i.var = c(1,2)) # rain-temp
+plot.gbm(pozzo_SAL_fit1, i.var = c(6,7)) # temp-vol
 
 ### impact of different features on predicting depth to gw 
 
 # summarise model 
 
-p4.effects <- tibble::as_tibble(gbm::summary.gbm(p4.fit1,
-                                                 plotit = F))
-p4.effects %>% utils::head()
+pozzo5_effects <- tibble::as_tibble(gbm::summary.gbm(pozzo_SAL_fit1,
+                                                     plotit = F))
+pozzo5_effects %>% utils::head()
 # this creates new dataset with var, factor variable with variables 
 # in our model, and rel.inf - relative influence each var has on model pred 
 
-# plot top 3 features
-p4.effects %>% 
+# plot top 6 features
+pozzo5_effects %>% 
   arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
+  top_n(6) %>%  # it's already only 3 vars
   ggplot(aes(x = fct_reorder(.f = var,
                              .x = rel.inf),
              y = rel.inf,
@@ -477,502 +476,68 @@ p4.effects %>%
   geom_col()+
   coord_flip()+
   scale_color_brewer(palette = "Dark2")
-
-
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
-
-# predicted 
-
-p4.test$predicted <- as.integer(predict(p4.fit1,
-                                        newdata = p4.test,
-                                        n.trees = p4.fit1_perf))
-
-# plot predicted vs actual
-
-ggplot(p4.test) +
-  geom_point(aes(x = predicted,
-                 y = imp4,
-                 color = predicted - imp4),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
-
-
-
-#### pozzo 5 ####
-
-#stepwise
-pozzo5_sw <- step.wisef("imp5", pozzo5)
-pozzo5_sw$bestTune # 5
-coef(pozzo5_sw$finalModel, 3)
-
-# split 
-set.seed(123)
-p5.split <- initial_split(pozzo5, prop = .7)
-p5.train <- training(p5.split)
-p5.test <- testing(p5.split)
-
-p5.fit1 <- gbm(imp5 ~ .,
-               data = pozzo5,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
-
-p5.fit1_perf <- gbm.perf(p5.fit1, method = "cv")
-
-## make predictions 
-
-p5_pred1 <- stats::predict(object = p5.fit1,
-                           newdata = p5.test,
-                           n.trees = p5.fit1_perf)
-p5_rmse <- Metrics::rmse(actual = p5.test$imp5,
-                         predicted = p5_pred1)
-print(p5_rmse) # 2.36
-
-gbm::plot.gbm(p5.fit1, i.var = 1)
-
-# ecc...
-
-## interactions of two features on the variable 
-
-gbm::plot.gbm(p5.fit1, i.var = c(1,3))
-plot.gbm(p5.fit1, i.var = c(1,2))
-plot.gbm(p5.fit1, i.var = c(2,3))
-
-### impact of different features on predicting depth to gw 
-
-# summarise model 
-
-p5.effects <- tibble::as_tibble(gbm::summary.gbm(p5.fit1,
-                                                 plotit = F))
-p5.effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
-
-# plot top 3 features
-p5.effects %>% 
-  arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
-  ggplot(aes(x = fct_reorder(.f = var,
-                             .x = rel.inf),
-             y = rel.inf,
-             fill = rel.inf))+
-  geom_col()+
-  coord_flip()+
-  scale_color_brewer(palette = "Dark2")
-
+ggsave("img/auser/50auser_pozzosal_features.jpg",
+       dpi = 500, width = 10, height=7)
 
 ## vis distribution of predicted compared with actual target values 
 # by predicting these vals and plotting the difference 
 
 # predicted 
 
-p5.test$predicted <- as.integer(predict(p5.fit1,
-                                        newdata = p5.test,
-                                        n.trees = p5.fit1_perf))
+pozzo_SAL.test$predicted <- as.integer(predict(pozzo_SAL_fit1,
+                                               newdata = pozzo_SAL.test,
+                                               n.trees = perf_gbm1))
 
 # plot predicted vs actual
 
-ggplot(p5.test) +
+ggplot(pozzo_SAL.test) +
   geom_point(aes(x = predicted,
                  y = imp5,
                  color = predicted - imp5),
              alpha = .7, size = 1) +
   theme_fivethirtyeight()
+ggsave("img/auser/51pozzo_sal_pred.jpg",
+       dpi = 500, width = 10, height=7)
 
 
-#### pozzo 6 ####
 
-#stepwise
-pozzo6_sw <- step.wisef("imp6", pozzo6)
-pozzo6_sw$bestTune # 5
-coef(pozzo6_sw$finalModel, 2)
+## plotting pred vs actual 
 
-# split 
-set.seed(123)
-p6.split <- initial_split(pozzo6,prop = .7)
-p6.train <- training(p6.split)
-p6.test <- testing(p6.split)
+reg <- lm(predicted ~ imp5, data = pozzo_SAL.test)
+reg
+#Coefficients:
+#(Intercept)         imp15 
+#-0.05032      0.91663 
 
-p6.fit1 <- gbm(imp6 ~ .,
-               data = pozzo6,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
+r.sq <- format(summary(reg)$r.squared,digits = 2)
 
-p6.fit1_perf <- gbm.perf(p6.fit1, method = "cv")
+coeff <- coefficients(reg)
 
-## make predictions 
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+eq
+# plot
+(gbm_actualvspred <- ggplot(pozzo_SAL.test) +
+    geom_point(aes(x = predicted,
+                   y = imp5,
+                   color = predicted - imp5),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 8.33,slope = 0.78, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 50, y = 40, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo SAL auser\n",
+         subtitle = "Minimum rainfall threshold at 0.5 mm\n")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
 
-p6_pred1 <- stats::predict(object = p6.fit1,
-                           newdata = p6.test,
-                           n.trees = p6.fit1_perf)
-p6_rmse <- Metrics::rmse(actual = p6.test$imp6,
-                         predicted = p6_pred1)
-print(p6_rmse) # 0.93
 
-gbm::plot.gbm(p6.fit1, i.var = 1)
+#### modelli con i lag ####
 
-plot.gbm(p6.fit1, i.var = 2)
 
-plot.gbm(p6.fit1, i.var = 3)
 
-# ecc...
-
-## interactions of two features on the variable 
-
-gbm::plot.gbm(p6.fit1, i.var = c(1,3))
-plot.gbm(p6.fit1, i.var = c(1,2))
-plot.gbm(p6.fit1, i.var = c(2,3))
-
-### impact of different features on predicting depth to gw 
-
-# summarise model 
-
-p6.effects <- tibble::as_tibble(gbm::summary.gbm(p6.fit1,
-                                                 plotit = F))
-p6.effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
-
-# plot top 3 features
-p6.effects %>% 
-  arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
-  ggplot(aes(x = fct_reorder(.f = var,
-                             .x = rel.inf),
-             y = rel.inf,
-             fill = rel.inf))+
-  geom_col()+
-  coord_flip()+
-  scale_color_brewer(palette = "Dark2")
-
-
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
-
-# predicted 
-
-p6.test$predicted <- as.integer(predict(p6.fit1,
-                                        newdata = p6.test,
-                                        n.trees = p6.fit1_perf))
-
-# plot predicted vs actual
-
-ggplot(p6.test) +
-  geom_point(aes(x = predicted,
-                 y = imp6,
-                 color = predicted - imp6),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
-
-
-#### pozzo 7 ####
-
-#stepwise
-pozzo7_sw <- step.wisef("imp7", pozzo7)
-pozzo7_sw$bestTune # 5
-coef(pozzo7_sw$finalModel, 3)
-
-# split 
-set.seed(123)
-p7.split <- initial_split(pozzo7, prop = .7)
-p7.train <- training(p7.split)
-p7.test <- testing(p7.split)
-
-p7.fit1 <- gbm(imp7 ~ .,
-               data = pozzo7,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
-
-p7.fit1_perf <- gbm.perf(p7.fit1, method = "cv")
-
-## make predictions 
-
-p7_pred1 <- stats::predict(object = p7.fit1,
-                           newdata = p7.test,
-                           n.trees = p7.fit1_perf)
-p7_rmse <- Metrics::rmse(actual = p7.test$imp7,
-                         predicted = p3_pred1)
-print(p7_rmse) # 16.32
-
-gbm::plot.gbm(p7.fit1, i.var = 1)
-
-plot.gbm(p7.fit1, i.var = 2)
-
-plot.gbm(p7.fit1, i.var = 3)
-
-# ecc...
-
-## interactions of two features on the variable 
-
-gbm::plot.gbm(p7.fit1, i.var = c(1,3))
-plot.gbm(p7.fit1, i.var = c(1,2))
-plot.gbm(p7.fit1, i.var = c(2,3))
-
-### impact of different features on predicting depth to gw 
-
-# summarise model 
-
-p7.effects <- tibble::as_tibble(gbm::summary.gbm(p7.fit1,
-                                                 plotit = F))
-p7.effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
-
-# plot top 3 features
-p7.effects %>% 
-  arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
-  ggplot(aes(x = fct_reorder(.f = var,
-                             .x = rel.inf),
-             y = rel.inf,
-             fill = rel.inf))+
-  geom_col()+
-  coord_flip()+
-  scale_color_brewer(palette = "Dark2")
-
-
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
-
-# predicted 
-
-p7.test$predicted <- as.integer(predict(p7.fit1,
-                                        newdata = p7.test,
-                                        n.trees = p7.fit1_perf))
-
-# plot predicted vs actual
-
-ggplot(p7.test) +
-  geom_point(aes(x = predicted,
-                 y = imp7,
-                 color = predicted - imp7),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
-
-
-#### pozzo 8 #### 
-
-#stepwise
-pozzo8_sw <- step.wisef("imp8", pozzo8)
-pozzo8_sw$bestTune # 5
-coef(pozzo8_sw$finalModel, 3)
-
-# split 
-set.seed(123)
-p8.split <- initial_split(pozzo8, prop = .7)
-p8.train <- training(p8.split)
-p8.test <- testing(p8.split)
-
-p8.fit1 <- gbm(imp8 ~ .,
-               data = pozzo8,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
-
-p8.fit1_perf <- gbm.perf(p8.fit1, method = "cv")
-
-## make predictions 
-
-p8_pred1 <- stats::predict(object = p8.fit1,
-                           newdata = p8.test,
-                           n.trees = p8.fit1_perf)
-p8_rmse <- Metrics::rmse(actual = p8.test$imp8,
-                         predicted = p8_pred1)
-print(p8_rmse) # 0.87
-
-gbm::plot.gbm(p8.fit1, i.var = 1)
-
-plot.gbm(p8.fit1, i.var = 2)
-
-plot.gbm(p8.fit1, i.var = 3)
-
-# ecc...
-
-## interactions of two features on the variable 
-
-gbm::plot.gbm(p8.fit1, i.var = c(1,3))
-plot.gbm(p8.fit1, i.var = c(1,2))
-plot.gbm(p8.fit1, i.var = c(2,3))
-
-### impact of different features on predicting depth to gw 
-
-# summarise model 
-
-p8.effects <- tibble::as_tibble(gbm::summary.gbm(p8.fit1,
-                                                 plotit = F))
-p8.effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
-
-# plot top 3 features
-p8.effects %>% 
-  arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
-  ggplot(aes(x = fct_reorder(.f = var,
-                             .x = rel.inf),
-             y = rel.inf,
-             fill = rel.inf))+
-  geom_col()+
-  coord_flip()+
-  scale_color_brewer(palette = "Dark2")
-
-
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
-
-# predicted 
-
-p8.test$predicted <- as.integer(predict(p8.fit1,
-                                        newdata = p8.test,
-                                        n.trees = p8.fit1_perf))
-
-# plot predicted vs actual
-
-ggplot(p8.test) +
-  geom_point(aes(x = predicted,
-                 y = imp8,
-                 color = predicted - imp8),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
-
-
-#### pozzo 9 #### 
-
-#stepwise
-pozzo9_sw <- step.wisef("imp9", pozzo9)
-pozzo9_sw$bestTune # 1!
-coef(pozzo9_sw$finalModel, 1)
-# others "subscript out of bounds", as best model is already 1?
-
-# split 
-set.seed(123)
-p9.split <- initial_split(pozzo9, prop = .7)
-p9.train <- training(p9.split)
-p9.test <- testing(p9.split)
-
-p9.fit1 <- gbm(imp9 ~ imp_rain_velletri, # in this case just one var...
-               data = pozzo9,
-               verbose = 1,
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 1) # can't go larger or i get error:
-# >1 nodes produced errors; first error: incorrect number of dimensions
-
-p9.fit1_perf <- gbm.perf(p9.fit1)
-
-## make predictions 
-
-p9_pred1 <- stats::predict(object = p9.fit1,
-                           newdata = p9.test,
-                           n.trees = p9.fit1_perf)
-p9_rmse <- Metrics::rmse(actual = p9.test$imp9,
-                         predicted = p9_pred1)
-print(p9_rmse) # 3.88
-
-gbm::plot.gbm(p9.fit1, i.var = 1) # only the one var
-
-## interactions of two features on the variable not possible
-
-### impact of different features on predicting depth to gw 
-
-# summarise model 
-
-p9.effects <- tibble::as_tibble(gbm::summary.gbm(p9.fit1,
-                                                 plotit = F))
-p9.effects %>% utils::head() # 100 ... of course it's the only one 
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
-
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
-
-# predicted 
-
-p9.test$predicted <- as.integer(predict(p9.fit1,
-                                        newdata = p9.test,
-                                        n.trees = p9.fit1_perf))
-
-# plot predicted vs actual
-
-ggplot(p9.test) +
-  geom_point(aes(x = predicted,
-                 y = imp9,
-                 color = predicted - imp9),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
-
-
-#### XGBOOST ####
-
-#install.packages("xgboost")
-library(xgboost)
-library(lubridate)
-library(tibble)
-
-View(pozzo1)
-max(pozzo1$Date)
-str(pozzo1)
-
-pozzo1_ext <- pozzo1 %>%
-  mutate(Date = as_date(Date)) %>%
-  bind_rows(tibble(Date = seq(start = as_date("2020-07-01"),
-                              from = as_date("2020-07-01"),
-                              by = "day", length.out = 31),
-                   imp1 = rep(NA, 31)))
-tail(pozzo1_ext)
-
-pozzo1_xgb <- pozzo1_ext %>%
-  mutate(months = lubridate::month(Date),
-         years = lubridate::year(Date),
-         days = lubridate::day(Date))
-
-str(pozzo1_xgb)
-
-## split - train and prediction sets
-
-p1.xgb.train <- pozzo1_xgb[1:nrow(pozzo1),]
-p1.xgb.pred <- pozzo1_xgb[(nrow(pozzo1)+1):nrow(pozzo1_xgb),]
-
-p1.x_train <- xgboost::xgb.DMatrix(as.matrix(p1.xgb.train %>% 
-                                               dplyr::select(months, years)))
-p1.x_pred <- xgboost::xgb.DMatrix(as.matrix(p1.xgb.pred %>% 
-                                              dplyr::select(months, years)))
-p1.y_train <- p1.xgb.train$imp1
-
-
-p1.xgb_trcontrol <- caret::trainControl(
-  method ="cv",
-  number = 5,
-  
-)
-
-
-#### canneto ####
-
-canneto <- read.csv("processed_data/MADONNA_DI_CANNETO_to_model.csv")
-canneto0.5 <- read.csv("processed_data/canneto_rain0.5.csv")
-canneto1.5 <- read.csv("processed_data/canneto_rain1.5.csv")
-canneto3 <- read.csv("processed_data/canneto_rain3.csv")
-canneto5 <- read.csv("processed_data/canneto_rain5.csv")
-canneto7 <- read.csv("processed_data/canneto_rain7.csv")
-# uploaded new datasets with new features 
+#######fine##########
 
 
 
