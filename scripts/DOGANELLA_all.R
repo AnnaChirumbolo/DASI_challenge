@@ -206,13 +206,6 @@ print(doganella_missing)
 
 x_label <- doganella_filtered$Date
 
-ggplot_na_distribution(abs(doganella_filtered$depth_to_gw.m),
-                       title = "Distribution of Missing Target Values (Madonna di Canneto)\n",
-                       ylab = "Depth to groundwater (m)\n",
-                       theme = ggplot2::theme_classic(),
-                       x_axis_labels = x_label,
-                       xlab="")
-
 #### imputing missing data ####
 
 doganella_filtered1 <- doganella_filtered %>% 
@@ -788,762 +781,1264 @@ list.pozzo1.perf <- lapply(list.pozzo1.fit, function(x) gbm.perf(x,method="cv"))
 
 ## make predictions 
 
-pozzo1_pred <- stats::predict(object = pozzo1_fit1[[1]],
-                               newdata = pozzo1.test[[1]],
-                               n.trees = perf_gbm1[[1]])
+# original
 
-rmse_fit1 <- Metrics::rmse(actual = pozzo1.test$imp1,
-                           predicted = pozzo1_pred1)
-print(rmse_fit1) # 9.313319
-#(higher error than when keeping all variables)
+pozzo1_pred <- stats::predict(object = list.pozzo1.fit[[1]],
+                               newdata = list.pozzo1.test[[1]],
+                               n.trees = list.pozzo1.perf[[1]])
 
-#plot - rain velletri
-gbm::plot.gbm(pozzo1_fit1, i.var = 1)
-# plot - temp monteporzio
-plot.gbm(pozzo1_fit1, i.var = 2)
-# plot - temp velletri
-plot.gbm(pozzo1_fit1, i.var = 3)
+rmse_fit1 <- Metrics::rmse(actual = list.pozzo1.test$pozzi.pozzo1$`1`,
+                           predicted = pozzo1_pred)
+print(rmse_fit1) # 3.56
 
-## interactions of two features on the variable 
+# 0.5
 
-gbm::plot.gbm(pozzo1_fit1, i.var = c(1,3)) # vol-rain
-plot.gbm(pozzo1_fit1, i.var = c(1,2)) # vol-temp
-plot.gbm(pozzo1_fit1, i.var = c(2,3)) # temp-rain
+pozzo1pred0.5 <- stats::predict(object = list.pozzo1.fit[[2]],
+                                newdata = list.pozzo1.test[[2]],
+                                n.trees = list.pozzo1.perf[[2]])
 
-### impact of different features on predicting depth to gw 
+rmsefit0.5 <- Metrics::rmse(actual = list.pozzo1.test[[2]]$`1`,
+                            predicted = pozzo1pred0.5)
+print(rmsefit0.5) # 2.94
 
-# summarise model 
+# 1
 
-pozzo1_effects <- tibble::as_tibble(gbm::summary.gbm(pozzo1_fit1,
-                                                     plotit = F))
-pozzo1_effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
+pozzo1pred1 <- predict(object = list.pozzo1.fit[[3]],
+                       newdata = list.pozzo1.test[[3]],
+                       n.trees = list.pozzo1.perf[[3]])
+rmsefit1 <- rmse(actual = list.pozzo1.test[[2]]$`1`,
+                 predicted = pozzo1pred1)
+print(rmsefit1) # 5.11
 
-# plot top 3 features
-pozzo1_effects %>% 
-  arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
-  ggplot(aes(x = fct_reorder(.f = var,
-                             .x = rel.inf),
-             y = rel.inf,
-             fill = rel.inf))+
-  geom_col()+
-  coord_flip()+
-  scale_color_brewer(palette = "Dark2")
+# 1.5 
 
+pozzo1pred1.5 <- predict(object = list.pozzo1.fit[[4]],
+                         newdata = list.pozzo1.test[[4]],
+                         n.trees = list.pozzo1.perf[[4]])
+rmsefit1.5 <- rmse(actual = list.pozzo1.test[[4]]$`1`,
+                   predicted = pozzo1pred1.5)
+print(rmsefit1.5) # 3.05
 
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
+# 2.83 
 
-# predicted 
-
-pozzo1.test$predicted <- as.integer(predict(pozzo1_fit1,
-                                            newdata = pozzo1.test,
-                                            n.trees = perf_gbm1))
-
-# plot predicted vs actual
-
-ggplot(pozzo1.test) +
-  geom_point(aes(x = predicted,
-                 y = imp1,
-                 color = predicted - imp1),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
+pozzo1pred2.83 <- predict(object = list.pozzo1.fit[[5]],
+                          newdata = list.pozzo1.test[[5]],
+                          n.trees = list.pozzo1.perf[[5]])
+rmse2.83 <- rmse(actual = list.pozzo1.test[[5]]$`1`,
+                 predicted = pozzo1pred2.83)
+print(rmse2.83) # 3.80
 
 #### pozzo 2 #### 
 
-## stepwise 
+# test + train split 
 
-pozzo2_sw <- step.wisef("imp2", pozzo2)
-pozzo2_sw$bestTune # 5
-coef(pozzo2_sw$finalModel, 3)
-
-## train and test  ##### how to automate this??? 
-#gmb.f(pozzo2)...
-
-# split 
 set.seed(123)
-p2.split <- initial_split(pozzo2, prop = .7)
-p2.train <- training(p2.split)
-p2.test <- testing(p2.split)
 
-p2.fit1 <- gbm(imp2 ~ .,
-               data = pozzo2,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
+list.pozzo2.split <- lapply(list.pozzo2, function(x) initial_split(x, prop=.7))
+list.pozzo2.train <- lapply(list.pozzo2.split, function(x) training(x))
+list.pozzo2.test <- lapply(list.pozzo2.split, function(x) testing(x))
 
-p2.fit1_perf <- gbm.perf(p2.fit1, method = "cv")
-p2.fit1_perf
+list.pozzo2.fit <- lapply(list.pozzo2, function(x) gbm::gbm(`2` ~ .,
+                                                            data = x, 
+                                                            verbose = T,
+                                                            shrinkage = 0.01,
+                                                            interaction.depth = 3,
+                                                            n.minobsinnode = 5,
+                                                            n.trees = 5000,
+                                                            cv.folds = 10))
+
+list.pozzo2.perf <- lapply(list.pozzo2.fit, function(x) gbm.perf(x,method="cv"))
 
 ## make predictions 
 
-p2_pred1 <- stats::predict(object = p2.fit1,
-                           newdata = p2.test,
-                           n.trees = p2.fit1_perf)
-p2_rmse <- Metrics::rmse(actual = p2.test$imp2,
-                         predicted = p2_pred1)
-print(p2_rmse) # 0.98
+pozzo2_pred <- stats::predict(object = list.pozzo2.fit[[1]],
+                              newdata = list.pozzo2.test[[1]],
+                              n.trees = list.pozzo2.perf[[1]])
 
-gbm::plot.gbm(p2.fit1, i.var = 1)
+rmse_fit2 <- Metrics::rmse(actual = list.pozzo2.test$pozzi.pozzo2$`2`,
+                           predicted = pozzo2_pred)
+print(rmse_fit2) # 1.12
 
-plot.gbm(p2.fit1, i.var = 2)
+# 0.5
 
-plot.gbm(p2.fit1, i.var = 3)
+pozzo2pred0.5 <- stats::predict(object = list.pozzo2.fit[[2]],
+                                newdata = list.pozzo2.test[[2]],
+                                n.trees = list.pozzo2.perf[[2]])
 
-## interactions of two features on the variable 
+rmse2fit0.5 <- Metrics::rmse(actual = list.pozzo2.test[[2]]$`2`,
+                            predicted = pozzo2pred0.5)
+print(rmse2fit0.5) # 1.04
 
-gbm::plot.gbm(p2.fit1, i.var = c(1,3))
-plot.gbm(p2.fit1, i.var = c(1,2))
-plot.gbm(p2.fit1, i.var = c(2,3))
+# 1
 
-### impact of different features on predicting depth to gw 
+pozzo2pred1 <- predict(object = list.pozzo2.fit[[3]],
+                       newdata = list.pozzo2.test[[3]],
+                       n.trees = list.pozzo2.perf[[3]])
+rmse2fit1 <- rmse(actual = list.pozzo2.test[[2]]$`2`,
+                 predicted = pozzo2pred1)
+print(rmse2fit1) # 1.30
 
-# summarise model 
+# 1.5 
 
-p2.effects <- tibble::as_tibble(gbm::summary.gbm(p2.fit1,
-                                                 plotit = F))
-p2.effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
+pozzo2pred1.5 <- predict(object = list.pozzo2.fit[[4]],
+                         newdata = list.pozzo2.test[[4]],
+                         n.trees = list.pozzo2.perf[[4]])
+rmse2fit1.5 <- rmse(actual = list.pozzo2.test[[4]]$`2`,
+                   predicted = pozzo2pred1.5)
+print(rmse2fit1.5) # 1.06
 
-# plot top 3 features
-p2.effects %>% 
-  arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
-  ggplot(aes(x = fct_reorder(.f = var,
-                             .x = rel.inf),
-             y = rel.inf,
-             fill = rel.inf))+
-  geom_col()+
-  coord_flip()+
-  scale_color_brewer(palette = "Dark2")
+# 2.83 
 
-
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
-
-# predicted 
-
-p2.test$predicted <- as.integer(predict(p2.fit1,
-                                        newdata = p2.test,
-                                        n.trees = p2.fit1_perf))
-
-# plot predicted vs actual
-
-ggplot(p2.test) +
-  geom_point(aes(x = predicted,
-                 y = imp2,
-                 color = predicted - imp2),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
-
+pozzo2pred2.83 <- predict(object = list.pozzo2.fit[[5]],
+                          newdata = list.pozzo2.test[[5]],
+                          n.trees = list.pozzo2.perf[[5]])
+rmse2fit3.83 <- rmse(actual = list.pozzo2.test[[5]]$`2`,
+                     predicted = pozzo2pred2.83)
+print(rmse2fit3.83) # 1.036
 
 #### pozzo 3 ####
 
-# stepwise
+# test + train split 
 
-pozzo3_sw <- step.wisef("imp3",pozzo3)
-pozzo3_sw$bestTune # 5
-coef(pozzo3_sw$finalModel, 4)
-
-
-# split 
 set.seed(123)
-p3.split <- initial_split(pozzo3, prop = .7)
-p3.train <- training(p3.split)
-p3.test <- testing(p3.split)
 
-p3.fit1 <- gbm(imp3 ~ .,
-               data = pozzo3,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
+list.pozzo3.split <- lapply(list.pozzo3, function(x) initial_split(x, prop=.7))
+list.pozzo3.train <- lapply(list.pozzo3.split, function(x) training(x))
+list.pozzo3.test <- lapply(list.pozzo3.split, function(x) testing(x))
 
-p3.fit1_perf <- gbm.perf(p3.fit1, method = "cv")
+list.pozzo3.fit <- lapply(list.pozzo3, function(x) gbm::gbm(`3` ~ .,
+                                                            data = x, 
+                                                            verbose = T,
+                                                            shrinkage = 0.01,
+                                                            interaction.depth = 3,
+                                                            n.minobsinnode = 5,
+                                                            n.trees = 5000,
+                                                            cv.folds = 10))
+
+list.pozzo3.perf <- lapply(list.pozzo3.fit, function(x) gbm.perf(x,method="cv"))
 
 ## make predictions 
 
-p3_pred1 <- stats::predict(object = p3.fit1,
-                           newdata = p3.test,
-                           n.trees = p3.fit1_perf)
-p3_rmse <- Metrics::rmse(actual = p3.test$imp3,
-                         predicted = p3_pred1)
-print(p3_rmse) # 1.89
+pozzo3_pred <- stats::predict(object = list.pozzo3.fit[[1]],
+                              newdata = list.pozzo3.test[[1]],
+                              n.trees = list.pozzo3.perf[[1]])
 
-gbm::plot.gbm(p3.fit1, i.var = 1)
+rmse_fit3 <- Metrics::rmse(actual = list.pozzo3.test[[1]]$`3`,
+                           predicted = pozzo3_pred)
+print(rmse_fit3) # 1.68
 
-plot.gbm(p3.fit1, i.var = 2)
+# 0.5
 
-plot.gbm(p3.fit1, i.var = 3)
+pozzo3pred0.5 <- stats::predict(object = list.pozzo3.fit[[2]],
+                                newdata = list.pozzo3.test[[2]],
+                                n.trees = list.pozzo3.perf[[2]])
 
-# ecc...
+rmse3fit0.5 <- Metrics::rmse(actual = list.pozzo3.test[[2]]$`3`,
+                             predicted = pozzo3pred0.5)
+print(rmse3fit0.5) # 1.67
 
-## interactions of two features on the variable 
+# 1
 
-gbm::plot.gbm(p3.fit1, i.var = c(1,3))
-plot.gbm(p3.fit1, i.var = c(1,2))
-plot.gbm(p3.fit1, i.var = c(2,3))
+pozzo3pred1 <- predict(object = list.pozzo3.fit[[3]],
+                       newdata = list.pozzo3.test[[3]],
+                       n.trees = list.pozzo3.perf[[3]])
+rmse3fit1 <- rmse(actual = list.pozzo3.test[[2]]$`3`,
+                  predicted = pozzo3pred1)
+print(rmse3fit1) # 2.38
 
-### impact of different features on predicting depth to gw 
+# 1.5 
 
-# summarise model 
+pozzo3pred1.5 <- predict(object = list.pozzo3.fit[[4]],
+                         newdata = list.pozzo3.test[[4]],
+                         n.trees = list.pozzo3.perf[[4]])
+rmse3fit1.5 <- rmse(actual = list.pozzo3.test[[4]]$`3`,
+                    predicted = pozzo3pred1.5)
+print(rmse3fit1.5) # 1.59
 
-p3.effects <- tibble::as_tibble(gbm::summary.gbm(p3.fit1,
-                                                 plotit = F))
-p3.effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
+# 2.83 
 
-# plot top 3 features
-p3.effects %>% 
-  arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
-  ggplot(aes(x = fct_reorder(.f = var,
-                             .x = rel.inf),
-             y = rel.inf,
-             fill = rel.inf))+
-  geom_col()+
-  coord_flip()+
-  scale_color_brewer(palette = "Dark2")
-
-
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
-
-# predicted 
-
-p3.test$predicted <- as.integer(predict(p3.fit1,
-                                        newdata = p3.test,
-                                        n.trees = p3.fit1_perf))
-
-# plot predicted vs actual
-
-ggplot(p3.test) +
-  geom_point(aes(x = predicted,
-                 y = imp3,
-                 color = predicted - imp3),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
-
-
+pozzo3pred2.83 <- predict(object = list.pozzo3.fit[[5]],
+                          newdata = list.pozzo3.test[[5]],
+                          n.trees = list.pozzo3.perf[[5]])
+rmse3fit3.83 <- rmse(actual = list.pozzo3.test[[5]]$`3`,
+                     predicted = pozzo3pred2.83)
+print(rmse3fit3.83) # 1.66
 
 #### pozzo 4 ####
 
-# stepwise
-pozzo4_sw <- step.wisef("imp4", pozzo4)
-pozzo4_sw$bestTune # 5
-coef(pozzo4_sw$finalModel, 3)
+# test + train split 
 
-# split, train and test
 set.seed(123)
-p4.split <- initial_split(pozzo4, prop = .7)
-p4.train <- training(p4.split)
-p4.test <- testing(p4.split)
 
-p4.fit1 <- gbm(imp4 ~ .,
-               data = pozzo4,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
+list.pozzo4.split <- lapply(list.pozzo4, function(x) initial_split(x, prop=.7))
+list.pozzo4.train <- lapply(list.pozzo4.split, function(x) training(x))
+list.pozzo4.test <- lapply(list.pozzo4.split, function(x) testing(x))
 
-p4.fit1_perf <- gbm.perf(p4.fit1, method = "cv")
+list.pozzo4.fit <- lapply(list.pozzo4, function(x) gbm::gbm(`4` ~ .,
+                                                            data = x, 
+                                                            verbose = T,
+                                                            shrinkage = 0.01,
+                                                            interaction.depth = 3,
+                                                            n.minobsinnode = 5,
+                                                            n.trees = 5000,
+                                                            cv.folds = 10))
+
+list.pozzo4.perf <- lapply(list.pozzo4.fit, function(x) gbm.perf(x,method="cv"))
 
 ## make predictions 
 
-p4_pred1 <- stats::predict(object = p4.fit1,
-                           newdata = p4.test,
-                           n.trees = p4.fit1_perf)
-p4_rmse <- Metrics::rmse(actual = p4.test$imp4,
-                         predicted = p4_pred1)
-print(p4_rmse) # 0.82
+pozzo4_pred <- stats::predict(object = list.pozzo4.fit[[1]],
+                              newdata = list.pozzo4.test[[1]],
+                              n.trees = list.pozzo4.perf[[1]])
 
-gbm::plot.gbm(p4.fit1, i.var = 1)
+rmse_fit4 <- Metrics::rmse(actual = list.pozzo4.test[[1]]$`4`,
+                           predicted = pozzo4_pred)
+print(rmse_fit4) # 0.52
 
-plot.gbm(p4.fit1, i.var = 2)
+# 0.5
 
-plot.gbm(p4.fit1, i.var = 3)
+pozzo4pred0.5 <- stats::predict(object = list.pozzo4.fit[[2]],
+                                newdata = list.pozzo4.test[[2]],
+                                n.trees = list.pozzo4.perf[[2]])
 
-# ecc...
+rmse4fit0.5 <- Metrics::rmse(actual = list.pozzo4.test[[2]]$`4`,
+                             predicted = pozzo4pred0.5)
+print(rmse4fit0.5) # 0.68
 
-## interactions of two features on the variable 
+# 1
 
-gbm::plot.gbm(p4.fit1, i.var = c(1,3))
-plot.gbm(p4.fit1, i.var = c(1,2))
-plot.gbm(p4.fit1, i.var = c(2,3))
+pozzo4pred1 <- predict(object = list.pozzo4.fit[[3]],
+                       newdata = list.pozzo4.test[[3]],
+                       n.trees = list.pozzo4.perf[[3]])
+rmse4fit1 <- rmse(actual = list.pozzo4.test[[2]]$`4`,
+                  predicted = pozzo4pred1)
+print(rmse4fit1) # 0.82
 
-### impact of different features on predicting depth to gw 
+# 1.5 
 
-# summarise model 
+pozzo4pred1.5 <- predict(object = list.pozzo4.fit[[4]],
+                         newdata = list.pozzo4.test[[4]],
+                         n.trees = list.pozzo4.perf[[4]])
+rmse4fit1.5 <- rmse(actual = list.pozzo4.test[[4]]$`4`,
+                    predicted = pozzo4pred1.5)
+print(rmse4fit1.5) # 0.62
 
-p4.effects <- tibble::as_tibble(gbm::summary.gbm(p4.fit1,
-                                                 plotit = F))
-p4.effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
+# 2.83 
 
-# plot top 3 features
-p4.effects %>% 
-  arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
-  ggplot(aes(x = fct_reorder(.f = var,
-                             .x = rel.inf),
-             y = rel.inf,
-             fill = rel.inf))+
-  geom_col()+
-  coord_flip()+
-  scale_color_brewer(palette = "Dark2")
-
-
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
-
-# predicted 
-
-p4.test$predicted <- as.integer(predict(p4.fit1,
-                                        newdata = p4.test,
-                                        n.trees = p4.fit1_perf))
-
-# plot predicted vs actual
-
-ggplot(p4.test) +
-  geom_point(aes(x = predicted,
-                 y = imp4,
-                 color = predicted - imp4),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
-
-
+pozzo4pred2.83 <- predict(object = list.pozzo4.fit[[5]],
+                          newdata = list.pozzo4.test[[5]],
+                          n.trees = list.pozzo4.perf[[5]])
+rmse4fit3.83 <- rmse(actual = list.pozzo4.test[[5]]$`4`,
+                     predicted = pozzo4pred2.83)
+print(rmse4fit3.83) # 0.66
 
 #### pozzo 5 ####
 
-#stepwise
-pozzo5_sw <- step.wisef("imp5", pozzo5)
-pozzo5_sw$bestTune # 5
-coef(pozzo5_sw$finalModel, 3)
+# test + train split 
 
-# split 
 set.seed(123)
-p5.split <- initial_split(pozzo5, prop = .7)
-p5.train <- training(p5.split)
-p5.test <- testing(p5.split)
 
-p5.fit1 <- gbm(imp5 ~ .,
-               data = pozzo5,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
+list.pozzo5.split <- lapply(list.pozzo5, function(x) initial_split(x, prop=.7))
+list.pozzo5.train <- lapply(list.pozzo5.split, function(x) training(x))
+list.pozzo5.test <- lapply(list.pozzo5.split, function(x) testing(x))
 
-p5.fit1_perf <- gbm.perf(p5.fit1, method = "cv")
+list.pozzo5.fit <- lapply(list.pozzo5, function(x) gbm::gbm(`5` ~ .,
+                                                            data = x, 
+                                                            verbose = T,
+                                                            shrinkage = 0.01,
+                                                            interaction.depth = 3,
+                                                            n.minobsinnode = 5,
+                                                            n.trees = 5000,
+                                                            cv.folds = 10))
+
+list.pozzo5.perf <- lapply(list.pozzo5.fit, function(x) gbm.perf(x,method="cv"))
 
 ## make predictions 
 
-p5_pred1 <- stats::predict(object = p5.fit1,
-                           newdata = p5.test,
-                           n.trees = p5.fit1_perf)
-p5_rmse <- Metrics::rmse(actual = p5.test$imp5,
-                         predicted = p5_pred1)
-print(p5_rmse) # 2.36
+pozzo5_pred <- stats::predict(object = list.pozzo5.fit[[1]],
+                              newdata = list.pozzo5.test[[1]],
+                              n.trees = list.pozzo5.perf[[1]])
 
-gbm::plot.gbm(p5.fit1, i.var = 1)
+rmse_fit5 <- Metrics::rmse(actual = list.pozzo5.test[[1]]$`5`,
+                           predicted = pozzo5_pred)
+print(rmse_fit5) # 1.12
 
-# ecc...
+# 0.5
 
-## interactions of two features on the variable 
+pozzo5pred0.5 <- stats::predict(object = list.pozzo5.fit[[2]],
+                                newdata = list.pozzo5.test[[2]],
+                                n.trees = list.pozzo5.perf[[2]])
 
-gbm::plot.gbm(p5.fit1, i.var = c(1,3))
-plot.gbm(p5.fit1, i.var = c(1,2))
-plot.gbm(p5.fit1, i.var = c(2,3))
+rmse5fit0.5 <- Metrics::rmse(actual = list.pozzo5.test[[2]]$`5`,
+                             predicted = pozzo5pred0.5)
+print(rmse5fit0.5) # 1.29
 
-### impact of different features on predicting depth to gw 
+# 1
 
-# summarise model 
+pozzo5pred1 <- predict(object = list.pozzo5.fit[[3]],
+                       newdata = list.pozzo5.test[[3]],
+                       n.trees = list.pozzo5.perf[[3]])
+rmse5fit1 <- rmse(actual = list.pozzo5.test[[2]]$`5`,
+                  predicted = pozzo5pred1)
+print(rmse5fit1) # 1.52
 
-p5.effects <- tibble::as_tibble(gbm::summary.gbm(p5.fit1,
-                                                 plotit = F))
-p5.effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
+# 1.5 
 
-# plot top 3 features
-p5.effects %>% 
-  arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
-  ggplot(aes(x = fct_reorder(.f = var,
-                             .x = rel.inf),
-             y = rel.inf,
-             fill = rel.inf))+
-  geom_col()+
-  coord_flip()+
-  scale_color_brewer(palette = "Dark2")
+pozzo5pred1.5 <- predict(object = list.pozzo5.fit[[4]],
+                         newdata = list.pozzo5.test[[4]],
+                         n.trees = list.pozzo5.perf[[4]])
+rmse5fit1.5 <- rmse(actual = list.pozzo5.test[[4]]$`5`,
+                    predicted = pozzo5pred1.5)
+print(rmse5fit1.5) # 1.16
 
+# 2.83 
 
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
-
-# predicted 
-
-p5.test$predicted <- as.integer(predict(p5.fit1,
-                                        newdata = p5.test,
-                                        n.trees = p5.fit1_perf))
-
-# plot predicted vs actual
-
-ggplot(p5.test) +
-  geom_point(aes(x = predicted,
-                 y = imp5,
-                 color = predicted - imp5),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
-
+pozzo5pred2.83 <- predict(object = list.pozzo5.fit[[5]],
+                          newdata = list.pozzo5.test[[5]],
+                          n.trees = list.pozzo5.perf[[5]])
+rmse5fit3.83 <- rmse(actual = list.pozzo5.test[[5]]$`5`,
+                     predicted = pozzo5pred2.83)
+print(rmse5fit3.83) # 1.17
 
 #### pozzo 6 ####
 
-#stepwise
-pozzo6_sw <- step.wisef("imp6", pozzo6)
-pozzo6_sw$bestTune # 5
-coef(pozzo6_sw$finalModel, 2)
+# test + train split 
 
-# split 
 set.seed(123)
-p6.split <- initial_split(pozzo6,prop = .7)
-p6.train <- training(p6.split)
-p6.test <- testing(p6.split)
 
-p6.fit1 <- gbm(imp6 ~ .,
-               data = pozzo6,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
+list.pozzo6.split <- lapply(list.pozzo6, function(x) initial_split(x, prop=.7))
+list.pozzo6.train <- lapply(list.pozzo6.split, function(x) training(x))
+list.pozzo6.test <- lapply(list.pozzo6.split, function(x) testing(x))
 
-p6.fit1_perf <- gbm.perf(p6.fit1, method = "cv")
+list.pozzo6.fit <- lapply(list.pozzo6, function(x) gbm::gbm(`6` ~ .,
+                                                            data = x, 
+                                                            verbose = T,
+                                                            shrinkage = 0.01,
+                                                            interaction.depth = 3,
+                                                            n.minobsinnode = 5,
+                                                            n.trees = 5000,
+                                                            cv.folds = 10))
+
+list.pozzo6.perf <- lapply(list.pozzo6.fit, function(x) gbm.perf(x,method="cv"))
 
 ## make predictions 
 
-p6_pred1 <- stats::predict(object = p6.fit1,
-                           newdata = p6.test,
-                           n.trees = p6.fit1_perf)
-p6_rmse <- Metrics::rmse(actual = p6.test$imp6,
-                         predicted = p6_pred1)
-print(p6_rmse) # 0.93
+pozzo6_pred <- stats::predict(object = list.pozzo6.fit[[1]],
+                              newdata = list.pozzo6.test[[1]],
+                              n.trees = list.pozzo6.perf[[1]])
 
-gbm::plot.gbm(p6.fit1, i.var = 1)
+rmse_fit6 <- Metrics::rmse(actual = list.pozzo6.test[[1]]$`6`,
+                           predicted = pozzo6_pred)
+print(rmse_fit6) # 1.07
 
-plot.gbm(p6.fit1, i.var = 2)
+# 0.5
 
-plot.gbm(p6.fit1, i.var = 3)
+pozzo6pred0.5 <- stats::predict(object = list.pozzo6.fit[[2]],
+                                newdata = list.pozzo6.test[[2]],
+                                n.trees = list.pozzo6.perf[[2]])
 
-# ecc...
+rmse6fit0.5 <- Metrics::rmse(actual = list.pozzo6.test[[2]]$`6`,
+                             predicted = pozzo6pred0.5)
+print(rmse6fit0.5) # 1.00
 
-## interactions of two features on the variable 
+# 1
 
-gbm::plot.gbm(p6.fit1, i.var = c(1,3))
-plot.gbm(p6.fit1, i.var = c(1,2))
-plot.gbm(p6.fit1, i.var = c(2,3))
+pozzo6pred1 <- predict(object = list.pozzo6.fit[[3]],
+                       newdata = list.pozzo6.test[[3]],
+                       n.trees = list.pozzo6.perf[[3]])
+rmse6fit1 <- rmse(actual = list.pozzo6.test[[2]]$`6`,
+                  predicted = pozzo6pred1)
+print(rmse6fit1) # 1.30
 
-### impact of different features on predicting depth to gw 
+# 1.5 
 
-# summarise model 
+pozzo6pred1.5 <- predict(object = list.pozzo6.fit[[4]],
+                         newdata = list.pozzo6.test[[4]],
+                         n.trees = list.pozzo6.perf[[4]])
+rmse6fit1.5 <- rmse(actual = list.pozzo6.test[[4]]$`6`,
+                    predicted = pozzo6pred1.5)
+print(rmse6fit1.5) # 1.06
 
-p6.effects <- tibble::as_tibble(gbm::summary.gbm(p6.fit1,
-                                                 plotit = F))
-p6.effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
+# 2.83 
 
-# plot top 3 features
-p6.effects %>% 
-  arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
-  ggplot(aes(x = fct_reorder(.f = var,
-                             .x = rel.inf),
-             y = rel.inf,
-             fill = rel.inf))+
-  geom_col()+
-  coord_flip()+
-  scale_color_brewer(palette = "Dark2")
-
-
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
-
-# predicted 
-
-p6.test$predicted <- as.integer(predict(p6.fit1,
-                                        newdata = p6.test,
-                                        n.trees = p6.fit1_perf))
-
-# plot predicted vs actual
-
-ggplot(p6.test) +
-  geom_point(aes(x = predicted,
-                 y = imp6,
-                 color = predicted - imp6),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
-
+pozzo6pred2.83 <- predict(object = list.pozzo6.fit[[5]],
+                          newdata = list.pozzo6.test[[5]],
+                          n.trees = list.pozzo6.perf[[5]])
+rmse6fit3.83 <- rmse(actual = list.pozzo6.test[[5]]$`6`,
+                     predicted = pozzo6pred2.83)
+print(rmse6fit3.83) # 1.03
 
 #### pozzo 7 ####
 
-#stepwise
-pozzo7_sw <- step.wisef("imp7", pozzo7)
-pozzo7_sw$bestTune # 5
-coef(pozzo7_sw$finalModel, 3)
+# test + train split 
 
-# split 
 set.seed(123)
-p7.split <- initial_split(pozzo7, prop = .7)
-p7.train <- training(p7.split)
-p7.test <- testing(p7.split)
 
-p7.fit1 <- gbm(imp7 ~ .,
-               data = pozzo7,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
+list.pozzo7.split <- lapply(list.pozzo7, function(x) initial_split(x, prop=.7))
+list.pozzo7.train <- lapply(list.pozzo7.split, function(x) training(x))
+list.pozzo7.test <- lapply(list.pozzo7.split, function(x) testing(x))
 
-p7.fit1_perf <- gbm.perf(p7.fit1, method = "cv")
+list.pozzo7.fit <- lapply(list.pozzo7, function(x) gbm::gbm(`7` ~ .,
+                                                            data = x, 
+                                                            verbose = T,
+                                                            shrinkage = 0.01,
+                                                            interaction.depth = 3,
+                                                            n.minobsinnode = 5,
+                                                            n.trees = 5000,
+                                                            cv.folds = 10))
+
+list.pozzo7.perf <- lapply(list.pozzo7.fit, function(x) gbm.perf(x,method="cv"))
 
 ## make predictions 
 
-p7_pred1 <- stats::predict(object = p7.fit1,
-                           newdata = p7.test,
-                           n.trees = p7.fit1_perf)
-p7_rmse <- Metrics::rmse(actual = p7.test$imp7,
-                         predicted = p3_pred1)
-print(p7_rmse) # 16.32
+pozzo7_pred <- stats::predict(object = list.pozzo7.fit[[1]],
+                              newdata = list.pozzo7.test[[1]],
+                              n.trees = list.pozzo7.perf[[1]])
 
-gbm::plot.gbm(p7.fit1, i.var = 1)
+rmse_fit7 <- Metrics::rmse(actual = list.pozzo7.test[[1]]$`7`,
+                           predicted = pozzo7_pred)
+print(rmse_fit7) # 0.72
 
-plot.gbm(p7.fit1, i.var = 2)
+# 0.5
 
-plot.gbm(p7.fit1, i.var = 3)
+pozzo7pred0.5 <- stats::predict(object = list.pozzo7.fit[[2]],
+                                newdata = list.pozzo7.test[[2]],
+                                n.trees = list.pozzo7.perf[[2]])
 
-# ecc...
+rmse7fit0.5 <- Metrics::rmse(actual = list.pozzo7.test[[2]]$`7`,
+                             predicted = pozzo7pred0.5)
+print(rmse7fit0.5) # 0.73
 
-## interactions of two features on the variable 
+# 1
 
-gbm::plot.gbm(p7.fit1, i.var = c(1,3))
-plot.gbm(p7.fit1, i.var = c(1,2))
-plot.gbm(p7.fit1, i.var = c(2,3))
+pozzo7pred1 <- predict(object = list.pozzo7.fit[[3]],
+                       newdata = list.pozzo7.test[[3]],
+                       n.trees = list.pozzo7.perf[[3]])
+rmse7fit1 <- rmse(actual = list.pozzo7.test[[2]]$`7`,
+                  predicted = pozzo7pred1)
+print(rmse7fit1) # 1.13
 
-### impact of different features on predicting depth to gw 
+# 1.5 
+
+pozzo7pred1.5 <- predict(object = list.pozzo7.fit[[4]],
+                         newdata = list.pozzo7.test[[4]],
+                         n.trees = list.pozzo7.perf[[4]])
+rmse7fit1.5 <- rmse(actual = list.pozzo7.test[[4]]$`7`,
+                    predicted = pozzo7pred1.5)
+print(rmse7fit1.5) # 0.71
+
+# 2.83 
+
+pozzo7pred2.83 <- predict(object = list.pozzo7.fit[[5]],
+                          newdata = list.pozzo7.test[[5]],
+                          n.trees = list.pozzo7.perf[[5]])
+rmse7fit3.83 <- rmse(actual = list.pozzo7.test[[5]]$`7`,
+                     predicted = pozzo7pred2.83)
+print(rmse7fit3.83) # 0.76
+
+#### pozzo 8 ####
+
+# test + train split 
+
+set.seed(123)
+
+list.pozzo8.split <- lapply(list.pozzo8, function(x) initial_split(x, prop=.7))
+list.pozzo8.train <- lapply(list.pozzo8.split, function(x) training(x))
+list.pozzo8.test <- lapply(list.pozzo8.split, function(x) testing(x))
+
+list.pozzo8.fit <- lapply(list.pozzo8, function(x) gbm::gbm(`8` ~ .,
+                                                            data = x, 
+                                                            verbose = T,
+                                                            shrinkage = 0.01,
+                                                            interaction.depth = 3,
+                                                            n.minobsinnode = 5,
+                                                            n.trees = 5000,
+                                                            cv.folds = 10))
+
+list.pozzo8.perf <- lapply(list.pozzo8.fit, function(x) gbm.perf(x,method="cv"))
+
+## make predictions 
+
+pozzo8_pred <- stats::predict(object = list.pozzo8.fit[[1]],
+                              newdata = list.pozzo8.test[[1]],
+                              n.trees = list.pozzo8.perf[[1]])
+
+rmse_fit8 <- Metrics::rmse(actual = list.pozzo8.test[[1]]$`8`,
+                           predicted = pozzo8_pred)
+print(rmse_fit8) # 0.862
+
+# 0.5
+
+pozzo8pred0.5 <- stats::predict(object = list.pozzo8.fit[[2]],
+                                newdata = list.pozzo8.test[[2]],
+                                n.trees = list.pozzo8.perf[[2]])
+
+rmse8fit0.5 <- Metrics::rmse(actual = list.pozzo8.test[[2]]$`8`,
+                             predicted = pozzo8pred0.5)
+print(rmse8fit0.5) # 0.863
+
+# 1
+
+pozzo8pred1 <- predict(object = list.pozzo8.fit[[3]],
+                       newdata = list.pozzo8.test[[3]],
+                       n.trees = list.pozzo8.perf[[3]])
+rmse8fit1 <- rmse(actual = list.pozzo8.test[[2]]$`8`,
+                  predicted = pozzo8pred1)
+print(rmse8fit1) # 1.02
+
+# 1.5 
+
+pozzo8pred1.5 <- predict(object = list.pozzo8.fit[[4]],
+                         newdata = list.pozzo8.test[[4]],
+                         n.trees = list.pozzo8.perf[[4]])
+rmse8fit1.5 <- rmse(actual = list.pozzo8.test[[4]]$`8`,
+                    predicted = pozzo8pred1.5)
+print(rmse8fit1.5) # 0.77
+
+# 2.83 
+
+pozzo8pred2.83 <- predict(object = list.pozzo8.fit[[5]],
+                          newdata = list.pozzo8.test[[5]],
+                          n.trees = list.pozzo8.perf[[5]])
+rmse8fit3.83 <- rmse(actual = list.pozzo8.test[[5]]$`8`,
+                     predicted = pozzo8pred2.83)
+print(rmse8fit3.83) # 0.82
+
+#### pozzo 9 ####
+
+# test + train split 
+
+set.seed(123)
+
+list.pozzo9.split <- lapply(list.pozzo9, function(x) initial_split(x, prop=.7))
+list.pozzo9.train <- lapply(list.pozzo9.split, function(x) training(x))
+list.pozzo9.test <- lapply(list.pozzo9.split, function(x) testing(x))
+
+list.pozzo9.fit <- lapply(list.pozzo9, function(x) gbm::gbm(`9` ~ .,
+                                                            data = x, 
+                                                            verbose = T,
+                                                            shrinkage = 0.01,
+                                                            interaction.depth = 3,
+                                                            n.minobsinnode = 5,
+                                                            n.trees = 5000,
+                                                            cv.folds = 10))
+
+list.pozzo9.perf <- lapply(list.pozzo9.fit, function(x) gbm.perf(x,method="cv"))
+
+## make predictions 
+
+pozzo9_pred <- stats::predict(object = list.pozzo9.fit[[1]],
+                              newdata = list.pozzo9.test[[1]],
+                              n.trees = list.pozzo9.perf[[1]])
+
+rmse_fit9 <- Metrics::rmse(actual = list.pozzo9.test[[1]]$`9`,
+                           predicted = pozzo9_pred)
+print(rmse_fit9) # 2.68
+
+# 0.5
+
+pozzo9pred0.5 <- stats::predict(object = list.pozzo9.fit[[2]],
+                                newdata = list.pozzo9.test[[2]],
+                                n.trees = list.pozzo9.perf[[2]])
+
+rmse9fit0.5 <- Metrics::rmse(actual = list.pozzo9.test[[2]]$`9`,
+                             predicted = pozzo9pred0.5)
+print(rmse9fit0.5) # 2.73
+
+# 1
+
+pozzo9pred1 <- predict(object = list.pozzo9.fit[[3]],
+                       newdata = list.pozzo9.test[[3]],
+                       n.trees = list.pozzo9.perf[[3]])
+rmse9fit1 <- rmse(actual = list.pozzo9.test[[2]]$`9`,
+                  predicted = pozzo9pred1)
+print(rmse9fit1) # 2.98
+
+# 1.5 
+
+pozzo9pred1.5 <- predict(object = list.pozzo9.fit[[4]],
+                         newdata = list.pozzo9.test[[4]],
+                         n.trees = list.pozzo9.perf[[4]])
+rmse9fit1.5 <- rmse(actual = list.pozzo9.test[[4]]$`9`,
+                    predicted = pozzo9pred1.5)
+print(rmse9fit1.5) # 2.79
+
+# 2.83 
+
+pozzo9pred2.83 <- predict(object = list.pozzo9.fit[[5]],
+                          newdata = list.pozzo9.test[[5]],
+                          n.trees = list.pozzo9.perf[[5]])
+rmse9fit3.83 <- rmse(actual = list.pozzo9.test[[5]]$`9`,
+                     predicted = pozzo9pred2.83)
+print(rmse9fit3.83) # 2.69
+
+
+#### choosing best models and plotting them ####
+
+#### pozzo1 - best model: 0.5 mm ####
+
+pozzo1pred0.5 <- stats::predict(object = list.pozzo1.fit[[2]],
+                                newdata = list.pozzo1.test[[2]],
+                                n.trees = list.pozzo1.perf[[2]])
+
+rmsefit0.5 <- Metrics::rmse(actual = list.pozzo1.test[[2]]$`1`,
+                            predicted = pozzo1pred0.5)
+print(rmsefit0.5) # 2.94
 
 # summarise model 
 
-p7.effects <- tibble::as_tibble(gbm::summary.gbm(p7.fit1,
-                                                 plotit = F))
-p7.effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
+pozzo10.5.effects <- tibble::as_tibble(gbm::summary.gbm(list.pozzo1.fit[[2]],
+                                                               plotit = F))
+pozzo10.5.effects %>% utils::head() 
 
-# plot top 3 features
-p7.effects %>% 
+## plotting pred vs actual 
+
+list.pozzo1.test[[2]]$predicted <- as.integer(predict(list.pozzo1.fit[[2]],
+                                                      newdata = list.pozzo1.test[[2]],
+                                                      n.trees = list.pozzo1.perf[[2]]))
+
+reg <- lm(predicted ~ `1`, data = list.pozzo1.test[[2]])
+reg
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+
+# plot
+(gbm_actualvspred <- ggplot(list.pozzo1.test[[2]]) +
+    geom_point(aes(x = predicted,
+                   y = `1`,
+                   color = predicted - `1`),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 8.33,slope = 0.78, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 50, y = 40, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo 1 in Doganella\n",
+         subtitle = "Minimum rainfall threshold at 0.5 mm\n")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+
+ggsave("img/doganella/1_act_vs_pred.jpg",gbm_actualvspred,
+       dpi = 500, width = 10,height=7)
+
+# plotting 6 best vars by rel importance 
+
+plot_rel.infl <- pozzo10.5.effects %>% 
   arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
+  top_n(6) %>%  # it's already only 3 vars
   ggplot(aes(x = fct_reorder(.f = var,
                              .x = rel.inf),
              y = rel.inf,
              fill = rel.inf))+
   geom_col()+
   coord_flip()+
-  scale_color_brewer(palette = "Dark2")
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nPozzo 1 in Doganella\n",
+       subtitle = "Minimum rainfall threshold at 0.5 mm\n")+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
 
+ggsave("img/doganella/1_rel_infl.gbm.jpg",plot_rel.infl,
+       dpi = 500, width = 8, height = 6)
 
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
+#### pozzo 2 - best model: 2.83 mm ####
 
-# predicted 
-
-p7.test$predicted <- as.integer(predict(p7.fit1,
-                                        newdata = p7.test,
-                                        n.trees = p7.fit1_perf))
-
-# plot predicted vs actual
-
-ggplot(p7.test) +
-  geom_point(aes(x = predicted,
-                 y = imp7,
-                 color = predicted - imp7),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
-
-
-#### pozzo 8 #### 
-
-#stepwise
-pozzo8_sw <- step.wisef("imp8", pozzo8)
-pozzo8_sw$bestTune # 5
-coef(pozzo8_sw$finalModel, 3)
-
-# split 
-set.seed(123)
-p8.split <- initial_split(pozzo8, prop = .7)
-p8.train <- training(p8.split)
-p8.test <- testing(p8.split)
-
-p8.fit1 <- gbm(imp8 ~ .,
-               data = pozzo8,
-               verbose = T, 
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 10)
-
-p8.fit1_perf <- gbm.perf(p8.fit1, method = "cv")
-
-## make predictions 
-
-p8_pred1 <- stats::predict(object = p8.fit1,
-                           newdata = p8.test,
-                           n.trees = p8.fit1_perf)
-p8_rmse <- Metrics::rmse(actual = p8.test$imp8,
-                         predicted = p8_pred1)
-print(p8_rmse) # 0.87
-
-gbm::plot.gbm(p8.fit1, i.var = 1)
-
-plot.gbm(p8.fit1, i.var = 2)
-
-plot.gbm(p8.fit1, i.var = 3)
-
-# ecc...
-
-## interactions of two features on the variable 
-
-gbm::plot.gbm(p8.fit1, i.var = c(1,3))
-plot.gbm(p8.fit1, i.var = c(1,2))
-plot.gbm(p8.fit1, i.var = c(2,3))
-
-### impact of different features on predicting depth to gw 
+pozzo2pred2.83 <- predict(object = list.pozzo2.fit[[5]],
+                          newdata = list.pozzo2.test[[5]],
+                          n.trees = list.pozzo2.perf[[5]])
+rmse2fit3.83 <- rmse(actual = list.pozzo2.test[[5]]$`2`,
+                     predicted = pozzo2pred2.83)
+print(rmse2fit3.83) # 1.036
 
 # summarise model 
 
-p8.effects <- tibble::as_tibble(gbm::summary.gbm(p8.fit1,
-                                                 plotit = F))
-p8.effects %>% utils::head()
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
+pozzo22.83.effects <- tibble::as_tibble(gbm::summary.gbm(list.pozzo2.fit[[5]],
+                                                        plotit = F))
+pozzo22.83.effects %>% utils::head() 
 
-# plot top 3 features
-p8.effects %>% 
+## plotting pred vs actual 
+
+list.pozzo2.test[[5]]$predicted <- as.integer(predict(list.pozzo2.fit[[5]],
+                                                      newdata = list.pozzo2.test[[5]],
+                                                      n.trees = list.pozzo2.perf[[5]]))
+
+reg <- lm(predicted ~ `2`, data = list.pozzo2.test[[5]])
+reg
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+
+# plot
+(gbm_actualvspred <- ggplot(list.pozzo2.test[[5]]) +
+    geom_point(aes(x = predicted,
+                   y = `2`,
+                   color = predicted - `2`),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 14.48,slope = 0.85, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 99, y = 93, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo 2 in Doganella\n",
+         subtitle = "Minimum rainfall threshold at 2.83 mm\n")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+
+ggsave("img/doganella/2_act_vs_pred.jpg",gbm_actualvspred,
+       dpi = 500, width = 10,height=7)
+
+# plotting 6 best vars by rel importance 
+
+plot_rel.infl <- pozzo22.83.effects %>% 
   arrange(desc(rel.inf)) %>% 
-  top_n(3) %>%  # it's already only 3 vars
+  top_n(6) %>%  # it's already only 3 vars
   ggplot(aes(x = fct_reorder(.f = var,
                              .x = rel.inf),
              y = rel.inf,
              fill = rel.inf))+
   geom_col()+
   coord_flip()+
-  scale_color_brewer(palette = "Dark2")
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nPozzo 2 in Doganella\n",
+       subtitle = "Minimum rainfall threshold at 2.83 mm\n")+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
 
+ggsave("img/doganella/2_rel_infl.gbm.jpg",plot_rel.infl,
+       dpi = 500, width = 8, height = 6)
 
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
+#### pozzo 3 - best model: 1.5 mm ####
 
-# predicted 
+# 1.5 
 
-p8.test$predicted <- as.integer(predict(p8.fit1,
-                                        newdata = p8.test,
-                                        n.trees = p8.fit1_perf))
-
-# plot predicted vs actual
-
-ggplot(p8.test) +
-  geom_point(aes(x = predicted,
-                 y = imp8,
-                 color = predicted - imp8),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
-
-
-#### pozzo 9 #### 
-
-#stepwise
-pozzo9_sw <- step.wisef("imp9", pozzo9)
-pozzo9_sw$bestTune # 1!
-coef(pozzo9_sw$finalModel, 1)
-# others "subscript out of bounds", as best model is already 1?
-
-# split 
-set.seed(123)
-p9.split <- initial_split(pozzo9, prop = .7)
-p9.train <- training(p9.split)
-p9.test <- testing(p9.split)
-
-p9.fit1 <- gbm(imp9 ~ imp_rain_velletri, # in this case just one var...
-               data = pozzo9,
-               verbose = 1,
-               shrinkage = 0.01,
-               interaction.depth = 3, 
-               n.minobsinnode = 5,
-               n.trees = 5000,
-               cv.folds = 1) # can't go larger or i get error:
-# >1 nodes produced errors; first error: incorrect number of dimensions
-
-p9.fit1_perf <- gbm.perf(p9.fit1)
-
-## make predictions 
-
-p9_pred1 <- stats::predict(object = p9.fit1,
-                           newdata = p9.test,
-                           n.trees = p9.fit1_perf)
-p9_rmse <- Metrics::rmse(actual = p9.test$imp9,
-                         predicted = p9_pred1)
-print(p9_rmse) # 3.88
-
-gbm::plot.gbm(p9.fit1, i.var = 1) # only the one var
-
-## interactions of two features on the variable not possible
-
-### impact of different features on predicting depth to gw 
+pozzo3pred1.5 <- predict(object = list.pozzo3.fit[[4]],
+                         newdata = list.pozzo3.test[[4]],
+                         n.trees = list.pozzo3.perf[[4]])
+rmse3fit1.5 <- rmse(actual = list.pozzo3.test[[4]]$`3`,
+                    predicted = pozzo3pred1.5)
+print(rmse3fit1.5) # 1.59
 
 # summarise model 
 
-p9.effects <- tibble::as_tibble(gbm::summary.gbm(p9.fit1,
-                                                 plotit = F))
-p9.effects %>% utils::head() # 100 ... of course it's the only one 
-# this creates new dataset with var, factor variable with variables 
-# in our model, and rel.inf - relative influence each var has on model pred 
+pozzo31.5.effects <- tibble::as_tibble(gbm::summary.gbm(list.pozzo3.fit[[4]],
+                                                         plotit = F))
+pozzo31.5.effects %>% utils::head() 
 
-## vis distribution of predicted compared with actual target values 
-# by predicting these vals and plotting the difference 
+## plotting pred vs actual 
 
-# predicted 
+list.pozzo3.test[[4]]$predicted <- as.integer(predict(list.pozzo3.fit[[4]],
+                                                      newdata = list.pozzo3.test[[4]],
+                                                      n.trees = list.pozzo3.perf[[4]]))
 
-p9.test$predicted <- as.integer(predict(p9.fit1,
-                                        newdata = p9.test,
-                                        n.trees = p9.fit1_perf))
+reg <- lm(predicted ~ `3`, data = list.pozzo3.test[[4]])
+reg
 
-# plot predicted vs actual
+r.sq <- format(summary(reg)$r.squared,digits = 2)
 
-ggplot(p9.test) +
-  geom_point(aes(x = predicted,
-                 y = imp9,
-                 color = predicted - imp9),
-             alpha = .7, size = 1) +
-  theme_fivethirtyeight()
+coeff <- coefficients(reg)
 
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
 
+# plot
+(gbm_actualvspred <- ggplot(list.pozzo3.test[[4]]) +
+    geom_point(aes(x = predicted,
+                   y = `3`,
+                   color = predicted - `3`),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 34.21,slope = 0.70, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 115, y = 107, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo 2 in Doganella\n",
+         subtitle = "Minimum rainfall threshold at 1.5 mm\n")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
 
+ggsave("img/doganella/3_act_vs_pred.jpg",gbm_actualvspred,
+       dpi = 500, width = 10,height=7)
 
+# plotting 6 best vars by rel importance 
+
+plot_rel.infl <- pozzo31.5.effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # it's already only 3 vars
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nPozzo 3 in Doganella\n",
+       subtitle = "Minimum rainfall threshold at 1.5 mm\n")+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+ggsave("img/doganella/3_rel_infl.gbm.jpg",plot_rel.infl,
+       dpi = 500, width = 8, height = 6)
+
+#### pozzo 4 - best model: no threshold changed ####
+
+pozzo4_pred <- stats::predict(object = list.pozzo4.fit[[1]],
+                              newdata = list.pozzo4.test[[1]],
+                              n.trees = list.pozzo4.perf[[1]])
+
+rmse_fit4 <- Metrics::rmse(actual = list.pozzo4.test[[1]]$`4`,
+                           predicted = pozzo4_pred)
+print(rmse_fit4) # 0.52
+
+# summarise model 
+
+pozzo4.effects <- tibble::as_tibble(gbm::summary.gbm(list.pozzo4.fit[[1]],
+                                                        plotit = F))
+pozzo4.effects %>% utils::head() 
+
+## plotting pred vs actual 
+
+list.pozzo4.test[[1]]$predicted <- as.integer(predict(list.pozzo4.fit[[1]],
+                                                      newdata = list.pozzo4.test[[1]],
+                                                      n.trees = list.pozzo4.perf[[1]]))
+
+reg <- lm(predicted ~ `4`, data = list.pozzo4.test[[1]])
+reg
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+
+# plot
+(gbm_actualvspred <- ggplot(list.pozzo4.test[[1]]) +
+    geom_point(aes(x = predicted,
+                   y = `4`,
+                   color = predicted - `4`),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 13.82,slope = 0.86, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 101.5, y = 99, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo 4 in Doganella\n",
+         subtitle = "No minimum threshold\n")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+
+ggsave("img/doganella/4_act_vs_pred.jpg",gbm_actualvspred,
+       dpi = 500, width = 10,height=7)
+
+# plotting 6 best vars by rel importance 
+
+plot_rel.infl <- pozzo4.effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # it's already only 3 vars
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nPozzo 4 in Doganella\n",
+       subtitle = "No minimum threshold\n")+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+ggsave("img/doganella/4_rel_infl.gbm.jpg",plot_rel.infl,
+       dpi = 500, width = 8, height = 6)
+
+#### pozzo 5 - best model: no threshold changed ####
+
+pozzo5_pred <- stats::predict(object = list.pozzo5.fit[[1]],
+                              newdata = list.pozzo5.test[[1]],
+                              n.trees = list.pozzo5.perf[[1]])
+
+rmse_fit5 <- Metrics::rmse(actual = list.pozzo5.test[[1]]$`5`,
+                           predicted = pozzo5_pred)
+print(rmse_fit5) # 1.12
+
+# summarise model 
+
+pozzo5.effects <- tibble::as_tibble(gbm::summary.gbm(list.pozzo5.fit[[1]],
+                                                     plotit = F))
+pozzo5.effects %>% utils::head() 
+
+## plotting pred vs actual 
+
+list.pozzo5.test[[1]]$predicted <- as.integer(predict(list.pozzo5.fit[[1]],
+                                                      newdata = list.pozzo5.test[[1]],
+                                                      n.trees = list.pozzo5.perf[[1]]))
+
+reg <- lm(predicted ~ `5`, data = list.pozzo5.test[[1]])
+reg
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+
+# plot
+(gbm_actualvspred <- ggplot(list.pozzo5.test[[1]]) +
+    geom_point(aes(x = predicted,
+                   y = `5`,
+                   color = predicted - `5`),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 27.05,slope = 0.75, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 105, y = 107.5, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo 5 in Doganella\n",
+         subtitle = "No minimum threshold\n")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+
+ggsave("img/doganella/5_act_vs_pred.jpg",gbm_actualvspred,
+       dpi = 500, width = 10,height=7)
+
+# plotting 6 best vars by rel importance 
+
+plot_rel.infl <- pozzo5.effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # it's already only 3 vars
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nPozzo 5 in Doganella\n",
+       subtitle = "No minimum threshold\n")+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+ggsave("img/doganella/5_rel_infl.gbm.jpg",plot_rel.infl,
+       dpi = 500, width = 8, height = 6)
+
+#### pozzo 6 - best model: 0.5 mm ####
+
+# 0.5
+
+pozzo6pred0.5 <- stats::predict(object = list.pozzo6.fit[[2]],
+                                newdata = list.pozzo6.test[[2]],
+                                n.trees = list.pozzo6.perf[[2]])
+
+rmse6fit0.5 <- Metrics::rmse(actual = list.pozzo6.test[[2]]$`6`,
+                             predicted = pozzo6pred0.5)
+print(rmse6fit0.5) # 1.00
+
+# summarise model 
+
+pozzo60.5.effects <- tibble::as_tibble(gbm::summary.gbm(list.pozzo6.fit[[2]],
+                                                     plotit = F))
+pozzo60.5.effects %>% utils::head() 
+
+## plotting pred vs actual 
+
+list.pozzo6.test[[2]]$predicted <- as.integer(predict(list.pozzo6.fit[[2]],
+                                                      newdata = list.pozzo6.test[[2]],
+                                                      n.trees = list.pozzo6.perf[[2]]))
+
+reg <- lm(predicted ~ `6`, data = list.pozzo6.test[[2]])
+reg
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+
+# plot
+(gbm_actualvspred <- ggplot(list.pozzo6.test[[2]]) +
+    geom_point(aes(x = predicted,
+                   y = `6`,
+                   color = predicted - `6`),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 28.69, slope = 0.69, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 97, y = 92.5, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo 6 in Doganella\n",
+         subtitle = "Minimum rainfall threshold at 0.5 mm\n")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+
+ggsave("img/doganella/6_act_vs_pred.jpg",gbm_actualvspred,
+       dpi = 500, width = 10,height=7)
+
+# plotting 6 best vars by rel importance 
+
+plot_rel.infl <- pozzo60.5.effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # it's already only 3 vars
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nPozzo 6 in Doganella\n",
+       subtitle = "Minimum rainfall threshold at 0.5 mm\n")+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+ggsave("img/doganella/6_rel_infl.gbm.jpg",plot_rel.infl,
+       dpi = 500, width = 8, height = 6)
+
+#### pozzo 7 - best model: ####
+
+# 1.5 
+
+pozzo7pred1.5 <- predict(object = list.pozzo7.fit[[4]],
+                         newdata = list.pozzo7.test[[4]],
+                         n.trees = list.pozzo7.perf[[4]])
+rmse7fit1.5 <- rmse(actual = list.pozzo7.test[[4]]$`7`,
+                    predicted = pozzo7pred1.5)
+print(rmse7fit1.5) # 0.71
+
+# summarise model 
+
+pozzo71.5.effects <- tibble::as_tibble(gbm::summary.gbm(list.pozzo7.fit[[4]],
+                                                        plotit = F))
+pozzo71.5.effects %>% utils::head() 
+
+## plotting pred vs actual 
+
+list.pozzo7.test[[4]]$predicted <- as.integer(predict(list.pozzo7.fit[[4]],
+                                                      newdata = list.pozzo7.test[[4]],
+                                                      n.trees = list.pozzo7.perf[[4]]))
+
+reg <- lm(predicted ~ `7`, data = list.pozzo7.test[[4]])
+reg
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+
+# plot
+(gbm_actualvspred <- ggplot(list.pozzo7.test[[4]]) +
+    geom_point(aes(x = predicted,
+                   y = `7`,
+                   color = predicted - `7`),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 54.10, slope = 0.43, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 94, y = 96, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo 7 in Doganella\n",
+         subtitle = "Minimum rainfall threshold at 1.5 mm\n")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+
+ggsave("img/doganella/7_act_vs_pred.jpg",gbm_actualvspred,
+       dpi = 500, width = 10,height=7)
+
+# plotting 6 best vars by rel importance 
+
+plot_rel.infl <- pozzo71.5.effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # it's already only 3 vars
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nPozzo 7 in Doganella\n", 
+       subtitle = "Minimum rainfall threshold at 1.5 mm\n")+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+ggsave("img/doganella/7_rel_infl.gbm.jpg",plot_rel.infl,
+       dpi = 500, width = 8, height = 6)
+
+#### pozzo 8 - best model: 1.5 mm ####
+
+pozzo8pred1.5 <- predict(object = list.pozzo8.fit[[4]],
+                         newdata = list.pozzo8.test[[4]],
+                         n.trees = list.pozzo8.perf[[4]])
+rmse8fit1.5 <- rmse(actual = list.pozzo8.test[[4]]$`8`,
+                    predicted = pozzo8pred1.5)
+print(rmse8fit1.5) # 0.77
+
+# summarise model 
+
+pozzo81.5.effects <- tibble::as_tibble(gbm::summary.gbm(list.pozzo8.fit[[4]],
+                                                        plotit = F))
+pozzo81.5.effects %>% utils::head() 
+
+## plotting pred vs actual 
+
+list.pozzo8.test[[4]]$predicted <- as.integer(predict(list.pozzo8.fit[[4]],
+                                                      newdata = list.pozzo8.test[[4]],
+                                                      n.trees = list.pozzo8.perf[[4]]))
+
+reg <- lm(predicted ~ `8`, data = list.pozzo8.test[[4]])
+reg
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+
+# plot
+(gbm_actualvspred <- ggplot(list.pozzo8.test[[4]]) +
+    geom_point(aes(x = predicted,
+                   y = `8`,
+                   color = predicted - `8`),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 23.03, slope = 0.76, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 95, y = 102, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo 8 in Doganella\n", 
+         subtitle = "Minimum rainfall threshold at 1.5 mm\n")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+
+ggsave("img/doganella/8_act_vs_pred.jpg",gbm_actualvspred,
+       dpi = 500, width = 10,height=7)
+
+# plotting 6 best vars by rel importance 
+
+plot_rel.infl <- pozzo81.5.effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # it's already only 3 vars
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nPozzo 8 in Doganella\n",
+       subtitle = "Minimum rainfall threshold at 1.5 mm\n")+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+ggsave("img/doganella/8_rel_infl.gbm.jpg",plot_rel.infl,
+       dpi = 500, width = 8, height = 6)
+
+#### pozzo 9 - best model: no threshold changed ####
+
+pozzo9_pred <- stats::predict(object = list.pozzo9.fit[[1]],
+                              newdata = list.pozzo9.test[[1]],
+                              n.trees = list.pozzo9.perf[[1]])
+
+rmse_fit9 <- Metrics::rmse(actual = list.pozzo9.test[[1]]$`9`,
+                           predicted = pozzo9_pred)
+print(rmse_fit9) # 2.68
+
+# summarise model 
+
+pozzo9.effects <- tibble::as_tibble(gbm::summary.gbm(list.pozzo9.fit[[1]],
+                                                        plotit = F))
+pozzo9.effects %>% utils::head() 
+
+## plotting pred vs actual 
+
+list.pozzo9.test[[1]]$predicted <- as.integer(predict(list.pozzo9.fit[[1]],
+                                                      newdata = list.pozzo9.test[[1]],
+                                                      n.trees = list.pozzo9.perf[[1]]))
+
+reg <- lm(predicted ~ `9`, data = list.pozzo9.test[[1]])
+reg
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+
+# plot
+(gbm_actualvspred <- ggplot(list.pozzo9.test[[1]]) +
+    geom_point(aes(x = predicted,
+                   y = `9`,
+                   color = predicted - `9`),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 30.10, slope = 0.68, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 95, y = 100, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo 9 in Doganella\n",
+         subtitle = "No minimum threshold\n")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+
+ggsave("img/doganella/9_act_vs_pred.jpg",gbm_actualvspred,
+       dpi = 500, width = 10,height=7)
+
+# plotting 6 best vars by rel importance 
+
+plot_rel.infl <- pozzo9.effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # it's already only 3 vars
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nPozzo 9 in Doganella\n", 
+       subtitle = "No minimum threshold\n")+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+ggsave("img/doganella/9_rel_infl.gbm.jpg",plot_rel.infl,
+       dpi = 500, width = 8, height = 6)
