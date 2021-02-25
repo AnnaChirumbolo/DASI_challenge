@@ -321,7 +321,7 @@ ggsave("img/auser/10auser_rain_Tereglio_Coreglia_Antelminelli.jpg",
     geom_point(size = 1, alpha = .8)+
     theme_classic()+
     xlim(0,115))
-Tereglio_Coreglia_Antelminelli
+
 ggsave("img/auser/10auser_rain_Fabbriche_di_Vallico.jpg",
        dpi = 500, width = 10, height=7)
 
@@ -459,27 +459,57 @@ count.na <- function(x){
 
 ###
 
-
-#doganella2 <- data.frame(doganella, lapply(doganella[,14:22], count.na))
-
-#doganella3 <- data.frame(doganella2, lapply(doganella2[,14:22],
-#  function(x) if_else(is.na(x),1,0)))
-
-
 ## all this was to try and find a way to impute missing data
 
-#### imputeTS ####
+#### imputeTS visualizzo i missing per ogni pozzo ####
 
-ggplot_na_distribution(auser$CoS)+
-  theme_classic()
-ggplot_na_distribution(auser$DIEC)+
-  theme_classic()
-ggplot_na_distribution(auser$LT2)+
-  theme_classic()
-ggplot_na_distribution(auser$PAG)+
-  theme_classic()
-ggplot_na_distribution(auser$SAL)+
-  theme_classic()
+
+(plot_na_cos<-ggplot_na_distribution(auser$CoS,
+                       x_axis_labels=auser$Date,
+                       title = "Missing Values pozzo CoS")+
+  theme_classic())
+ggsave("img/auser/13_0Cos_missing.jpg", dpi = 500, width = 10, height=7)
+
+
+(plot_na_diec<-ggplot_na_distribution(auser$DIEC,
+                       x_axis_labels=auser$Date,
+                       title = "Missing Values pozzo DIEC")+
+  theme_classic())
+ggsave("img/auser/13_1diec_missing.jpg", dpi = 500, width = 10, height=7)
+
+
+(plot_na_lt2<-ggplot_na_distribution(auser$LT2,
+                       x_axis_labels=auser$Date,
+                       title = "Missing Values pozzo LT2")+
+  theme_classic())
+ggsave("img/auser/13_2lt2_missing.jpg", dpi = 500, width = 10, height=7)
+
+                       
+                       
+(plot_na_pag<-ggplot_na_distribution(auser$PAG,
+                       x_axis_labels=auser$Date,
+                       title = "Missing Values pozzo PAG")+
+  theme_classic())
+ggsave("img/auser/13_3pag_missing.jpg", dpi = 500, width = 10, height=7)
+
+                       
+                       
+(plot_na_sal<-ggplot_na_distribution(auser$SAL,
+                       x_axis_labels=auser$Date,
+                       title = "Missing Values pozzo SAL")+
+  theme_classic())
+ggsave("img/auser/13_4Sal_missing.jpg", dpi = 500, width = 10, height=7)
+
+(panelled_pozzi_auser <- ggarrange(plot_na_lt2,
+                                  plot_na_diec,
+                                  plot_na_cos,
+                                  plot_na_pag,
+                                  plot_na_sal))
+panelled_pozzi_auser
+
+ggsave("img/auser/14AUSER_pozzi_missing.jpg",
+       dpi = 500, height= 7, width = 10)                      
+                       
 
 statsNA(auser$CoS)
 statsNA(auser$DIEC)
@@ -520,9 +550,9 @@ auser5 <- data.frame(auser, lapply(auser[,23:27],
                                    function(x) na_ma(x, k=1)))
 
 auser6 <-setnames(auser5, old = colnames(auser5[,28:32]),
-                  new = c("imp1","imp2",
-                          "imp3","imp4",
-                          "imp5"))
+                  new = c("impCoS","impDIEC",
+                          "impLT2","impPAG",
+                          "impSAL"))
 
 
 #rm(auser7)
@@ -530,7 +560,8 @@ auser6 <-setnames(auser5, old = colnames(auser5[,28:32]),
 auser7 <- auser6 %>% 
   gather(key="imp", value = "imputed_depth_to_gw.m",28:32) %>%
   mutate(Date = ymd(Date))
-
+ggsave("img/auser/15AUSER_pozzi_NO_missing.jpg",
+       dpi = 500, height= 7, width = 10) 
 str(auser7)
 
 #imp1=CoS target
@@ -576,127 +607,116 @@ summary(auser8[,28:32])
                                  color = imp))+
     geom_boxplot()+
     theme_classic())#+
-#facet_wrap(vars(imp)))
+#facet_wrap(vars(imp))
 # saving
-ggsave("img/hist_auser_target.jpg", dpi = 500, width = 10, height=7)
+ggsave("img/auser/16box_auser_pozzi.jpg", dpi = 500, width = 10, height=7)
+#ggsave("img/auser/16_1box_auser_pozzi.jpg", dpi = 500, width = 10, height=7)
 
 #### checking singularly 
 
-(imp1_auser <- ggplot(auser8, aes(y = imp1))+
+(impCoS_auser <- ggplot(auser8, aes(y = impCoS))+
     geom_boxplot()+
     theme_classic())
-#(imp1_auser <- ggplot(auser7, aes(y = CoS))+
-#    geom_boxplot()+
-#    theme_classic())
+ggsave("img/auser/17box_auser_cos.jpg", dpi = 500, width = 10, height=7)
 
-#(imp2_auser <- ggplot(auser7, aes(y = DIEC))+
-#   geom_boxplot()+
-#    theme_classic())
-(imp2_auser <- ggplot(auser8, aes(y = imp2))+
+(impDIEC_auser <- ggplot(auser8, aes(y = impDIEC))+
     geom_boxplot()+
     theme_classic())
 
-#(imp3_auser <- ggplot(auser7, aes(y = LT2))+
-#    geom_boxplot()+
-#    theme_classic())
-(imp3_auser <- ggplot(auser8, aes(y = imp3))+
+(impLT2_auser <- ggplot(auser8, aes(y = impLT2))+
+    geom_boxplot()+
+    theme_classic())
+ggsave("img/auser/18box_auser_lt2.jpg", dpi = 500, width = 10, height=7)
+
+(impPAG_auser <- ggplot(auser8, aes(y = impPAG))+
     geom_boxplot()+
     theme_classic())
 
-#(imp4_auser <- ggplot(auser7, aes(y = PAG))+
-#    geom_boxplot()+
-#    theme_classic())
-(imp4_auser <- ggplot(auser8, aes(y = imp4))+
+(impSAL_auser <- ggplot(auser8, aes(y = impSAL))+
     geom_boxplot()+
     theme_classic())
-
-#(imp5_auser <- ggplot(auser7, aes(y = SAL))+
-#    geom_boxplot()+
-#    theme_classic())
-(imp5_auser <- ggplot(auser8, aes(y = imp5))+
-    geom_boxplot()+
-    theme_classic())
+ggsave("img/auser/19box_auser_sal.jpg", dpi = 500, width = 10, height=7)
 
 ## extracting vals of potential outliers 
 
 # for pozzo 1 CoS
-out1_auser <- boxplot.stats(auser8$imp1)$out # 0 (repeated x4)
-out1_auser
-out1_ind_auser <- which(auser8$imp1 %in% c(out1_auser))
-out1_ind_auser # rows where outliers are found
+outCoS_auser <- boxplot.stats(auser8$impCoS)$out # 0 (repeated x4)
+outCoS_auser
+outCoS_ind_auser <- which(auser8$impCoS %in% c(outCoS_auser))
+outCoS_ind_auser # rows where outliers are found
 
-under_bound <- quantile(auser8$imp1, 0.025)
+under_bound <- quantile(auser8$impCoS, 0.025)
 under_bound # 4.32
 
-under_bound99 <- quantile(auser8$imp1, 0.01)
+under_bound99 <- quantile(auser8$impCoS, 0.01)
 under_bound99 # 4.22 
 
 ## checking stats to verify it's an outlier
 # grubbs test
-test1 <- grubbs.test(auser8$imp1)
-test1 # 0 is an outlier (at 5% significance level)
+testCoS <- grubbs.test(auser8$impCoS)
+testCoS # 0 is an outlier (at 5% significance level)
 
 ## substituting with q1 value 
-auser8$imp1[auser8$imp1 == 0] <- 4.32
-summary(auser8$imp1)
+auser8$impCoS[auser8$impCoS == 0] <- 4.32
+summary(auser8$impCoS)
 
 # for pozzo 2 DIEC ok non ho outliers
-out2_auser <- boxplot.stats(auser8$imp2)$out # non ci sono valore critici
-out2_auser
+outDIEC_auser <- boxplot.stats(auser8$impDIEC)$out # non ci sono valore critici
+outDIEC_auser
 
 # for pozzo 3 LT2
-out3_auser <- boxplot.stats(auser8$imp3)$out # 0 (repeated x2)
-out3_auser
-out3_ind_auser <- which(auser8$imp3 %in% c(out3_auser))
-out3_ind_auser # rows where outliers are found
+outLT2_auser <- boxplot.stats(auser8$impLT2)$out # 0 (repeated x2)
+outLT2_auser
+outLT2_ind_auser <- which(auser8$impLT2 %in% c(outLT2_auser))
+outLT2_ind_auser # rows where outliers are found
 
-under_bound <- quantile(auser8$imp3, 0.025)
+under_bound <- quantile(auser8$impLT2, 0.025)
 under_bound # 11.85
 
-under_bound99 <- quantile(auser8$imp3, 0.01)
+under_bound99 <- quantile(auser8$impLT2, 0.01)
 under_bound99 # 11.78 
 
 ## checking stats to verify it's an outlier
 # grubbs test
-test3 <- grubbs.test(auser8$imp3)
-test3 # 0 is an outlier 
+testLT2 <- grubbs.test(auser8$impLT2)
+testLT2 # 0 is an outlier 
 
 ## substituting with q1 value 
-auser8$imp3[auser8$imp3 == 0] <- 11.85
-summary(auser8$imp3)
+auser8$impLT2[auser8$impLT2 == 0] <- 11.85
+summary(auser8$impLT2)
 
 
 # for pozzo 4 PAG
-out4_auser <- boxplot.stats(auser8$imp4)$out # non ci sono valore critici
+out4_auser <- boxplot.stats(auser8$impPAG)$out # non ci sono valore critici
 out4_auser
 
 
 # for pozzo 5 SAL
-out5_auser <- boxplot.stats(auser8$imp5) # 
-out5_auser
-out5_ind_auser <- which(auser8$imp5 %in% c(out5_auser))
-out5_ind_auser # 
+outSAL_auser <- boxplot.stats(auser8$impSAL) # 
+outSAL_auser
+outSAL_ind_auser <- which(auser8$impSAL %in% c(outSAL_auser))
+outSAL_ind_auser # 
 
-under_bound_5 <- quantile(auser8$imp5, 0.025)
-under_bound_5 # 4.28
+under_bound_SAL <- quantile(auser8$impSAL, 0.025)
+under_bound_SAL # 4.28
 
 # grubbs test 
-test5 <- grubbs.test(auser8$imp5)
-test5 # 0 it is an outlier, 8% significance
+testSAL <- grubbs.test(auser8$impSAL)
+testSAL # 0 it is an outlier, 8% significance
 
 # substituting 
-auser8$imp5[auser8$imp5 == 0] <- 4.28
-summary(auser8$imp5)
+auser8$impSAL[auser8$impSAL == 0] <- 4.28
+summary(auser8$impSAL)
+#sostituisco solo i valori pari a 0
 
+boxplot.stats(auser8$impSAL)
 
-boxplot.stats(auser8$imp5)
+outSAL <- boxplot.stats(auser8$impSAL)$out
+outSAL 
+outSAL_ind <- which(auser8$impSAL %in% c(outSAL))
+outSAL_ind
 
-out5 <- boxplot.stats(auser8$imp5)$out
-out5 
-out5_ind <- which(auser8$imp6 %in% c(out5))
-out5_ind
-
-data5 <- auser8[out5_ind,]
+dataSAL <- auser8[outSAL_ind,]
 
 
 
@@ -713,14 +733,12 @@ View(auser9)
 
 # saving 
 
-ggsave("img/auser_boxplot.jpg", dpi = 500, width = 10, height = 7)
+ggsave("img/auser/20auser_boxplot.jpg", dpi = 500, width = 10, height = 7)
+
+### keeping outliers for pozzo 5 SAL- 
 
 
-
-### keeping outliers for pozzo 5 - 
-
-
-### checking outliers for feature variables 
+#### checking outliers for feature variables ####
 
 # auser9
 
@@ -744,6 +762,10 @@ auser10 <- auser9 %>%
     geom_histogram()+
     theme_classic()+
     facet_wrap(vars(temp_sensor)))
+ggsave("img/auser/21auser_temp.jpg", dpi = 500, width = 10, height = 7)
+### noto una anomalia sulle temperature di Ponte a Moriano, i valori 
+#a zero sono molto ripetuti soprattutto dall'anno 2017 in poi
+#dovro' prendere provvedimenti, escudendo questa valriabile dal modello
 # pretty similar distribution
 
 # rain
@@ -751,6 +773,7 @@ auser10 <- auser9 %>%
     geom_histogram()+
     theme_classic()+
     facet_wrap(vars(rain_sensor)))
+ggsave("img/auser/22auser_rain.jpg", dpi = 500, width = 10, height = 7)
 # pretty similar here as well
 
 
@@ -760,12 +783,14 @@ auser10 <- auser9 %>%
 (temp_box_auser <- ggplot(auser10, aes(y=temp.C, color = temp_sensor))+
     geom_boxplot()+
     theme_classic())
+ggsave("img/auser/23auser_temp.jpg", dpi = 500, width = 10, height = 7)
 # no outliers 
 
 # rain 
 (rain_box_auser <- ggplot(auser10, aes(y = rain.mm, color = rain_sensor))+
     geom_boxplot()+
     theme_classic())
+ggsave("img/auser/24auser_rain.jpg", dpi = 500, width = 10, height = 7)
 # like in histogram, there's a long tail, 
 #which the plot recognises as outliers 
 
@@ -773,7 +798,8 @@ auser10 <- auser9 %>%
 ### let's check it statistically 
 
 out_tempor_auser <- boxplot.stats(auser9$Temperature_Orentano)
-out_tempv_auser
+out_tempor_auser
+
 # confirmed no outliers for temp Orentano 
 
 out_tempms_auser <- boxplot.stats(auser9$Temperature_Monte_Serra)
@@ -847,6 +873,8 @@ df_rainb_out
     geom_point()+
     geom_line(data = auser9, aes(Date, Rainfall_Borgo_a_Mozzano, color = "red"))+
     theme_classic())
+ggsave("img/auser/25auser_rain_borgo_mozzano.jpg",
+       dpi = 500, width = 10, height=7)
 # it occurs throughout - from 2012 through to 2020
 
 
@@ -863,10 +891,9 @@ View(df_rainc_auser)
     geom_line(color = "red")+
     geom_point(data = df_rainc_auser, aes(Date, Rainfall_Calavorno))+
     theme_classic())
+ggsave("img/auser/25_1auser_rain_calavorno.jpg",
+       dpi = 500, width = 10, height=7)
 
-#(plot_rainc_auser <- ggplot(df_rainc_auser, aes(Date, Rainfall_Calavorno))+
-#    geom_point()+
-#    theme_classic())
 
 #### rainfall Croce_Arcana ####
 out_raincr_auser_ind <- which(auser9$Rainfall_Croce_Arcana %in% c(out_raincr_auser))
@@ -881,6 +908,8 @@ View(df_raincr_auser)
     geom_line(color = "red")+
     geom_point(data = df_rainc_auser, aes(Date, Rainfall_Croce_Arcana))+
     theme_classic())
+ggsave("img/auser/25_2_auser_rain_crocearcana.jpg",
+       dpi = 500, width = 10, height=7)
 
 #### rainfall Fabbriche_di_Vallico ####
 out_rainf_auser_ind <- which(auser9$Rainfall_Fabbriche_di_Vallico %in% c(out_rainf_auser))
@@ -895,6 +924,8 @@ View(df_rainf_auser)
     geom_line(color = "red")+
     geom_point(data = df_rainc_auser, aes(Date, Rainfall_Fabbriche_di_Vallico))+
     theme_classic())
+ggsave("img/auser/25_3_auser_rain_f_vallico.jpg",
+       dpi = 500, width = 10, height=7)
 
 #### rainfall Gallicano ####
 out_raing_auser_ind <- which(auser9$Rainfall_Gallicano %in% c(out_raing_auser))
@@ -909,7 +940,8 @@ View(df_raing_auser)
     geom_line(color = "red")+
     geom_point(data = df_raing_auser, aes(Date, Rainfall_Gallicano))+
     theme_classic())
-
+ggsave("img/auser/25_4_auser_rain_gallicano.jpg",
+       dpi = 500, width = 10, height=7)
 
 #### rainfall Monte_Serra ####
 out_rainms_auser_ind <- which(auser9$Rainfall_Monte_Serra %in% c(out_rainms_auser))
@@ -924,6 +956,8 @@ View(df_rainms_auser)
     geom_line(color = "red")+
     geom_point(data = df_rainms_auser, aes(Date, Rainfall_Monte_Serra))+
     theme_classic())
+ggsave("img/auser/25_6_auser_rain_monteserra.jpg",
+       dpi = 500, width = 10, height=7)
 
 #### rainfall Orentano ####
 out_raino_auser_ind <- which(auser9$Rainfall_Orentano %in% c(out_raino_auser))
@@ -938,6 +972,8 @@ View(df_raino_auser)
     geom_line(color = "red")+
     geom_point(data = df_rainms_auser, aes(Date, Rainfall_Orentano))+
     theme_classic())
+ggsave("img/auser/25_7_auser_rain_orentano.jpg",
+       dpi = 500, width = 10, height=7)
 
 #### rainfall Piaggione ####
 out_rainp_auser_ind <- which(auser9$Rainfall_Piaggione %in% c(out_rainp_auser))
@@ -952,6 +988,8 @@ View(df_rainp_auser)
     geom_line(color = "red")+
     geom_point(data = df_rainp_auser, aes(Date, Rainfall_Piaggione))+
     theme_classic())
+ggsave("img/auser/25_8_auser_rain_piaggione.jpg",
+       dpi = 500, width = 10, height=7)
 
 #### rainfall Tereglio_Coreglia_Antelminelli ####
 out_raint_auser_ind <- which(auser9$Rainfall_Tereglio_Coreglia_Antelminelli %in% c(out_raint_auser))
@@ -966,9 +1004,22 @@ View(df_raint_auser)
     geom_line(color = "red")+
     geom_point(data = df_rainms_auser, aes(Date, Rainfall_Tereglio_Coreglia_Antelminelli))+
     theme_classic())
+ggsave("img/auser/25_9_auser_rain_tca.jpg",
+       dpi = 500, width = 10, height=7)
 
 
-
+(plot_rain<- ggarrange(plot_rainb_out,
+                       plot_rainms_auser,
+                       plot_rainp_auser,
+                       plot_raino_auser,
+                       plot_rainms_auser,
+                       plot_raing_auser,
+                       plot_rainf_auser,
+                       plot_rainc_auser))
+plot_rain
+ggsave("img/auser/6auser_rain_all.jpg",
+       dpi = 500, width = 10, height=7)
+    
 #### decision to leave them as such 
 
 
@@ -991,13 +1042,26 @@ statsNA(auser8$Rainfall_Gallicano) #no missing
 ggplot_na_distribution(auser8$Rainfall_Gallicano)
 
 statsNA(auser8$Rainfall_Monte_Serra) # 6 missing
-ggplot_na_distribution(auser8$Rainfall_Monte_Serra)
+(plot1<-ggplot_na_distribution(auser8$Rainfall_Monte_Serra,
+                               x_axis_labels=auser8$Date,
+                               title = "Missing Values RF M.Serra"))
+ggsave("img/auser/27auser_rain_missing_monte serra.jpg",
+       dpi = 500, width = 10, height=7)
 
 statsNA(auser8$Rainfall_Orentano) #no missing
 ggplot_na_distribution(auser8$Rainfall_Orentano)
 
 statsNA(auser8$Rainfall_Piaggione) # 6 missing
-ggplot_na_distribution(auser8$Rainfall_Piaggione)
+(plot2<-ggplot_na_distribution(auser8$Rainfall_Piaggione,
+                               x_axis_labels=auser8$Date,
+                               title = "Missing Values RF Piaggione"))
+ggsave("img/auser/28auser_rain_missing_piaggione.jpg",
+       dpi = 500, width = 10, height=7)
+(rain_missing<-ggarrange(plot1,
+                         plot2)
+)
+ggsave("img/auser/29auser_rain_missing2.jpg",
+       dpi = 500, width = 10, height=7)
 
 statsNA(auser8$Rainfall_Tereglio_Coreglia_Antelminelli) # no missing
 ggplot_na_distribution(auser8$Rainfall_Tereglio_Coreglia_Antelminelli)
@@ -1046,7 +1110,7 @@ rf_monteserra <- rf_monteserra_ms %>%
          date1 = gsub(".csv", "", date1),
          date1 = gsub("([a-z])([[:digit:]])", "\\1 \\2", date1, perl = T)) %>%
   separate(date, into = c("weekday", "day")) %>%
-  select(-weekday) %>%
+  dplyr::select(-weekday) %>%
   unite(date_final, day,date1, sep = " ") %>%
   mutate(date_final = str_replace(date_final,"ago","08"),
          date_final = str_replace(date_final, "gen", "01"),
@@ -1063,7 +1127,7 @@ rf_monteserra <- rf_monteserra_ms %>%
          date_final = gsub(" ", "/", date_final),
          date_final = dmy(date_final)) %>%
   dplyr::rename(Date = date_final) %>%
-  select(Date, prec) %>%
+  dplyr::select(Date, prec) %>%
   arrange(Date)
 
 summary(rf_monteserra)
@@ -1079,24 +1143,53 @@ min(auser8$Date[is.na(auser8$Rainfall_Piaggione )])
 max(auser8$Date[is.na(auser8$Rainfall_Piaggione )])
 #osservo che i dati mancanti di Rainfal Piaggione riguardano tutto l'anno 2009
 #non recuperabile da 3b meteo
-#decido di tagliare il dataset fino al 31/12/2009
+#osservando i dati vedo che ho dei missing anche sulle variabili dell'idrometria
+#fino a maggio 2011
+#decido di tagliare il dataset fino al 01/06/2011
 
+#### fine dei missing rain e temp ####
 auser8<- auser8 %>%     
-  filter(Date >= "2010-01-01")
+  filter(Date >= "2011-06-01")
 visdat::vis_dat(auser8)
-#######   #########
-#controlla i missing che prima avevo interpolato
-#ripeto interpolazione su auser8
-#### linear interpolation ####
 
-auser8$CoS <-as.numeric(na.interp(auser8$CoS))
-auser8$DIEC <-as.numeric(na.interp(auser8$DIEC))
-auser8$LT2 <-as.numeric(na.interp(auser8$LT2))
-auser8$PAG <-as.numeric(na.interp(auser8$PAG))
-auser8$SAL <-as.numeric(na.interp(auser8$SAL))
+auser8<-auser8 %>%
+  dplyr::select(-CoS, -DIEC, -LT2, -PAG, -SAL)
+visdat::vis_dat(auser8)
+
+#### variabili sull'idrometria missing####
+min(auser8$Date[is.na(auser8$Hydrometry_Monte_S_Quirico )])
+max(auser8$Date[is.na(auser8$Hydrometry_Monte_S_Quirico )])
+
+min(auser8$Date[is.na(auser8$Hydrometry_Piaggione )])
+max(auser8$Date[is.na(auser8$Hydrometry_Piaggione)])
+
+
+statsNA(auser8$Hydrometry_Monte_S_Quirico) # ffew messing
+(plot3<-ggplot_na_distribution(auser8$Hydrometry_Monte_S_Quirico,
+                       x_axis_labels=auser8$Date,
+                       title = "Missing Values H Monte_S_Quirico"))
+
+statsNA(auser8$Hydrometry_Piaggione) # few missing
+(plot4<-ggplot_na_distribution(auser8$Hydrometry_Piaggione,
+                               x_axis_labels=auser8$Date,
+                               title = "Missing Values H Piaggione"))
+
+(plot_Hydrometry<- ggarrange(plot3, plot3))
+ggsave("img/auser/30auser_Hydrometry.jpg",
+       dpi = 500, width = 10, height=7)
+
+
+#######   #########
+
+# interpolazione su auser8 per hydrometria
+#### linear interpolation  hydrometria####
+
 auser8$Hydrometry_Piaggione <-as.numeric(na.interp(auser8$Hydrometry_Piaggione))
 auser8$Hydrometry_Monte_S_Quirico <-as.numeric(na.interp(auser8$Hydrometry_Monte_S_Quirico))
+
 visdat::vis_dat(auser8)
+ggsave("img/auser/31auser_NO_missing.jpg",
+       dpi = 500, width = 10, height=7)
 
 
 ####inserisco la variabile stagioni####
@@ -1194,7 +1287,7 @@ auser_orig_LagTCA1 <- auser_orig_LagTCA %>%
 
 
 
-## creating 5 new datasets Sieve with different min rainfall levels 
+## creating 5 new datasets with different min rainfall levels 
 ## and with new time lags (trying to represent true effect of rain over target)
 
 #Rainfall_Monte_Serra + lag
@@ -1205,8 +1298,7 @@ auser0.5_MS <- auser_orig_LagMS %>%
          lag1 = lag(rain0.5, +1),
          lag3 = lag(rain0.5,+3),
          lag5 = lag(rain0.5,+5),
-         lag7 = lag(rain0.5,+7),
-         lag9 = lag(rain0.5, +9)) %>% 
+         lag7 = lag(rain0.5,+7)) %>% 
   dplyr::select(-Rainfall_Monte_Serra)
 
 auser0.5_MS_1 <- auser0.5_MS %>%  dplyr::select(-Date)
@@ -1247,7 +1339,7 @@ auser5_MS <- auser_orig_LagMS %>%
 auser5_MS_1 <- auser5_MS %>%   dplyr::select(-Date)
 
 
-## creating 5 new datasets Sorgente with different min rainfall levels 
+## creating 5 new datasets  with different min rainfall levels 
 ## and with new time lags (trying to represent true effect of rain over target)
 #Rainfall_Croce_Arcana + lag
 #auser_orig_LagCA
@@ -1422,17 +1514,18 @@ write.csv(auser8,"processed_data/AUSER_to_model.csv")
 
 #### visualizzo andamento delle variabili target ####
 auser8 %>%
-  dplyr::select(Date, SAL, CoS, LT2) %>%
+  dplyr::select(Date, impSAL, impCoS, impLT2) %>%
   melt(., id.vars = "Date") %>%
   ggplot(., aes(Date, value))+
   facet_wrap(variable~., ncol = 1, scales = "free_y")+
   geom_line(size = 1.5, alpha = 0.8, col = "gray65")+
   geom_smooth(method = "loess", color = "firebrick3", size = 1.2, formula = y ~ x, fill = "firebrick4", alpha = 0.32)+
-  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2010-01-01", "2020-06-30")))+
+  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2011-06-01", "2020-06-30")))+
   labs(x = "Date", y = "Value", title = "The distribution of the target variables along with the loess curve",
-       subtitle = "in aquifer Auser from 2010") + 
+       subtitle = "in aquifer Auser from 2011") + 
   theme_classic()
-
+ggsave("img/auser/32auser_target_no_missing.jpg",
+       dpi = 500, width = 10, height=7)
 
 
 ####
@@ -1440,6 +1533,8 @@ auser8 %>%
 df <- auser8
 df$Date <- NULL
 ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, layout.exp = 4, label_size = 3)
+ggsave("img/auser/33auser_correlazione.jpg",
+       dpi = 500, width = 10, height=7)
 rm(df)
 
 
@@ -1450,11 +1545,13 @@ auser8 %>%
   ggplot(., aes(Date, value, col = variable))+
   geom_line(size = 0.6, alpha = 1)+
   scale_color_viridis_d(option = "inferno", begin = 0.15, end = 0.85, name = "")+
-  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2010-01-01", "2020-06-30")))+
+  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2011-06-01", "2020-06-30")))+
   labs(x = "Date", y = "Temperature C", title = "Temperature depending on the region",
-       subtitle = "explanatory variables on aquifer Auser from 2010") + 
+       subtitle = "explanatory variables on aquifer Auser from 2011") + 
   theme_classic()+
   theme(legend.position = "bottom", legend.direction = "vertical")
+ggsave("img/auser/34auser_temp.jpg",
+       dpi = 500, width = 10, height=7)
 ## si notano le temperature di Monte  a Moriano a zero da giugno 2017
 # si presume un difetto nel sensore
 
@@ -1469,11 +1566,13 @@ auser8 %>%
   geom_line(size = 0.7, alpha = 1)+
   scale_color_viridis_d(option = "inferno", begin = 0.45, end = 0.45, name = "")+
   scale_y_continuous(trans = "pseudo_log", breaks = c(0,-100, -10000, -1000000, - 20000000))+
-  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2010-01-01", "2020-06-30")))+
+  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2011-06-01", "2020-06-30")))+
   labs(x = "Date", y = "The amount of water", title = "The amount of water depending on the station",
-       subtitle = "explanatory variables on aquifer Auser from 01-2010") + 
+       subtitle = "explanatory variables on aquifer Auser from 06-2011") + 
   theme_21+
   theme(legend.position = "none")
+ggsave("img/auser/35auser_volumi.jpg",
+       dpi = 500, width = 10, height=7)
 
 
 #commento:I valori di queste variabili 
@@ -1492,12 +1591,14 @@ auser8 %>%
   facet_wrap(variable~., ncol = 1)+
   geom_line(size = 0.6, alpha = 1)+
   scale_color_viridis_d(option = "inferno", begin = 0.55, end = 0.55, name = "")+
-  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2010-01-01", "2020-06-30")))+
+  scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2011-06-01", "2020-06-30")))+
   labs(x = "Date", y = "Groundwater level meters", title = "Groundwater level depending on the station",
-       subtitle = "exp variables on aquifer Auser from 01-2010") + 
+       subtitle = "exp variables on aquifer Auser from 06-2011") + 
   theme_21+
   theme(legend.position = "none")
-##commento: guardando piaggione ha avuto assenza di dati prima del 2011,
+ggsave("img/auser/36auser_H.jpg",
+       dpi = 500, width = 10, height=7)
+##commento: osservo piaggione 
 #nel modello si puo' pensare di rimuovere questa variabile anche perche'
 #molto correlata con altre, guardano la matrice di correlazione
 
