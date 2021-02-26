@@ -66,6 +66,10 @@ library(scales)
 library(Metrics)
 library(mgcv)
 
+library(varhandle)
+library(rsample)
+library(gbm)
+
 ##### imposto il theme ####
 theme_21 <- theme(legend.position = "bottom", legend.direction = "horizontal", axis.text = element_text(size = 14), 
                      plot.caption = element_text(color = "gray25", face = "bold", size = 8), legend.text = element_text(size = 15), 
@@ -758,85 +762,354 @@ ggsave("img/bilancino/19Bilancino_RF_FL.jpg",
 ############################################################################
 ##############################################################################
 
-####  GBM ####
+####  GBM  gradient boost model####
 
 
+
+#### target flow rate + target lacke_level ####
+#BILANCINO_to_model
+
+#dalla matrice di correlazione vista prima
+# scelgo di escludere rainfall S_Agata e rainfall le croci
+bilancino <- read.csv("processed_data/BILANCINO_to_model.csv")%>%
+  dplyr::select(-X, -Date, -Rainfall_mean, -Rainfall_S_Agata,
+                -Rainfall_Le_Croci)
+# in regression date doesnt really matter 
+
+  bilancino$Season<-factor(bilancino$Season, 
+                       levels=c("Winter","Spring", "Summer", "Autumn"))
+
+
+#target Flow_rate e trget Lake_Level creo due dataset
+
+Flow_Rate_df <- bilancino %>% dplyr::select(-Lake_Level)
+Lake_Level_df <- bilancino %>% dplyr::select(-Flow_Rate)
+
+#### computing stepwise regression for variable selection ####
+# creating function
 step.wisef <- function(x, DATA){
   set.seed(123)
   train.control <- trainControl(method = "cv", number = 10)
   step.model <- train(as.formula(paste(x,"~.")), data = DATA, 
                       method = "leapSeq", 
-                      tuneGrid = data.frame(nvmax = 1:17),
+                      tuneGrid = data.frame(nvmax = 1:11),
                       trControl = train.control,
                       na.action = na.omit)
   return(step.model)
 }
 
+#### Flow_Rate_df GBM ####
 
-#### flow rate ####
+flow_rate_gb <- Flow_Rate_df 
+flow_rate_gb_Season <- dummyVars(~Season, data = flow_rate_gb, fullRank = F)
+flow_rate_gb_Season <- as.data.frame(predict(flow_rate_gb_Season, newdata = flow_rate_gb))
+flow_rate_gb <- cbind(flow_rate_gb, flow_rate_gb_Season)
+flow_rate_gb <-flow_rate_gb%>% dplyr::select(-Season)
 
-Lake_Bilancino_cut1 <- Lake_Bilancino_cut %>%
-  dplyr::select( Flow_Rate, Temperature_Le_Croci, 
-                Rainfall_Cavallina,
-                Rainfall_S_Piero, Rainfall_Mangona)
+#visdat::vis_dat(flow_rate_gb)
 
-Lake_Bilancino_cut1 <- cbind(Lake_Bilancino_cut1, Lake_Bilancino_Season)
+#### GBM con target Flow_Rate ####
 
-Lake_Bilancino_cut1 <- Lake_Bilancino_cut1[complete.cases(Lake_Bilancino_cut1),]
+#flow_rate_sw <- step.wisef("Flow_Rate", flow_rate_gb)
+flow_rate_sw$bestTune 
+flow_rate_sw$finalModel
+coef(flow_rate_sw$finalModel, 10)
 
-set.seed(2021)
-rand_Lake_Bilancino <- sample(nrow(Lake_Bilancino_cut1), nrow(Lake_Bilancino_cut1)* 1/3, replace = F)
-test_Lake_Bilancino <- Lake_Bilancino_cut1[rand_Lake_Bilancino,]
-train_Lake_Bilancino <- Lake_Bilancino_cut1[-rand_Lake_Bilancino,]
+#### testing and training split Flow_Rate ####
 
 
-cat("Number of rows in the training set:", nrow(train_Lake_Bilancino), "\n")
-#Number of rows in the training set: 4017 
-cat("Number of rows in the test set:", nrow(test_Lake_Bilancino))
-#Number of rows in the test set: 2008
+set.seed(123)
+flow_rate.split <- initial_split(flow_rate_gb, prop = .7)
+flow_rate.train <- training(flow_rate.split)
+flow_rate.test <- testing(flow_rate.split)
 
-bilancino_originale.fit <- gbm::gbm(Flow_Rate ~ .,
-                                  data = Lake_Bilancino_cut1,
-                                  verbose = T, 
-                                  shrinkage = 0.01,
-                                  interaction.depth = 3, 
-                                  n.minobsinnode = 5,
-                                  n.trees = 600,
-                                  cv.folds = 12)
+flow_rate_fit1 <- gbm::gbm(Flow_Rate ~ .,
+                           data = flow_rate_gb,
+                           verbose = T, 
+                           shrinkage = 0.01,
+                           interaction.depth = 3, 
+                           n.minobsinnode = 5,
+                           n.trees = 5000,
+                           cv.folds = 10)
+perf_gbm1 <- gbm.perf(flow_rate_fit1, method = "cv")
+#ggsave("img/bilancino/21flowrate_GB.jpg",dpi = 500, width = 10, height=7)
 
-bilancino_orig.fl.fit.perf <- gbm.perf(bilancino_originale.fit, method = "cv")
-ggsave("img/bilancino/40Bilancino_originale_GBM.jpg",
-       dpi = 500, width = 10, height=7)
 ## make predictions 
-
-bilancino_originale.fit.pred <- stats::predict(object = bilancino_originale.fit,
-                                             newdata = test_Lake_Bilancino,
-                                             n.trees = bilancino_orig.fl.fit.perf)
-bilancino_orig.fl.rmse <- Metrics::rmse(actual = bilancino_orig.fl.test$Flow_Rate,
-                                        predicted = bilancino_orig.fl.fit.pred)
-print(bilancino_orig.fl.rmse) 
-#### RMSE 2.88 ### BEST MODEL ####
-
+flow_rate_pred1 <- stats::predict(object = flow_rate_fit1,
+                                  newdata = flow_rate.test,
+                                  n.trees = perf_gbm1)
+rmse_fit1 <- Metrics::rmse(actual = flow_rate.test$Flow_Rate,
+                           predicted = flow_rate_pred1)
+print(rmse_fit1) 
+#### RMSE 3.4211 Flow_RAte GB ####
 
 
-
-
-
-
-
-
-
-
-
+#### plot flow rate GB ####
+#plot - rain S Piero
+gbm::plot.gbm(flow_rate_fit1, i.var = 1)
+# plot - rain Mangona
+plot.gbm(flow_rate_fit1, i.var = 2)
+# plot - rain Cavallina
+plot.gbm(flow_rate_fit1, i.var = 3)
+# plot - temp le croci
+plot.gbm(flow_rate_fit1, i.var = 4)
 
 
 
+## interactions of two features on the variable 
+gbm::plot.gbm(flow_rate_fit1, i.var = c(1,3)) # rain-rain
+plot.gbm(flow_rate_fit1, i.var = c(1,2)) # rain-rain
+plot.gbm(flow_rate_fit1, i.var = c(3,4)) # temp-rain
 
-## Anna with gbm for bilancino (original) + lags 
+### impact of different features on predicting depth to gw 
 
-library(varhandle)
-library(rsample)
-library(gbm)
+# summarise model 
+
+flow_rate_effects <- tibble::as_tibble(gbm::summary.gbm(flow_rate_fit1,
+                                                     plotit = F))
+flow_rate_effects %>% utils::head()
+# this creates new dataset with var, factor variable with variables 
+# in our model, and rel.inf - relative influence each var has on model pred 
+
+# plot top 6 features
+flow_rate_effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # it's already only 6 vars
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  scale_color_brewer(palette = "Dark2")
+ggsave("img/bilancino/21flowrate_features.jpg",
+       dpi = 500, width = 10, height=7)
+
+## vis distribution of predicted compared with actual target values 
+# by predicting these vals and plotting the difference 
+
+# predicted 
+
+flow_rate.test$predicted <- as.integer(predict(flow_rate_fit1,
+                                               newdata = flow_rate.test,
+                                               n.trees = perf_gbm1))
+
+# plot predicted vs actual
+
+(ggplot(flow_rate.test) +
+  geom_point(aes(x = predicted,
+                 y = Flow_Rate,
+                 color = predicted - Flow_Rate),
+             alpha = .7, size = 1) +
+  theme_fivethirtyeight()+
+ggsave("img/bilancino/22flow_rate_pred.jpg",
+       dpi = 500, width = 10, height=7)
+)
+
+
+
+## plotting pred vs actual 
+
+reg <- lm(predicted ~ Flow_Rate, data = flow_rate.test)
+reg
+#Coefficients:
+#(Intercept)  Flow_Rate 
+#1.9747       0.1509 
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+eq
+# plot
+(gbm_actualvspred <- ggplot(flow_rate.test) +
+    geom_point(aes(x = predicted,
+                   y = Flow_Rate,
+                   color = predicted - Flow_Rate),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 8.33,slope = 0.78, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 50, y = 40, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Flow_Rate Bilancino\n",
+         subtitle = "l/s")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+ggsave("img/bilancino/23Bilancino_flowrate_pred_act.jpg",
+       dpi = 500, width = 10, height=7)
+
+
+
+#### RMSE RMSE 3.4211 Flow_RAte GB  ### BEST MODEL ####
+
+
+#### Lake_level_df GBM ####
+
+lake_level_gb <- Lake_Level_df 
+lake_level_gb_Season <- dummyVars(~Season, data = lake_level_gb, fullRank = F)
+lake_level_gb_Season <- as.data.frame(predict(lake_level_gb_Season, newdata = lake_level_gb))
+lake_level_gb <- cbind(lake_level_gb, lake_level_gb_Season)
+lake_level_gb <-lake_level_gb%>% dplyr::select(-Season)
+
+
+
+#### GBM con target Flow_Rate ####
+
+#lake_level_sw <- step.wisef("Lake_Level", lake_level_gb)
+lake_level_sw$bestTune 
+lake_level_sw$finalModel
+coef(lake_level_sw$finalModel, 10)
+
+#### testing and training split Flow_Rate ####
+
+
+set.seed(123)
+lake_level.split <- initial_split(lake_level_gb, prop = .7)
+lake_level.train <- training(lake_level.split)
+lake_level.test <- testing(lake_level.split)
+
+lake_level_fit1 <- gbm::gbm(Lake_Level ~ .,
+                           data = lake_level_gb,
+                           verbose = T, 
+                           shrinkage = 0.01,
+                           interaction.depth = 3, 
+                           n.minobsinnode = 5,
+                           n.trees = 5000,
+                           cv.folds = 10)
+perf_gbm1 <- gbm.perf(lake_level_fit1, method = "cv")
+#ggsave("img/bilancino/24lake_level_GB.jpg",dpi = 500, width = 10, height=7)
+
+## make predictions 
+lake_level_pred1 <- stats::predict(object = lake_level_fit1,
+                                  newdata = lake_level.test,
+                                  n.trees = perf_gbm1)
+rmse_fit1 <- Metrics::rmse(actual = lake_level.test$Lake_Level,
+                           predicted = lake_level_pred1)
+print(rmse_fit1) 
+#### RMSE 1.5908 Lake_Level GB ####
+
+
+#### plot flow rate GB ####
+#plot - rain S Piero
+gbm::plot.gbm(lake_level_fit1, i.var = 1)
+# plot - rain Mangona
+plot.gbm(lake_level_fit1, i.var = 2)
+# plot - rain Cavallina
+plot.gbm(lake_level_fit1, i.var = 3)
+# plot - temp le croci
+plot.gbm(lake_level_fit1, i.var = 4)
+
+
+
+## interactions of two features on the variable 
+gbm::plot.gbm(lake_level_fit1, i.var = c(1,3)) # rain-rain
+plot.gbm(lake_level_fit1, i.var = c(1,2)) # rain-rain
+plot.gbm(lake_level_fit1, i.var = c(3,4)) # temp-rain
+
+### impact of different features on predicting depth to gw 
+
+# summarise model 
+
+lake_level_effects <- tibble::as_tibble(gbm::summary.gbm(lake_level_fit1,
+                                                        plotit = F))
+lake_level_effects %>% utils::head()
+# this creates new dataset with var, factor variable with variables 
+# in our model, and rel.inf - relative influence each var has on model pred 
+
+# plot top 6 features
+lake_level_effects %>% 
+  arrange(desc(rel.inf)) %>% 
+  top_n(6) %>%  # it's already only 6 vars
+  ggplot(aes(x = fct_reorder(.f = var,
+                             .x = rel.inf),
+             y = rel.inf,
+             fill = rel.inf))+
+  geom_col()+
+  coord_flip()+
+  scale_color_brewer(palette = "Dark2")
+ggsave("img/bilancino/25lake_level_features.jpg",
+       dpi = 500, width = 10, height=7)
+
+## vis distribution of predicted compared with actual target values 
+# by predicting these vals and plotting the difference 
+
+# predicted 
+
+lake_level.test$predicted <- as.integer(predict(lake_level_fit1,
+                                               newdata = lake_level.test,
+                                               n.trees = perf_gbm1))
+
+# plot predicted vs actual
+
+(ggplot(lake_level.test) +
+    geom_point(aes(x = predicted,
+                   y = Lake_Level,
+                   color = predicted - Lake_Level),
+               alpha = .7, size = 1) +
+    theme_fivethirtyeight()+
+    ggsave("img/bilancino/26lake_level_pred.jpg",
+           dpi = 500, width = 10, height=7)
+)
+
+
+
+## plotting pred vs actual 
+
+reg <- lm(predicted ~ Lake_Level, data = lake_level.test)
+reg
+#Coefficients:
+#(Intercept)  Lake_level 
+#1.9747       0.1509 
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+eq
+# plot
+(gbm_actualvspred <- ggplot(lake_level.test) +
+    geom_point(aes(x = predicted,
+                   y = Lake_Level,
+                   color = predicted - Lake_Level),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 8.33,slope = 0.78, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 50, y = 40, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Lake_Level Bilancino\n",
+         subtitle = "m")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+ggsave("img/bilancino/27Bilancino_lakelevel_pred_act.jpg",
+       dpi = 500, width = 10, height=7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### GBM ####
+
+#### anna with gbm for bilancino (original) + lags ####
+
+
 
 str(bilancino_months)
 

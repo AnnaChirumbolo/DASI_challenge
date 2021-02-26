@@ -96,6 +96,7 @@ pozzo_cos_gb_Season <- dummyVars(~Season, data = pozzo_cos_gb, fullRank = F)
 pozzo_cos_gb_Season <- as.data.frame(predict(pozzo_cos_gb_Season, newdata = pozzo_cos_gb))
 pozzo_cos_gb <- cbind(pozzo_cos_gb, pozzo_cos_gb_Season)
 pozzo_cos_gb<-pozzo_cos_gb%>% dplyr::select(-Season)
+
 #### GBM con target impCoS####
 
 pozzo_CoS_sw <- step.wisef("imp1", pozzo_cos_gb)
