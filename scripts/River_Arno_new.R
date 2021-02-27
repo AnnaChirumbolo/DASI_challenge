@@ -90,8 +90,12 @@ River_Arno<-read.csv("data/River_Arno.csv")
 River_Arno$Date<-as.Date(River_Arno$Date, format = "%d/%m/%Y")
 
 ### N/A Visualization
-visdat::vis_dat(River_Arno)
+df<- River_Arno
+colnames(df) <- gsub("_"," ",colnames(df))
+
+visdat::vis_dat(df)
 ggsave("img/arno/01River_Arno_Inizio.jpg", dpi = 500, width = 10, height=7)
+rm(df)
 #01River_Arno_Inizio.jpg
 
 
@@ -108,9 +112,14 @@ max(River_Arno$Date[is.na(River_Arno$Rainfall_Le_Croci )])
 # delete rows with NA in feature to forecast
 cutdata <- as.Date("2004-01-01")
 River_Arno_cut <- River_Arno[(River_Arno$Date > cutdata), ]
+
 ### N/A Visualization
-visdat::vis_dat(River_Arno_cut)
+df<- River_Arno_cut
+colnames(df) <- gsub("_"," ",colnames(df))
+
+visdat::vis_dat(df)
 ggsave("img/arno/02River_Arno_missing.jpg", dpi = 500, width = 10, height=7)
+rm(df)
 #02River_Arno_cut_missing.jpg
 
 #######plot rainfall:
@@ -233,7 +242,7 @@ ggsave("img/arno/11Rainfall_Camaldoli_missing.jpg", dpi = 500, width = 10, heigh
 statsNA(River_Arno_cut$Temperature_Firenze) # richiede intervento 1062 missing
 ggplot_na_distribution(River_Arno_cut$Temperature_Firenze,
                        x_axis_labels=River_Arno_cut$Date,
-                       title = "Distribution of Missing Values Temp_Firenze")
+                       title = "Distribution of Missing Values Temp Firenze")
 ggsave("img/arno/12Temperature_Firenze_missing.jpg", dpi = 500, width = 10, height=7)
 #12Temperature_Firenze_missing
 
@@ -248,14 +257,16 @@ df<-River_Arno_cut%>%
   dplyr::select(-Temperature_Firenze, -Hydrometry_Nave_di_Rosano,
                 -Rainfall_Le_Croci, -Rainfall_Cavallina, -Rainfall_S_Agata,
                 -Rainfall_Mangona, -Rainfall_S_Piero)
-
+colnames(df) <- gsub("_"," ",colnames(df))
 River_Arno_cut.rf <- gather(data=df, 
                       key="Localita", value="Rainfall", colnames(df)[-1])
-
-ggplot(River_Arno_cut.rf, aes(x=Date,y=Rainfall,colour=Localita)) +
+River_Arno_cut.rf$Localita <-gsub("Rainfall"," ",River_Arno_cut.rf$Localita)
+  
+(ggplot(River_Arno_cut.rf, aes(x=Date,y=Rainfall,colour=Localita)) +
   geom_line() + geom_point() +
   facet_wrap(~Localita)+
-  ggtitle("River Arno: Rainfall_Localita'- con Missing - (mm)") +
+  theme_classic()+
+  ggtitle("River Arno: Rainfall Localita'- con Missing \n(mm)") )
 ggsave("img/arno/11_1All_rain_missing.jpg", 
        dpi = 500, height = 6, width = 8)
 rm(df)
@@ -264,14 +275,15 @@ df<-River_Arno_cut%>%
   dplyr::select(Date,
                 Rainfall_Le_Croci, Rainfall_Cavallina, Rainfall_S_Agata,
                 Rainfall_Mangona, Rainfall_S_Piero)
-
+colnames(df) <- gsub("_"," ",colnames(df))
 River_Arno_cut.rf <- gather(data=df, 
                             key="Localita", value="Rainfall", colnames(df)[-1])
-
+River_Arno_cut.rf$Localita <-gsub("Rainfall"," ",River_Arno_cut.rf$Localita)
 ggplot(River_Arno_cut.rf, aes(x=Date,y=Rainfall,colour=Localita)) +
   geom_line() + geom_point() +
+  theme_classic()+
   facet_wrap(~Localita)+
-  ggtitle("River Arno: Rainfall_Localita'- NO Missing - (mm)") +
+  ggtitle("River Arno: Rainfall Localita'- NO Missing - \n(mm)") +
 ggsave("img/arno/11_2All_rain_NOmissing.jpg", 
        dpi = 500, height = 6, width = 8)
 rm(df)
@@ -771,9 +783,11 @@ River_Arno_cut$Rainfall_Vernio[is.na(River_Arno_cut$Rainfall_Vernio)] <-
 
 ####controllo ulteriori NA ####
 ### N/A Visualization
-visdat::vis_dat(River_Arno_cut)
+df<-River_Arno_cut
+colnames(df) <- gsub("_"," ",colnames(df))
+visdat::vis_dat(df)
 ggsave("img/arno/14River_Arno_cut_fewmissing.jpg", dpi = 500, width = 10, height=7)
-
+rm(df)
 # delete rows with NA  non posso recuperare i dati dal
 # 05-07-2007 al 01-01-2011
 #cutdata_1 <- as.Date("2007-07-05")
@@ -797,7 +811,10 @@ max(River_Arno_cut1$Date[is.na(River_Arno_cut1$Hydrometry_Nave_di_Rosano )])
 #River_Arno_cut1$Hydrometry_Nave_di_Rosano <-as.numeric(na.approx(River_Arno_cut1$Hydrometry_Nave_di_Rosano))
 #
 River_Arno_cut1$Hydrometry_Nave_di_Rosano <-as.numeric(na.interp(River_Arno_cut1$Hydrometry_Nave_di_Rosano))
-visdat::vis_dat(River_Arno_cut1)
+
+df<- River_Arno_cut1
+colnames(df) <- gsub("_"," ",colnames(df))
+visdat::vis_dat(df)
 ggsave("img/arno/15River_Arno_cut_NOmissing.jpg", dpi = 500, width = 10, height=7)
 
 
@@ -988,18 +1005,20 @@ River_Arno_cut1 %>%
 
 
 #analizzo la variabile target in base alla stagione:
+df<- River_Arno_cut1
+colnames(df) <- gsub("_"," ",colnames(df))
 
-River_Arno_cut1 %>%
-  dplyr::select(Season, Hydrometry_Nave_di_Rosano) %>%
+df %>%
+  dplyr::select(Season, "Hydrometry Nave di Rosano") %>%
   melt(., id.vars = "Season") %>%
   ggplot(., aes(Season, value))+
   facet_wrap(variable~., ncol = 1, scales = "free_y")+
   geom_boxplot(outlier.size = 1.1, outlier.shape = 20, lwd = 0.5, fatten = 1.1, 
                alpha = 0.95, width = 0.75, col = "gray10", fill = "#f8fc9d")+
   scale_x_discrete(limit = c("Spring", "Summer", "Autumn", "Winter"))+
-  labs(x = "Season", y = "Value", title = "The distribution of the explained variables by season",
+  labs(x = "Season", y = "Value (m)", title = "The distribution of the explained variables by season",
        subtitle = "river Arno") + 
-  theme_21
+  theme_classic()
 ggsave("img/arno/21target+seasons.jpg", dpi = 500, width = 10, height=7)
 #valori superiori a 5, che rappresentano piogge intense,
 #si vedono solo in autunno e in inverno.
@@ -1795,9 +1814,8 @@ Hydrometry_Nave_di_Rosano_sw$bestTune
 Hydrometry_Nave_di_Rosano_sw$finalModel
 coef(Hydrometry_Nave_di_Rosano_sw$finalModel, 6)
 
-### let's stick to three variables (?) ###
-## question: model chooses the two temperatures even if they're highly correlated to one another...?
-# why? 
+###  ###
+## 
 
 #### testing and training split ####
 
@@ -1833,9 +1851,9 @@ print(rmse_fit1)
 
 Hydrometry_Nave_di_Rosano_effects <- tibble::as_tibble(gbm::summary.gbm(Hydrometry_Nave_di_Rosano_fit1,
                                                                         plotit = F))
-Hydrometry_Nave_di_Rosano_effects %>% utils::head()
+#Hydrometry_Nave_di_Rosano_effects %>% utils::head()
 # plot top 6 features
-Hydrometry_Nave_di_Rosano_effects %>% 
+plot<-Hydrometry_Nave_di_Rosano_effects %>% 
   arrange(desc(rel.inf)) %>% 
   top_n(6) %>%  # 
   ggplot(aes(x = fct_reorder(.f = var,
@@ -1844,8 +1862,17 @@ Hydrometry_Nave_di_Rosano_effects %>%
              fill = rel.inf))+
   geom_col()+
   coord_flip()+
-  scale_color_brewer(palette = "Dark2")
-ggsave("img/arno/27.jpg", dpi = 500, width = 10, height=7)
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nHydrometry Nave di Rosano in Arno\n")+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+
+
+ggsave("img/arno/27_0.jpg", dpi = 500, width = 10, height=7)
 #### il primo classificato ####
 
 
@@ -1902,8 +1929,7 @@ Hydrometry_Nave_di_Rosano_sw$finalModel
 coef(Hydrometry_Nave_di_Rosano_sw$finalModel, 5)
 
 ### let's stick to three variables (?) ###
-## question: model chooses the two temperatures even if they're highly correlated to one another...?
-# why? 
+##  
 
 #### testing and training split ####
 
@@ -1980,14 +2006,24 @@ Hydrometry_Nave_di_Rosano_effects %>% utils::head()
 # plot top 6 features
 Hydrometry_Nave_di_Rosano_effects %>% 
   arrange(desc(rel.inf)) %>% 
-  top_n(6) %>%  # it's already only 3 vars
+  top_n(6) %>%  # 
   ggplot(aes(x = fct_reorder(.f = var,
                              .x = rel.inf),
              y = rel.inf,
              fill = rel.inf))+
   geom_col()+
   coord_flip()+
-  scale_color_brewer(palette = "Dark2")
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nHydrometry Nave di Rosano in Arno\n",
+       subtitle = "")+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+
+
 ggsave("img/arno/29Variabili_GB1.jpg", dpi = 500, width = 10, height=7)
 
 
