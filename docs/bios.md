@@ -1,8 +1,11 @@
 # The Authors 
 
- 
+<!-- Add icon library -->
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
-## Anna Chirumbolo                       |  [LinkedIn](https://www.linkedin.com/in/anna-chirumbolo/)
+**Anna Chirumbolo** |  
+    <a href="https://www.linkedin.com/in/yan-holtz-2477534a/" class="fa fa-linkedin"></a>
+    <a href="https://github.com/holtzy/" class="fa fa-github"></a>
 
 <img src="https://user-images.githubusercontent.com/43357858/109384281-0d8ea800-78ec-11eb-9880-1cad69593082.jpeg" width=300 align ="right">
 
@@ -13,38 +16,13 @@ During my years at university I've discovered a strong passion towards programmi
 You can contact me at this <a href="mailto:anna.chirumbolo@gmail.com">email address</a>.
 
 
-<p style="text-align: center;"><span style="color: #808080;"><em>Yan.holtz.data@gmail.com</em></span></p>
-
-<!-- Add icon library -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
-<!-- Add font awesome icons -->
-<p style="text-align: center;">
-    <a href="https://twitter.com/r_graph_gallery?lang=en" class="fa fa-twitter"></a>
-    <a href="https://www.linkedin.com/in/yan-holtz-2477534a/" class="fa fa-linkedin"></a>
-    <a href="https://github.com/holtzy/" class="fa fa-github"></a>
-</p>
-
-
-
-
-
-
-
-
-
-
-
-
-
+<p style="text-align: center;"><span style="color: #808080;"><em><a href="mailto:anna.chirumbolo@gmail.com">anna.chirumbolo@gmail.com</a></em></span></p>
 
 <br>
 <br>
 <br>
 
 ## Alberto Baccari 
-
-
 
 <br>
 <br>
