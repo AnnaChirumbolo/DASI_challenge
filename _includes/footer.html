@@ -6,11 +6,17 @@
     
     {%- if site.author %}
         <ul class="contact-list">
+       		<li><a href="/docs/bios">About the authors</a></li>
+       		<li><a href="https://www.linkedin.com/in/anna-chirumbolo/">Anna's LinkedIn</a></li>
+       		<li><a href="https://github.com/michaeltroger">Cinzia's LinkedIn</a></li>
+       		<li><a href="https://stackoverflow.com/users/5155371/michael-troger">Stack Overflow</a></li>
+       		<li><a href="https://www.linkedin.com/in/michaeltroger">LinkedIn</a></li>
+					<li><a href="https://michaeltroger.com/imprint">Imprint</a></li>
           {% if site.authors.name -%}
             <li class="p-name">{{ site.author.name | escape }}</li>
           {% endif -%}
           {% if site.authors.email -%}
-            <li><a class="u-email" href="mailto:{{ site.author.email }}">{{ site.author.email }}</a></li>
+            <li><a class="u-email" href="mailto:anna.chirumbolo@gmail.com">{{ site.author.email }}</a></li>
           {%- endif %}
         </ul>
       {%- endif %}
