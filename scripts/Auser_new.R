@@ -804,8 +804,12 @@ ggsave("img/auser/22auser_rain.jpg", dpi = 500, width = 10, height = 7)
 ## vis boxplot
 
 # temp 
+df<-auser10
+colnames(df) <- gsub("temp_sensor","localita",colnames(df))
+df$localita <-gsub("Temperature_","",df$localita)
+df$localita <-gsub("_"," ",df$localita)
 
-(temp_box_auser <- ggplot(auser10, aes(y=temp.C, color = temp_sensor))+
+(temp_box_auser <- ggplot(df, aes(y=temp.C, color = localita))+
     geom_boxplot()+
     theme_classic())
 ggsave("img/auser/23auser_temp.jpg", dpi = 500, width = 10, height = 7)
