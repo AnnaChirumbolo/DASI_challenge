@@ -1403,6 +1403,7 @@ reg
 r.sq <- format(summary(reg)$r.squared,digits = 2)
 
 coeff <- coefficients(reg)
+coeff
 
 eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
              "\nr.squared = ",r.sq)
@@ -1456,7 +1457,7 @@ pozzo2pred2.83 <- predict(object = list.pozzo2.fit[[5]],
                           n.trees = list.pozzo2.perf[[5]])
 rmse2fit3.83 <- rmse(actual = list.pozzo2.test[[5]]$`2`,
                      predicted = pozzo2pred2.83)
-print(rmse2fit3.83) # 1.036
+print(rmse2fit3.83) # 1.04
 
 # summarise model 
 
@@ -1476,6 +1477,7 @@ reg
 r.sq <- format(summary(reg)$r.squared,digits = 2)
 
 coeff <- coefficients(reg)
+coeff
 
 eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
              "\nr.squared = ",r.sq)
@@ -1551,6 +1553,7 @@ reg
 r.sq <- format(summary(reg)$r.squared,digits = 2)
 
 coeff <- coefficients(reg)
+coeff
 
 eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
              "\nr.squared = ",r.sq)
@@ -1625,6 +1628,7 @@ reg
 r.sq <- format(summary(reg)$r.squared,digits = 2)
 
 coeff <- coefficients(reg)
+coeff
 
 eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
              "\nr.squared = ",r.sq)
@@ -1775,7 +1779,7 @@ reg
 r.sq <- format(summary(reg)$r.squared,digits = 2)
 
 coeff <- coefficients(reg)
-
+coeff
 eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
              "\nr.squared = ",r.sq)
 
@@ -2042,3 +2046,4 @@ plot_rel.infl
 
 ggsave("img/doganella/9_rel_infl.gbm.jpg",plot_rel.infl,
        dpi = 500, width = 8, height = 6)
+
