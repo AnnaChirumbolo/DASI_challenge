@@ -90,7 +90,12 @@ names(Lake_Bilancino) # guardo il nome delle variabili e della variabile trget
 summary(Lake_Bilancino) # per avere una visione del dataframe e dei valori nullu
 
 #### controllo i missing ####
-visdat::vis_dat(Lake_Bilancino)
+vis_dat <- Lake_Bilancino
+colnames(vis_dat) <- gsub("_"," ",colnames(vis_dat))
+visdat::vis_dat(vis_dat)
+  
+
+
 ggsave("img/bilancino/01Bilancino_Inizio.jpg", dpi = 500, width = 10, height=7)
 #01Bilancino_Inizio.jpg
 
@@ -108,9 +113,13 @@ str(Lake_Bilancino_cut)
 
 dim(Lake_Bilancino_cut)
 dim(na.omit(Lake_Bilancino_cut)) #controllo di aver eliminato tutti i null
-visdat::vis_dat(Lake_Bilancino_cut) #missing eliminati
+df<-Lake_Bilancino_cut
+
+colnames(df) <- gsub("_"," ",colnames(df))
+visdat::vis_dat(df) #missing eliminati
 ggsave("img/bilancino/02Bilancino_cut_no_missing.jpg",
        dpi = 500, width = 10, height=7)
+rm(df)
        
 #### aggiungo la variabile season ####
 # raggruppo i mesi in stagioni utile per studiare la stagionalita'
@@ -154,11 +163,12 @@ df <- Lake_Bilancino_cut %>% dplyr::select(Date,
   pivot_longer(., cols = c(Flow_Rate),
                names_to = "Var", values_to = "Val", values_drop_na = FALSE)
 df <- df[complete.cases(df), ]
-ggplot(df, aes(x = Date, y = Val, col = Var)) +
-  geom_line() +
-  ggtitle("Lake Bilancino: Flow Rate in l/s") +
-  ylab("Flow_Rate") +
-  xlab("Date")
+ggplot(df, aes(x = Date, y = Val)) +
+  geom_line(color="salmon") +
+  ggtitle("Lake Bilancino: Flow Rate in L/s\n") +
+  ylab("Flow Rate") +
+  theme_classic()+
+  xlab("")
 ggsave("img/bilancino/03Bilancino_Flow_Rate.jpg",
        dpi = 500, width = 10, height=7)
 rm(df)
@@ -190,11 +200,12 @@ df <- Lake_Bilancino_cut %>% dplyr::select(Date,
                names_to = "Var", values_to = "Val", values_drop_na = FALSE)
 df <- df[complete.cases(df), ]
 summary(df)
-ggplot(df, aes(x = Date, y = Val, col = Var)) +
-  geom_line() +
-  ggtitle("Lake Bilancino: Lake Level meters") +
-  ylab("Lake_Level m") +
-  xlab("Date")
+ggplot(df, aes(x = Date, y = Val)) +
+  geom_line(color="salmon") +
+  ggtitle("Lake Bilancino: Lake Level in meters\n") +
+  theme_classic()+
+  ylab("Lake Level") +
+  xlab("")
 ggsave("img/bilancino/04Bilancino_Lake_level.jpg",
        dpi = 500, width = 10, height=7)
 rm(df)
@@ -222,15 +233,18 @@ max(Lake_Bilancino_cut$Lake_Level)# 252,76 m massimo livello d'acqua del lago
 #leggermente inferiore al livello precedente.
 
 ###distribuzione comparata
-Lake_Bilancino_cut %>%
-  dplyr::select(Date, Lake_Level, Flow_Rate) %>%
+df<-Lake_Bilancino_cut
+colnames(df) <- gsub("_"," ",colnames(df))
+df %>%
+  dplyr::select(Date, "Lake Level", "Flow Rate") %>%
   melt(., id.vars = "Date") %>%
   ggplot(., aes(Date, value))+
   facet_wrap(variable~., ncol = 1, scales = "free_y")+
   geom_line(size = 1.2, alpha = 0.8, col = "gray65")+
   geom_smooth(method = "loess", color = "firebrick3", size = 1.0, formula = y ~ x, fill = "firebrick4", alpha = 0.32)+
   scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2004-01-01", "2020-06-30")))+
-  labs(x = "Date", y = "Value", title = "Distribution of the target variables (along with the loess curve)",
+  labs(x = "Date", y = "L/s                                        m", 
+       title = "Distribution of the target variables (along with the loess curve)",
        subtitle = "lake Bilancio from 01-2004") + 
   theme_classic()
 ggsave("img/bilancino/05Bilancino_target.jpg",
@@ -240,8 +254,8 @@ ggsave("img/bilancino/05Bilancino_target.jpg",
 bilancino_season <- add.seasons(Lake_Bilancino_cut)
 
 
-Lake_Bilancino_cut %>%
-  dplyr::select(Season, Lake_Level,  Flow_Rate) %>%
+df %>%
+  dplyr::select(Season, "Lake Level",  "Flow Rate") %>%
   melt(., id.vars = "Season") %>%
   ggplot(., aes(Season, value))+
   facet_wrap(variable~., ncol = 1, scales = "free_y")+
@@ -249,7 +263,7 @@ Lake_Bilancino_cut %>%
                alpha = 0.95, width = 0.75, col = "gray10", fill = "#f8fc9d")+
   scale_x_discrete(limit = c("Spring", "Summer", "Autumn", "Winter"))+
   labs(x = "Season", y = "Value", title = "Distribution of the explained variables by season",
-       subtitle = "in lake Bilancino") + 
+       subtitle = "in lake Bilancino\n") + 
   theme_classic()
 ggsave("img/bilancino/06Bilancino_target_season.jpg",
        dpi = 500, width = 10, height=7)
@@ -291,17 +305,19 @@ ggsave("img/bilancino/09box_target.jpg", dpi = 500, width = 10, height=7)
 # DECIDO di lasciare 2 variabili, per il processo di modellazione 
 #scelgo la prima coppia delle regioni "S Piero" e "Mangona", 
 #perché questa coppia è la meno correlata (Vedi correlazione piu' avanti) e quindi ci fornisce maggiori informazioni
-Lake_Bilancino_cut %>%
-  dplyr::select(Date, Rainfall_S_Piero, Rainfall_Mangona, Rainfall_S_Agata, Rainfall_Cavallina, Rainfall_Le_Croci) %>%
+
+df %>%
+  dplyr::select(Date, "Rainfall S Piero", "Rainfall Mangona", "Rainfall S Agata", 
+  "Rainfall Cavallina", "Rainfall Le Croci") %>%
   melt(., id.vars = "Date") %>%
   ggplot(., aes(Date, value, col = variable))+
   facet_wrap(variable~., ncol = 2)+
   geom_line(size = 0.4, alpha = 1)+
   scale_color_viridis_d(option = "inferno", begin = 0.15, end = 0.15)+
   scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2004-01-01", "2020-06-30")))+
-  labs(x = "Date", y = "Quantity of rain falling in mm", title = "Rain falling depending on the region",
-       subtitle = "Rainfalls  variabilies lake Bilancino from 01-2004") + 
-  theme_21+
+  labs(x = "", y = "Quantity of rain falling in mm", title = "Rain falling depending on the region",
+       subtitle = "Rainfalls variabilies lake Bilancino from 01-2004") + 
+  theme_classic()+
   theme(legend.position = "none")
 ggsave("img/bilancino/10Bilancino_rain.jpg",
        dpi = 500, width = 10, height=7)
@@ -319,8 +335,8 @@ mean(Lake_Bilancino_cut$Temperature_Le_Croci)
 #Essendo l'unica variabile sulla temperatura, 
 #la utilizzo sicuramente per creare il modello
 # Temperature analysis
-df <- Lake_Bilancino %>% dplyr::select(Date, Temperature_Le_Croci ) %>%
-  pivot_longer(., cols = c(Temperature_Le_Croci ),
+df <- df %>% dplyr::select(Date, "Temperature Le Croci" ) %>%
+  pivot_longer(., cols = c("Temperature Le Croci" ),
                names_to = "Var", values_to = "Val")
 df <- df[complete.cases(df), ]
 ggplot(df, aes(x = Date, y = Val, col = Var)) +
@@ -328,20 +344,23 @@ ggplot(df, aes(x = Date, y = Val, col = Var)) +
   ylab("Temperature °C") + xlab("Date")
 rm(df)
 #stesso grafico riplottato
-Lake_Bilancino_cut %>%
-  dplyr::select(Date, Temperature_Le_Croci) %>%
+df<-Lake_Bilancino_cut
+colnames(df) <- gsub("_"," ",colnames(df))
+df %>%
+  dplyr::select(Date, "Temperature Le Croci") %>%
   melt(., id.vars = "Date") %>%
   ggplot(., aes(Date, value, col = variable))+
   facet_wrap(variable~., ncol = 1)+
   geom_line(size = 0.6, alpha = 1)+
   scale_color_viridis_d(option = "inferno", begin = 0.85, end = 0.85, name = "")+
   scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2004-01-01", "2020-06-30")))+
-  labs(x = "Date", y = "Temperature in C", title = "Temperature region Le Croci",
+  labs(x = "", y = "Temperature in C", title = "Temperature region Le Croci",
        subtitle = "explanatory variables on lake Bilancino from 01-2004") + 
   theme_classic()+
   theme(legend.position = "none")
 ggsave("img/bilancino/12Bilancino_temp.jpg",
        dpi = 500, width = 10, height=7)
+#rm(df)
 #posso pensare di analizzare i casi sotto allo zero, per vedere se sono collegati
 #a precipitazioni nevose
 
@@ -350,9 +369,12 @@ write.csv(Lake_Bilancino_cut,"processed_data/BILANCINO_to_model.csv")
 
 
 #### correlazione Correlation Matrix ####
-df <- Lake_Bilancino_cut
+#df <- Lake_Bilancino_cut
 df$Date <- NULL
-ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, layout.exp = 4, label_size = 3)
+df$Season<-NULL
+ggcorr(df, label = TRUE, 
+       label_round = 2, hjust = 1, size = 4, layout.exp = 4, 
+       label_size = 3)
 ggsave("img/bilancino/11Bilancino_correlazione.jpg",
        dpi = 500, width = 10, height=7)
 rm(df)
@@ -388,21 +410,23 @@ df$Rainfall_mean <- rowMeans(df[,c("Rainfall_S_Piero","Rainfall_Mangona",
 
 df$Rainfall_mean <- runmean(df$Rainfall_mean,30)
 df$Lake_Level <- df$Lake_Level/20
-df <- df %>% dplyr::select(Date, Lake_Level, Rainfall_mean) %>%
-  pivot_longer(., cols = c(Lake_Level, Rainfall_mean ),
+colnames(df) <- gsub("_"," ",colnames(df))
+df <- df %>% dplyr::select(Date, "Lake Level", "Rainfall mean") %>%
+  pivot_longer(., cols = c("Lake Level", "Rainfall mean" ),
                names_to = "Var", values_to = "Val", values_drop_na = FALSE)
 (plot4<-ggplot(df, aes(x = Date, y = Val, col = Var)) +
-  geom_line() + ggtitle("Lake Level - Rainfall - Lake Bilancino") +
-  ylab("Lake Level - Rainfall") +   xlab("Date"))
+  geom_line() + ggtitle("Lake Level / Rainfall - Lake Bilancino") +
+  ylab("Lake Level - Rainfall") +   xlab(""))
 
 ggsave("img/bilancino/13Bilancino_LL_rainfall.jpg",
        dpi = 500, width = 10, height=7)
-
+rm(df)
 
 # correlation Lake_level - Rainfall (compare plots 2) dal 2016 
 #guardo gli ultimi anni
 
 cutdate <- as.Date("2016-01-01")
+df <- Lake_Bilancino_cut
 df <- df[(df$Date > cutdate), ]
 df$Rainfall_mean <- runmean(df$Rainfall_mean,30)/10
 df$Lake_Level <- (df$Lake_Level/20)-12
@@ -654,10 +678,15 @@ Lake_Bilancino_cut1 <- cbind(Lake_Bilancino_cut1, Lake_Bilancino_Season)
 
 Lake_Bilancino_cut1 <- Lake_Bilancino_cut1[complete.cases(Lake_Bilancino_cut1),]
 
+bilancino_LL<-Lake_Bilancino_cut1%>%
+  dplyr::select(-Flow_Rate)
+bilancino_FL<-Lake_Bilancino_cut1%>%
+  dplyr::select(-Lake_Level)
+
 set.seed(2021)
-rand_Lake_Bilancino <- sample(nrow(Lake_Bilancino_cut1), nrow(Lake_Bilancino_cut1)* 1/3, replace = F)
-test_Lake_Bilancino <- Lake_Bilancino_cut1[rand_Lake_Bilancino,]
-train_Lake_Bilancino <- Lake_Bilancino_cut1[-rand_Lake_Bilancino,]
+rand_Lake_Bilancino <- sample(nrow(bilancino_LL), nrow(bilancino_LL)* 1/3, replace = F)
+test_Lake_Bilancino <- bilancino_LL[rand_Lake_Bilancino,]
+train_Lake_Bilancino <- bilancino_LL[-rand_Lake_Bilancino,]
 
 
 cat("Number of rows in the training set:", nrow(train_Lake_Bilancino), "\n")
@@ -669,11 +698,13 @@ cat("Number of rows in the test set:", nrow(test_Lake_Bilancino))
 #in base al rapporto di due a uno, e inizio il processo di modellazione
 
 #### random forest lake level ####
+
 rf_Lake_Bilancino_Lake_Level <- rfsrc(Lake_Level~Season.Autumn+Season.Spring+Season.Summer+Season.Winter+Temperature_Le_Croci+
                                         Rainfall_S_Piero+Rainfall_Mangona+Rainfall_Cavallina, 
                                       data = train_Lake_Bilancino, block.size = 1, 
                                       importance = T, samptype = "swr", 
                                       var.used = "all.trees", ntree = 200)
+
 plot(rf_Lake_Bilancino_Lake_Level, verbose = F)
 
 #ggsave("img/bilancino/16Bilancino_RF.jpg",dpi = 500, width = 10, height=7)
@@ -695,20 +726,86 @@ cat("RMSE Test:", round(rmse(pred_rf_Lake_Bilancino_Lake_Level$predicted, test_L
 # la varianza spiega circa il 33% dei casi
 
 
+# predicted 
 pred_Lake_Bilancino_Lake_Level <- data.frame(pred = pred_rf_Lake_Bilancino_Lake_Level$predicted, 
                                              real = test_Lake_Bilancino$Lake_Level)
 
 pred_Lake_Bilancino_Lake_Level$above <- ifelse(pred_Lake_Bilancino_Lake_Level$pred>pred_Lake_Bilancino_Lake_Level$real,
                                                "Too high predict value", "Too low predicted value")
 
+#ggplot(pred_Lake_Bilancino_Lake_Level, aes(real, pred, fill = above))
+
+# plot predicted vs actual
+
+(ggplot(pred_Lake_Bilancino_Lake_Level) +
+    geom_point(aes(x = pred,
+                   y = real,
+                   color = pred - real),
+               alpha = .7, size = 1) +
+    theme_classic())
+ggsave("img/bilancino/17_0lake_level_pred.jpg",
+         dpi = 500, width = 10, height=7)
+
+
+
+## plotting pred vs actual 
+
+reg <- lm(real ~ pred, data = pred_Lake_Bilancino_Lake_Level)
+reg
+#Coefficients:
+#(Intercept)  Lake_level coeff
+# 46.6117       0.8133 
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+eq
+# plot
+(RF_actualvspred <- ggplot(pred_Lake_Bilancino_Lake_Level) +
+    geom_point(aes(x = pred,
+                   y = real,
+                   color = pred - real
+                  ),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 46.6117 ,slope = 0.8133 , 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 250.5, y = 244, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (RF): Lake Level Bilancino\n",
+         subtitle = "m")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+ggsave("img/bilancino/17_1Bilancino_lakelevel_pred_act.jpg",
+       dpi = 500, width = 10, height=7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ggplot(pred_Lake_Bilancino_Lake_Level, aes(real, pred, fill = above))+
-  geom_point(size = 4, shape = 21, alpha = 0.8)+ 
+  geom_point(size = 4, shape = 21, alpha = 0.8)+
+  theme_classic()+
   scale_fill_viridis_d(option = "inferno", begin = 0.25, end = 0.85, name = "")+
-  geom_abline(intercept = 0, slope = 1, col = "red2", size = 1.25)+
-  labs(x = "Real values in the test set", y = "Predicted values in the test set", 
+  labs(x = "Real values in the test set (m)", y = "Predicted values in the test set (m)", 
        title = "The predicted and true values on test set", fill = "", 
-       subtitle = "Random forest model / Lake_Level variable / Bilancino lake") + 
-  theme_21+
+       subtitle = "Random forest model / Lake Level variable / Bilancino") + 
+  theme_classic()+
   theme(legend.position = "bottom", legend.direction = "vertical")
 ggsave("img/bilancino/17Bilancino_RF_LakeLevel.jpg",
        dpi = 500, width = 10, height=7)
@@ -717,9 +814,14 @@ ggsave("img/bilancino/17Bilancino_RF_LakeLevel.jpg",
 
 
 #### random forest flow rate ####
+set.seed(2021)
+rand_Lake_Bilancino <- sample(nrow(bilancino_FL), nrow(bilancino_FL)* 1/3, replace = F)
+test_Lake_Bilancino <- bilancino_FL[rand_Lake_Bilancino,]
+train_Lake_Bilancino <- bilancino_FL[-rand_Lake_Bilancino,]
 
 rf_Lake_Bilancino_Flow_Rate <- rfsrc(Flow_Rate~Season.Autumn+Season.Spring+Season.Summer+Season.Winter+Temperature_Le_Croci+
-                                       Rainfall_S_Piero+Rainfall_Mangona+Rainfall_Cavallina, data = train_Lake_Bilancino, 
+                                       Rainfall_S_Piero+Rainfall_Mangona+Rainfall_Cavallina, 
+                                     data = train_Lake_Bilancino, 
                                      block.size = 1, importance = T, 
                                      samptype = "swr", var.used = "all.trees", ntree = 200)
 
@@ -733,10 +835,12 @@ pred_rf_Lake_Bilancino_Flow_Rate
 
 cat("RMSE Test:", round(rmse(pred_rf_Lake_Bilancino_Flow_Rate$predicted, test_Lake_Bilancino$Flow_Rate),2))
 
-#### RMSE Test: 4.22 RF flow rate####
+#### RMSE Test: 4.22 RF flow rate#### 
+#variance 3.32
 
 
 #### ####
+# predicted 
 
 pred_Lake_Bilancino_Flow_Rate <- data.frame(pred = pred_rf_Lake_Bilancino_Flow_Rate$predicted, 
                                             real = test_Lake_Bilancino$Flow_Rate)
@@ -744,17 +848,69 @@ pred_Lake_Bilancino_Flow_Rate <- data.frame(pred = pred_rf_Lake_Bilancino_Flow_R
 pred_Lake_Bilancino_Flow_Rate$above <- ifelse(pred_Lake_Bilancino_Flow_Rate$pred>pred_Lake_Bilancino_Flow_Rate$real,
                                               "Too high predicted value", "Too low predicted value")
 
-ggplot(pred_Lake_Bilancino_Lake_Level, aes(real, pred, fill = above))+
-  geom_point(size = 4, shape = 21, alpha = 0.8)+ 
-  scale_fill_viridis_d(option = "inferno", begin = 0.25, end = 0.85, name = "")+
-  geom_abline(intercept = 0, slope = 1, col = "red2", size = 1.25)+
-  labs(x = "Real values in the test set", y = "Predicted values in the test set", 
-       title = "The predicted and true values on the test set", fill = "",
-       subtitle = "Random forest / Flow_Rate variable / Bilancino lake") + 
-  theme_21+
-  theme(legend.position = "bottom", legend.direction = "vertical")
-ggsave("img/bilancino/19Bilancino_RF_FL.jpg",
+
+# predicted 
+
+# plot predicted vs actual
+
+(ggplot(pred_Lake_Bilancino_Flow_Rate) +
+    geom_point(aes(x = pred,
+                   y = real,
+                   color = pred - real),
+               alpha = .7, size = 1) +
+    theme_classic())
+ggsave("img/bilancino/20_0flowrate_pred.jpg",
        dpi = 500, width = 10, height=7)
+
+
+
+## plotting pred vs actual 
+
+reg <- lm(real ~ pred, data = pred_Lake_Bilancino_Flow_Rate)
+reg
+#Coefficients:
+#(Intercept)  Flow rate coeff
+#  1.2065       0.5632 
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+eq
+# plot
+(RF_actualvspred <- ggplot(pred_Lake_Bilancino_Flow_Rate) +
+    geom_point(aes(x = pred,
+                   y = real,
+                   color = pred - real
+    ),
+    alpha = .7, size = 2) +
+    geom_abline(intercept = 1.2065 ,slope = 0.5632 , 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 250.5, y = 244, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (RF): Flow Rate Bilancino\n",
+         subtitle = "L/s")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+ggsave("img/bilancino/20_1Bilancino_flowratel_pred_act.jpg",
+       dpi = 500, width = 10, height=7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -766,7 +922,7 @@ ggsave("img/bilancino/19Bilancino_RF_FL.jpg",
 
 
 
-#### target flow rate + target lacke_level ####
+#### target flow rate + target lake_level ####
 #BILANCINO_to_model
 
 #dalla matrice di correlazione vista prima
@@ -910,17 +1066,17 @@ ggsave("img/bilancino/22flow_rate_pred.jpg",
 
 ## plotting pred vs actual 
 
-reg <- lm(predicted ~ Flow_Rate, data = flow_rate.test)
+reg <- lm(Flow_Rate ~ predicted, data = flow_rate.test)
 reg
 #Coefficients:
-#(Intercept)  Flow_Rate 
-#1.9747       0.1509 
+#(Intercept)  Flow_Rate coeff 
+#-0.4054       1.3179 
 
 r.sq <- format(summary(reg)$r.squared,digits = 2)
 
 coeff <- coefficients(reg)
 
-eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+eq <- paste0("y = ", round(coeff[2],1), "*x", round(coeff[1],1),
              "\nr.squared = ",r.sq)
 eq
 # plot
@@ -929,9 +1085,9 @@ eq
                    y = Flow_Rate,
                    color = predicted - Flow_Rate),
                alpha = .7, size = 2) +
-    geom_abline(intercept = 8.33,slope = 0.78, 
+    geom_abline(intercept = -0.4054,slope = 1.3179, 
                 color = "darkred", linetype ="dashed")+
-    geom_text(x = 50, y = 40, label = eq, color = "darkred")+
+    geom_text(x = 15, y = 30, label = eq, color = "darkred")+
     labs(title = "Predicted vs Actual values (GBM): Flow_Rate Bilancino\n",
          subtitle = "l/s")+
     ylab("Actual\n")+
@@ -1058,17 +1214,17 @@ lake_level.test$predicted <- as.integer(predict(lake_level_fit1,
 
 ## plotting pred vs actual 
 
-reg <- lm(predicted ~ Lake_Level, data = lake_level.test)
+reg <- lm(Lake_Level ~ predicted, data = lake_level.test)
 reg
 #Coefficients:
-#(Intercept)  Lake_level 
-#1.9747       0.1509 
+#(Intercept)  Lake_level coeff
+#-17.403        1.072 
 
 r.sq <- format(summary(reg)$r.squared,digits = 2)
 
 coeff <- coefficients(reg)
 
-eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+eq <- paste0("y = ", round(coeff[2],1), "*x", round(coeff[1],1),
              "\nr.squared = ",r.sq)
 eq
 # plot
@@ -1077,9 +1233,9 @@ eq
                    y = Lake_Level,
                    color = predicted - Lake_Level),
                alpha = .7, size = 2) +
-    geom_abline(intercept = 8.33,slope = 0.78, 
+    geom_abline(intercept = -17.403 ,slope = 1.072 , 
                 color = "darkred", linetype ="dashed")+
-    geom_text(x = 50, y = 40, label = eq, color = "darkred")+
+    geom_text(x = 250.5, y = 244, label = eq, color = "darkred")+
     labs(title = "Predicted vs Actual values (GBM): Lake_Level Bilancino\n",
          subtitle = "m")+
     ylab("Actual\n")+
