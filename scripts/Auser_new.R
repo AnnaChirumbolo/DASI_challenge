@@ -1706,6 +1706,8 @@ auser8_rf_CoS <- cbind(auser8_rf_CoS, auser8_rf_Season)
 
 auser8_rf_CoS <- auser8_rf_CoS[complete.cases(auser8_rf_CoS),]
 
+colnames(auser8_rf_CoS) <- gsub("imp","pozzo",colnames(auser8_rf_CoS))
+
 set.seed(2021)
 rand_auser_cos <- sample(nrow(auser8_rf_CoS), nrow(auser8_rf_CoS)* 1/3, replace = F)
 test_auser_cos <- auser8_rf_CoS[rand_auser_cos,]
@@ -1720,7 +1722,7 @@ cat("Number of rows in the test set:", nrow(test_auser_cos))
 #ho diviso per il set di addestramento
 #in base al rapporto di due a uno, e inizio il processo di modellazione
 
-rf_auser_cos <- rfsrc(impCoS~., 
+rf_auser_cos <- rfsrc(pozzoCoS~., 
                       data = train_auser_cos, block.size = 1, 
                      importance = T, samptype = "swr", 
                      var.used = "all.trees", ntree = 500)
@@ -1759,6 +1761,7 @@ auser8_rf_LT2 <- auser8_rf %>%
 auser8_rf_LT2 <- cbind(auser8_rf_LT2, auser8_rf_Season)
 
 auser8_rf_LT2 <- auser8_rf_LT2[complete.cases(auser8_rf_LT2),]
+colnames(auser8_rf_LT2) <- gsub("imp","pozzo",colnames(auser8_rf_LT2))
 
 set.seed(2021)
 rand_auser_LT2 <- sample(nrow(auser8_rf_LT2), nrow(auser8_rf_LT2)* 1/3, replace = F)
@@ -1774,7 +1777,7 @@ cat("Number of rows in the test set:", nrow(test_auser_cos))
 #ho diviso per il set di addestramento
 #in base al rapporto di due a uno, e inizio il processo di modellazione
 
-rf_auser_LT2 <- rfsrc(impLT2~., 
+rf_auser_LT2 <- rfsrc(pozzoLT2~., 
                       data = train_auser_LT2, block.size = 1, 
                       importance = T, samptype = "swr", 
                       var.used = "all.trees", ntree = 500)
@@ -1813,7 +1816,7 @@ auser8_rf_SAL <- auser8_rf %>%
 auser8_rf_SAL <- cbind(auser8_rf_SAL, auser8_rf_Season)
 
 auser8_rf_SAL <- auser8_rf_SAL[complete.cases(auser8_rf_SAL),]
-
+colnames(auser8_rf_SAL) <- gsub("imp","pozzo",colnames(auser8_rf_SAL))
 set.seed(2021)
 rand_auser_SAL <- sample(nrow(auser8_rf_SAL), nrow(auser8_rf_SAL)* 1/3, replace = F)
 test_auser_SAL <- auser8_rf_SAL[rand_auser_SAL,]
@@ -1828,7 +1831,7 @@ cat("Number of rows in the test set:", nrow(test_auser_cos))
 #ho diviso per il set di addestramento
 #in base al rapporto di due a uno, e inizio il processo di modellazione
 
-rf_auser_SAL <- rfsrc(impSAL~., 
+rf_auser_SAL <- rfsrc(pozzoSAL~., 
                       data = train_auser_SAL, block.size = 1, 
                       importance = T, samptype = "swr", 
                       var.used = "all.trees", ntree = 500)
