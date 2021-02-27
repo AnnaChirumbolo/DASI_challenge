@@ -38,10 +38,13 @@ auser <- read.csv("data/Aquifer_Auser.csv")
 auser$Date<-as.Date(auser$Date, format = "%d/%m/%Y")
 
 #### N/A Visualization ###
-visdat::vis_dat(auser)
+df<- auser
+colnames(df) <- gsub("_"," ",colnames(df))
+
+visdat::vis_dat(df)
 ggsave("img/auser/01Auser.jpg",
        dpi = 500, width = 10, height=7)
-
+rm(df)
 str(auser) 
 names(auser)
 summary(auser) #per avere una visione del dataframe
@@ -77,14 +80,22 @@ max(auser$Date[is.na(auser$Rainfall_Gallicano)]) # restituisce "2005-12-31"
 #risulta il taglio da fare fino al giorno "2005-12-31"
 auser_cut<- auser %>%     
   filter(Date >= "2006-01-01")
-visdat::vis_dat(auser_cut)
+df<-auser_cut
+colnames(df) <- gsub("_"," ",colnames(df))
+visdat::vis_dat(df)
 ggsave("img/auser/02Auser.jpg",
        dpi = 500, width = 10, height=7)
+rm(df)
 #continuano ad eserci missing non recuperabili, soprattutto su
 #Depth_to_Groundwater_DIEC , CoS, LT2 (fino a maggio 2011)
 
 
 #1 plot con tutte le 5 variabili
+auser1 <- auser %>% 
+  gather(key = "well", value = "depth_to_gw.m", Depth_to_Groundwater_LT2 : Depth_to_Groundwater_DIEC) %>%
+  mutate(Date = ymd(Date),
+         well = gsub("Depth_to_Groundwater_","",well))
+
 auser_filtered <- auser1 %>% 
   filter(Date >= "2006-01-01")
 
@@ -139,11 +150,14 @@ max(auser_filtered$Temperature_Lucca_Orto_Botanico,na.rm = T)
 
 auser_filtered1<-auser_filtered%>%
   filter(well==c("LT2", "CoS", "SAL")) #mi serve per selezionare solo i pozzi Target
-  
+
+
 (scatter_temp_orentano <- ggplot(auser_filtered1, 
                                  aes(x = Temperature_Orentano,
                                      y = abs(depth_to_gw.m),
                                      color = well))+
+    xlab("Temperature Orentano")+
+    ylab("Profondita dei pozzi, valore assoluto (m)")+
     geom_point(size = 1, alpha = 0.8)+
     theme_classic()+
     xlim(0,31))
@@ -156,6 +170,8 @@ ggsave("img/auser/06auser_temp_orentano.jpg",
                                    aes(Temperature_Monte_Serra, 
                                        abs(depth_to_gw.m),
                                        color = well))+
+    xlab("Temperature Monte Serra")+
+    ylab("Profondita dei pozzi, valore assoluto (m)")+
     geom_point(size = 1, alpha = 0.8)+
     theme_classic()+
     xlim(0,31))
@@ -169,6 +185,8 @@ ggsave("img/auser/07auser_temp_monteserra.jpg",
                                       aes(Temperature_Ponte_a_Moriano, 
                                           abs(depth_to_gw.m),
                                           color = well))+
+    xlab("Temperature Ponte a Moriano")+
+    ylab("Profondita dei pozzi, valore assoluto")+
     geom_point(size = 1, alpha = 0.8)+
     theme_classic()+
     xlim(0,31))
@@ -180,6 +198,8 @@ ggsave("img/auser/08auser_temp_ponteamoriano.jpg",
                               aes(Temperature_Lucca_Orto_Botanico, 
                                   abs(depth_to_gw.m),
                                   color = well))+
+    xlab("Temperature Lucca")+
+    ylab("Profondita dei pozzi, valore assoluto")+
     geom_point(size = 1, alpha = 0.8)+
     theme_classic()+
     xlim(0,31))
@@ -602,16 +622,20 @@ summary(auser8[,28:32])
 ## boxplots
 
 # target var 
-(hist_target_auser <- ggplot(auser7,
-                             aes(y = imputed_depth_to_gw.m,
-                                 color = imp))+
+df<-auser7
+colnames(df) <- gsub("imp","Pozzi",colnames(df))
+df$Pozzi<-gsub("imp","",df$Pozzi)
+(hist_target_auser <- ggplot(df,
+                             aes(y = Pozziuted_depth_to_gw.m,
+                                 color = Pozzi))+
+    ylab("Box plot")+
     geom_boxplot()+
     theme_classic())#+
 #facet_wrap(vars(imp))
 # saving
 ggsave("img/auser/16box_auser_pozzi.jpg", dpi = 500, width = 10, height=7)
 #ggsave("img/auser/16_1box_auser_pozzi.jpg", dpi = 500, width = 10, height=7)
-
+rm(df)
 #### checking singularly 
 
 (impCoS_auser <- ggplot(auser8, aes(y = impCoS))+
@@ -780,6 +804,7 @@ ggsave("img/auser/22auser_rain.jpg", dpi = 500, width = 10, height = 7)
 ## vis boxplot
 
 # temp 
+
 (temp_box_auser <- ggplot(auser10, aes(y=temp.C, color = temp_sensor))+
     geom_boxplot()+
     theme_classic())
@@ -1167,14 +1192,14 @@ max(auser8$Date[is.na(auser8$Hydrometry_Piaggione)])
 statsNA(auser8$Hydrometry_Monte_S_Quirico) # ffew messing
 (plot3<-ggplot_na_distribution(auser8$Hydrometry_Monte_S_Quirico,
                        x_axis_labels=auser8$Date,
-                       title = "Missing Values H Monte_S_Quirico"))
+                       title = "Missing Values H Monte S Quirico"))
 
 statsNA(auser8$Hydrometry_Piaggione) # few missing
 (plot4<-ggplot_na_distribution(auser8$Hydrometry_Piaggione,
                                x_axis_labels=auser8$Date,
                                title = "Missing Values H Piaggione"))
 
-(plot_Hydrometry<- ggarrange(plot3, plot3))
+(plot_Hydrometry<- ggarrange(plot3, plot4))
 ggsave("img/auser/30auser_Hydrometry.jpg",
        dpi = 500, width = 10, height=7)
 
@@ -1513,8 +1538,11 @@ write.csv(auser8,"processed_data/AUSER_to_model.csv")
 #summary(auser8)
 
 #### visualizzo andamento delle variabili target ####
-auser8 %>%
-  dplyr::select(Date, impSAL, impCoS, impLT2) %>%
+
+df<-auser8
+colnames(df) <- gsub("imp","pozzo",colnames(df))
+df%>%
+  dplyr::select(Date, pozzoSAL, pozzoCoS, pozzoLT2) %>%
   melt(., id.vars = "Date") %>%
   ggplot(., aes(Date, value))+
   facet_wrap(variable~., ncol = 1, scales = "free_y")+
@@ -1526,11 +1554,14 @@ auser8 %>%
   theme_classic()
 ggsave("img/auser/32auser_target_no_missing.jpg",
        dpi = 500, width = 10, height=7)
-
+rm(df)
 
 ####
 #### Correlation Matrix ####
-df <- auser8
+
+df<-auser8
+colnames(df) <- gsub("_"," ",colnames(df))
+colnames(df) <- gsub("imp","pozzo",colnames(df))
 df$Date <- NULL
 ggcorr(df, label = TRUE, label_round = 2, hjust = 1, size = 4, layout.exp = 4, label_size = 3)
 ggsave("img/auser/33auser_correlazione.jpg",
@@ -1559,9 +1590,12 @@ ggsave("img/auser/34auser_temp.jpg",
 
 
 #### Volume ####
-
-auser8 %>%
-  dplyr::select(Date, Volume_POL, Volume_CC1, Volume_CC2, Volume_CSA, Volume_CSAL) %>%
+df<-auser8
+colnames(df) <- gsub("_"," ",colnames(df))
+#colnames(df) <- gsub("imp","pozzo",colnames(df))
+df%>%
+  dplyr::select(Date, "Volume POL", "Volume CC1", 
+                "Volume CC2", "Volume CSA", "Volume CSAL") %>%
   melt(., id.vars = "Date") %>%
   ggplot(., aes(Date, value, col = variable))+
   facet_wrap(variable~., ncol = 2)+
@@ -1571,7 +1605,7 @@ auser8 %>%
   scale_x_date(date_labels = "%Y", date_breaks = "2 years", limits = as.Date(c("2011-06-01", "2020-06-30")))+
   labs(x = "Date", y = "The amount of water", title = "The amount of water depending on the station",
        subtitle = "explanatory variables on aquifer Auser from 06-2011") + 
-  theme_21+
+  theme_classic()+
   theme(legend.position = "none")
 ggsave("img/auser/35auser_volumi.jpg",
        dpi = 500, width = 10, height=7)
@@ -1616,8 +1650,11 @@ df <-  auser_featured %>%
                             month(Date) %in% c(9,10,11) ~ "Autumn",
                             month(Date) %in% c(1,2,12) ~ "Winter"))
 
+df<-auser8
+colnames(df) <- gsub("_"," ",colnames(df))
+colnames(df) <- gsub("imp","pozzo",colnames(df))
 df %>%
-  dplyr::select(Season, impSAL, impCoS, impLT2) %>%
+  dplyr::select(Season, pozzoSAL, pozzoCoS, pozzoLT2) %>%
   melt(., id.vars = "Season") %>%
   ggplot(., aes(Season, value))+
   facet_wrap(variable~., ncol = 1, scales = "free_y")+
