@@ -1037,7 +1037,18 @@ flow_rate_effects %>%
              fill = rel.inf))+
   geom_col()+
   coord_flip()+
-  scale_color_brewer(palette = "Dark2")
+  scale_color_brewer(palette = "Dark2")+
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nFlow Rate\n"
+       )+
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+
+
+
 ggsave("img/bilancino/21flowrate_features.jpg",
        dpi = 500, width = 10, height=7)
 
@@ -1185,7 +1196,18 @@ lake_level_effects %>%
              fill = rel.inf))+
   geom_col()+
   coord_flip()+
-  scale_color_brewer(palette = "Dark2")
+  scale_color_brewer(palette = "Dark2")+
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nLake Level\n"
+  )+
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+
+
+
 ggsave("img/bilancino/25lake_level_features.jpg",
        dpi = 500, width = 10, height=7)
 
