@@ -1937,9 +1937,14 @@ pozzo_cos_gb_Season <- dummyVars(~Season, data = pozzo_cos_gb, fullRank = F)
 pozzo_cos_gb_Season <- as.data.frame(predict(pozzo_cos_gb_Season, newdata = pozzo_cos_gb))
 pozzo_cos_gb <- cbind(pozzo_cos_gb, pozzo_cos_gb_Season)
 pozzo_cos_gb<-pozzo_cos_gb%>% dplyr::select(-Season)
+colnames(pozzo_cos_gb) <- gsub("imp1","pozzoCoS",colnames(pozzo_cos_gb))
+colnames(pozzo_cos_gb) <- gsub("imp2","pozzoDIEC",colnames(pozzo_cos_gb))
+colnames(pozzo_cos_gb) <- gsub("imp4","pozzoPAG",colnames(pozzo_cos_gb))
+
+
 #### GBM con target impCoS####
 
-pozzo_CoS_sw <- step.wisef("imp1", pozzo_cos_gb)
+pozzo_CoS_sw <- step.wisef("pozzoCoS", pozzo_cos_gb)
 pozzo_CoS_sw$bestTune 
 pozzo_CoS_sw$finalModel
 coef(pozzo_CoS_sw$finalModel, 10)
@@ -1951,7 +1956,7 @@ pozzo_CoS.split <- initial_split(pozzo_cos_gb, prop = .7)
 pozzo_CoS.train <- training(pozzo_CoS.split)
 pozzo_CoS.test <- testing(pozzo_CoS.split)
 
-pozzo_CoS_fit1 <- gbm::gbm(imp1 ~ .,
+pozzo_CoS_fit1 <- gbm::gbm(pozzoCoS ~ .,
                            data = pozzo_cos_gb,
                            verbose = T, 
                            shrinkage = 0.01,
@@ -1967,7 +1972,7 @@ perf_gbm1 <- gbm.perf(pozzo_CoS_fit1, method = "cv")
 pozzo_CoS_pred1 <- stats::predict(object = pozzo_CoS_fit1,
                                   newdata = pozzo_CoS.test,
                                   n.trees = perf_gbm1)
-rmse_fit1 <- Metrics::rmse(actual = pozzo_CoS.test$imp1,
+rmse_fit1 <- Metrics::rmse(actual = pozzo_CoS.test$pozzoCoS,
                            predicted = pozzo_CoS_pred1)
 print(rmse_fit1) 
 #### RMSE 0.2248 pozzo CoS GB ####
@@ -2003,14 +2008,22 @@ pozzo1_effects %>% utils::head()
 # plot top 6 features
 pozzo1_effects %>% 
   arrange(desc(rel.inf)) %>% 
-  top_n(6) %>%  # it's already only 3 vars
+  top_n(6) %>%  # 
   ggplot(aes(x = fct_reorder(.f = var,
                              .x = rel.inf),
              y = rel.inf,
              fill = rel.inf))+
   geom_col()+
   coord_flip()+
-  scale_color_brewer(palette = "Dark2")
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nPozzo CoS in Auser\n")+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+
 ggsave("img/auser/44auser_pozzocos_features.jpg",
        dpi = 500, width = 10, height=7)
 
@@ -2027,10 +2040,20 @@ pozzo_CoS.test$predicted <- as.integer(predict(pozzo_CoS_fit1,
 
 ggplot(pozzo_CoS.test) +
   geom_point(aes(x = predicted,
-                 y = imp1,
-                 color = predicted - imp1),
+                 y = pozzoCoS,
+                 color = predicted - pozzoCoS),
              alpha = .7, size = 1) +
-  theme_fivethirtyeight()
+  theme_classic()+
+  geom_abline(intercept = 0.6975 ,slope = 0.9669 , 
+              color = "darkred", linetype ="dashed")+
+  geom_text(x = 8, y = 5, label = eq, color = "darkred")+
+  labs(title = "Predicted vs Actual values (GBM): Pozzo CoS auser\n")+
+  ylab("Actual\n")+
+  xlab("\nPredicted")+
+  scale_color_continuous(name = "Difference\npredicted - actual")
+
+
+
 ggsave("img/auser/45pozzo_cos_pred.jpg",
        dpi = 500, width = 10, height=7)
 
@@ -2038,11 +2061,11 @@ ggsave("img/auser/45pozzo_cos_pred.jpg",
 
 ## plotting pred vs actual 
 
-reg <- lm(predicted ~ imp1, data = pozzo_CoS.test)
+reg <- lm(pozzoCoS ~ predicted, data = pozzo_CoS.test)
 reg
 #Coefficients:
-#(Intercept)         imp1  
-#-0.2432       0.9590 
+#(Intercept)     coef pozzo cos  
+#0.6975       0.9669 
 
 r.sq <- format(summary(reg)$r.squared,digits = 2)
 
@@ -2054,14 +2077,13 @@ eq
 # plot
 (gbm_actualvspred <- ggplot(pozzo_CoS.test) +
     geom_point(aes(x = predicted,
-                   y = imp1,
-                   color = predicted - imp1),
+                   y = pozzo_CoS,
+                   color = predicted - pozzoCoS),
                alpha = .7, size = 2) +
-    geom_abline(intercept = 8.33,slope = 0.78, 
+    geom_abline(intercept = 0.6975 ,slope = 0.9669 , 
                 color = "darkred", linetype ="dashed")+
-    geom_text(x = 50, y = 40, label = eq, color = "darkred")+
-    labs(title = "Predicted vs Actual values (GBM): Pozzo CoS auser\n",
-         subtitle = "Minimum rainfall threshold at 0.5 mm\n")+
+    geom_text(x = 10, y = 10, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo CoS auser\n")+
     ylab("Actual\n")+
     xlab("\nPredicted")+
     scale_color_continuous(name = "Difference\npredicted - actual")+
@@ -2164,7 +2186,16 @@ pozzo3_effects %>%
              fill = rel.inf))+
   geom_col()+
   coord_flip()+
-  scale_color_brewer(palette = "Dark2")
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nPozzo LT2 in Auser\n"
+       )+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+
 ggsave("img/auser/47auser_pozzolt2_features.jpg",
        dpi = 500, width = 10, height=7)
 
@@ -2184,7 +2215,10 @@ ggplot(pozzo_LT2.test) +
                  y = imp3,
                  color = predicted - imp3),
              alpha = .7, size = 1) +
-  theme_fivethirtyeight()
+  theme_classic()
+
+
+
 ggsave("img/auser/48pozzo_lt2_pred.jpg",
        dpi = 500, width = 10, height=7)
 
@@ -2192,11 +2226,11 @@ ggsave("img/auser/48pozzo_lt2_pred.jpg",
 
 ## plotting pred vs actual 
 
-reg <- lm(predicted ~ imp3, data = pozzo_LT2.test)
+reg <- lm(imp3 ~ predicted, data = pozzo_LT2.test)
 reg
 #Coefficients:
 #(Intercept)         imp3  
-#0.483        0.921 
+#2.4947       0.8397  
 
 r.sq <- format(summary(reg)$r.squared,digits = 2)
 
@@ -2211,17 +2245,17 @@ eq
                    y = imp3,
                    color = predicted - imp3),
                alpha = .7, size = 2) +
-    geom_abline(intercept = 8.33,slope = 0.78, 
+    geom_abline(intercept = 2.4947,slope = 0.8397 , 
                 color = "darkred", linetype ="dashed")+
-    geom_text(x = 50, y = 40, label = eq, color = "darkred")+
-    labs(title = "Predicted vs Actual values (GBM): Pozzo LT2 auser\n",
-         subtitle = "Minimum rainfall threshold at 0.5 mm\n")+
+    geom_text(x = 13.5, y = 12, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Pozzo LT2 auser\n")+
     ylab("Actual\n")+
     xlab("\nPredicted")+
     scale_color_continuous(name = "Difference\npredicted - actual")+
     theme_classic())
 
-
+ggsave("img/auser/48_1pozzo_lt2_pred.jpg",
+       dpi = 500, width = 10, height=7)
 
 
 
@@ -2309,14 +2343,23 @@ pozzo5_effects %>% utils::head()
 # plot top 6 features
 pozzo5_effects %>% 
   arrange(desc(rel.inf)) %>% 
-  top_n(6) %>%  # it's already only 3 vars
+  top_n(6) %>%  # s
   ggplot(aes(x = fct_reorder(.f = var,
                              .x = rel.inf),
              y = rel.inf,
              fill = rel.inf))+
   geom_col()+
   coord_flip()+
-  scale_color_brewer(palette = "Dark2")
+  xlab("Features")+
+  ylab("Relative Influence")+
+  labs(title = "Relative influence of features on target variable (GBM):\nPozzo SAL in Auser\n"
+      )+
+  scale_color_brewer(palette = "Dark2") +
+  theme_classic()+
+  scale_fill_continuous(name = "Relative Influence")
+plot_rel.infl
+
+
 ggsave("img/auser/50auser_pozzosal_features.jpg",
        dpi = 500, width = 10, height=7)
 
@@ -2336,7 +2379,7 @@ ggplot(pozzo_SAL.test) +
                  y = imp5,
                  color = predicted - imp5),
              alpha = .7, size = 1) +
-  theme_fivethirtyeight()
+  theme_classic()
 ggsave("img/auser/51pozzo_sal_pred.jpg",
        dpi = 500, width = 10, height=7)
 
@@ -2344,11 +2387,11 @@ ggsave("img/auser/51pozzo_sal_pred.jpg",
 
 ## plotting pred vs actual 
 
-reg <- lm(predicted ~ imp5, data = pozzo_SAL.test)
+reg <- lm(imp5 ~ predicted, data = pozzo_SAL.test)
 reg
 #Coefficients:
-#(Intercept)         imp15 
-#-0.05032      0.91663 
+#(Intercept)         imp5 
+# 1.7597      0.7516
 
 r.sq <- format(summary(reg)$r.squared,digits = 2)
 
@@ -2363,16 +2406,17 @@ eq
                    y = imp5,
                    color = predicted - imp5),
                alpha = .7, size = 2) +
-    geom_abline(intercept = 8.33,slope = 0.78, 
+    geom_abline(intercept = 1.7597,slope = 0.7516, 
                 color = "darkred", linetype ="dashed")+
-    geom_text(x = 50, y = 40, label = eq, color = "darkred")+
+    geom_text(x = 6, y = 4, label = eq, color = "darkred")+
     labs(title = "Predicted vs Actual values (GBM): Pozzo SAL auser\n",
          subtitle = "Minimum rainfall threshold at 0.5 mm\n")+
     ylab("Actual\n")+
     xlab("\nPredicted")+
     scale_color_continuous(name = "Difference\npredicted - actual")+
     theme_classic())
-
+ggsave("img/auser/51pozzo_sal_pred.jpg",
+       dpi = 500, width = 10, height=7)
 
 #### modelli con i lag ####
 
