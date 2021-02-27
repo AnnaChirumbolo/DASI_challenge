@@ -25,6 +25,15 @@ During my years at university I've discovered a strong passion towards programmi
 <a href="https://github.com/Menadel87" class="fa fa-github"></a>
 <span style="color: #808080;"><em><a href="mailto:albertobaccari87@gmail.com">albertobaccari87gmail.com</a></em></span>
 
+# PHOTO HERE 
+
+I'm a young enterpreneur in the sustainable innovation sector (*innovability*), which develops business units and start-ups for medium to small enterprises (3 M&A in track records). 
+I am member of the European Digital Alliance (top 100th AI innovator in EU). 
+
+For the last 5 years I have been an active AI architect for the development of modelling in the sales & marketing sector. I possess an important experience in B Corp and Benefit Corporations area. 
+
+I am currently busy in the making of a nation-wide "AI & Ethics" research centre in collaboration with the big players in this sector. 
+
 
 
 
@@ -39,5 +48,6 @@ During my years at university I've discovered a strong passion towards programmi
 
 <img src="https://user-images.githubusercontent.com/43357858/109385207-79740f00-78f2-11eb-908d-3e6e9605fb3f.jpg" width=300 align ="right">
 
+# BIO HERE
 
 
