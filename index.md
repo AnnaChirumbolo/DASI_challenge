@@ -63,23 +63,26 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 
 #### Madonna di Canneto 
 
-| Target | GBM: RMSE | GBM: R.sq | 
-| :---: | :---: | :---: | 
+| Target | GBM | | 
+| :---: | :---: | :---: |
+| | *RMSE* | *R.sq* | 
 | Flow Rate (L/s) | 26.05 | 0.34 | 
 
 <br>
 
 ### River Arno 
 
-| Target | RF: RMSE | GBM: RMSE | GBM: R.sq | 
+| Target | RF | GBM |  | 
 | :---: | :---: | :---: | :---: |
+| | *RMSE* | *RMSE* | *R.sq* | 
 | Hydrometry (L/s) | 0.37 | 0.34 | ??? | 
 
 <br>
 
 ### Lake Bilancino 
 
-| Target | RF: RMSE | RF: R.sq | GBM: RMSE | GBM: R.sq | 
+| Target | RF | | GBM |  | 
 | :---: | :---: | :---: | :---: | :---: |
+| | *RMSE* | *R.sq* | *RMSE* | *R.sq* |
 | Lake Level (m) | 1.78 | 0.33 | 1.60 | 0.35 |
 | Flow Rate (L/s) | 4.22 | 0.099 | 3.42 | 0.46 |
