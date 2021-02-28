@@ -34,9 +34,9 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 
 ### Aquifers 
 
-| Target | GBM  | | RF |
+| Target | GBM  | | RF | |
 | :--: | :---: | :---: | :----: |
-| *Doganella: wells* | *RMSE* | *R.sq*| *RMSE* |
+| *Doganella: wells* | *RMSE* | *R.sq*| *RMSE* | *R.sq* |
 | :-------------: | 
 | 1 | 2.94 | 0.83 |
 | 2 | 1.04 | 0.87 |
@@ -49,13 +49,13 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 | 9 | 2.68 | 0.76 |
 | *Luco: wells* |
 | :-----------: |
-| 1 | 0.14 | ? | 
-| 3 | 0.25 | ? |
+| 1 | 0.14 | 0.83 | 
+| 3 | 0.25 | 0.70 |
 | *Auser: wells* |
 | :------------: |
-| CoS | 0.22 | 0.93 | 0.22 |
-| LT2 | 0.09 | 0.77 | 0.07 | 
-| SAL | 0.11 | 0.69 | 0.10 |
+| CoS | 0.22 | 0.93 | 0.22 | 0.97 |
+| LT2 | 0.09 | 0.77 | 0.07 | 0.98 |
+| SAL | 0.11 | 0.69 | 0.10 | 0.96 |
 
 <br>
 

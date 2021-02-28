@@ -96,7 +96,7 @@ Also for well 3 we found Gradient Boost Machine as the best performing model (RM
 
 #### Target 1 (well 1): depth to groundwater (m)
 
-From our GBM run on R, we obtained an **RMSE of 0.14**, with volume being the most influential feature on the target variable, followed by temperature. 
+From our GBM run on R, we obtained an **RMSE of 0.14 and R squared of 0.83**, with volume being the most influential feature on the target variable, followed by temperature. 
 
 ![FI_imp1](https://user-images.githubusercontent.com/43357858/109385787-afb38d80-78f6-11eb-9604-b1be4d1af044.jpeg)
 
@@ -106,7 +106,7 @@ And the following graph between predicted and actual target values.
 
 #### Target 2 (well 3): depth to groundwater (m)
 
-From our GBM we obtained **RMSE: 0.25**, with volume as the most influential variable on the target, followed, again by temperature. 
+From our GBM we obtained **RMSE: 0.25 and R squared of 0.70**, with volume as the most influential variable on the target, followed, again by temperature. 
 
 ![FI_imp3](https://user-images.githubusercontent.com/43357858/109385789-b0e4ba80-78f6-11eb-8860-0239fcd2ddf0.jpeg)
 

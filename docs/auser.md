@@ -72,7 +72,7 @@ No outliers are present in the temperature variables.
 
 ![23auser_temp](https://user-images.githubusercontent.com/43357858/109396958-6f730000-7934-11eb-8b83-c652e1db7b53.jpg)
 
-We noticed that for the sensor in Ponte a Moriano, from 2017 values result 0 °C for consecutive months - we therefore decided to **exclude this variable** due clear faluts in data collection. 
+We noticed that for the sensor in Ponte a Moriano, from 2017 values result 0 °C for consecutive months - we therefore decided to **exclude this variable** due to clear faluts in data collection. 
 
 ![34auser_temp](https://user-images.githubusercontent.com/43357858/109320067-e5516b80-784f-11eb-92ab-866f9c887baa.jpg)
 
@@ -145,19 +145,19 @@ From our autoML and RapdMiner tests, Random Forest and Gradient Boost Machine re
 
 ##### Target 1: CoS
 
-PAG well seems to have the largest influence on the target, followed by POL volume. Rainfall variables have the least influence. **RMSE: 0.22**
+PAG well seems to have the largest influence on the target, followed by POL volume. Rainfall variables have the least influence. **RMSE: 0.22, variance: 97.39%**
 
 ![40_1auser_RF_cos](https://user-images.githubusercontent.com/43357858/109397002-c547a800-7934-11eb-8a4a-1cae32232fa6.jpg)
 
 ##### Target 2: LT2 
 
-CSAL well has the largest influence on the target, rainfall has again little importance. **RMSE: 0.07**
+CSAL well has the largest influence on the target, rainfall has again little importance. **RMSE: 0.07, variance: 98.04%**
 
 ![41_1auser_RF_LT2](https://user-images.githubusercontent.com/43357858/109397008-ca0c5c00-7934-11eb-9401-3a4667ed1aaf.jpg)
 
 ##### Target 3: SAL
 
-DIEC well has the largest impact in the model, **3 times greater** than the second most important feature: PAG well. Rainfall has the least influence in the model over the target. **RMSE: 0.1**
+DIEC well has the largest impact in the model, **3 times greater** than the second most important feature: PAG well. Rainfall has the least influence in the model over the target. **RMSE: 0.1, variance: 95.93%**
 
 ![42_1auser_RF_SAL](https://user-images.githubusercontent.com/43357858/109397015-ce387980-7934-11eb-970e-23b693a0efb5.jpg)
 
