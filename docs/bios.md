@@ -3,6 +3,9 @@
 <!-- Add icon library -->
  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
+<br>
+<br>
+
 ## Anna Chirumbolo 
 <img src="https://user-images.githubusercontent.com/43357858/109384281-0d8ea800-78ec-11eb-9880-1cad69593082.jpeg" width=300 align ="right">
 <a href="https://www.linkedin.com/in/anna-chirumbolo/" class="fa fa-linkedin"></a>
