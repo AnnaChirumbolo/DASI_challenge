@@ -1,6 +1,6 @@
 <br>
 
-# Lupa
+# Lupa Water Spring
 
 Lupa water spring presents one target variable, flow rate (L/s), and one feature: rainfall. 
 
