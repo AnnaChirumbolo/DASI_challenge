@@ -25,8 +25,7 @@ During my years at university I've discovered a strong passion towards programmi
 <a href="https://github.com/Menadel87" class="fa fa-github"></a>
 <span style="color: #808080;"><em><a href="mailto:albertobaccari87@gmail.com">albertobaccari87gmail.com</a></em></span>
 
-<img src="109414742-cfa98680-79b4-11eb-9e5d-3d2fb97c3a21.jpg
-" width=300 align ="left">
+<img src="https://user-images.githubusercontent.com/43357858/109414908-ff0cc300-79b5-11eb-90c4-ce121bdf3051.jpg" width=300 align ="left">
 
 I'm a young enterpreneur in the **sustainable innovation** sector (*innovability*), which develops business units and start-ups for medium to small enterprises (3 M&A in track records). 
 I am member of the **European Digital Alliance** (top 100th AI innovator in EU). 
