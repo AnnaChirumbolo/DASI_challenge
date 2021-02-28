@@ -24,10 +24,56 @@ We carried out important work of **feature engineering**, particularly on *preci
 
 Once feature engineering was carried out, we launched **control systems** for choice of best predictive models for each of the water systems under study, using **autoML** and **autoTS** packages and benchmarking their results by implementing **Rapidminer**.
 
-We are very satisfied with the achieved results in the few days of dedicated work. We report below the RMSE error table that our models produced.
+We are very satisfied with the achieved results in the few days of dedicated work. We report below the **RMSE error table** that our models produced.
 
+### Aquifers 
 
-**TABLE HERE**
+#### Doganella 
 
+| Well | GBM: RMSE | GBM: R.sq |
+| :--: | :---: | :---: |
+| 1 | 2.94 | 0.83 |
+| 2 | 1.04 | 0.87 |
+| 3 | 1.59 | 0.77 | 
+| 4 | 0.52 | 0.85 |
+| 5 | 1.12 | 0.81 |
+| 6 | 1.00 | 0.79 |
+| 7 | 0.71 | 0.48 |
+| 8 | 0.77 | 0.82 |
+| 9 | 2.68 | 0.76 |
 
+#### Luco 
 
+| Well | GBM: RMSE | GBM: R.sq | 
+| :---: | :---: | :---: |
+| 1 | 0.14 | ? | 
+| 3 | 0.25 | ? |
+
+#### Auser 
+
+| Well | RF: RMSE | GBM: RMSE | GBM: R.sq | 
+| :---: | :---: | :---: | :---: | 
+| CoS | 0.22 | 0.22 | 0.93 | 
+| LT2 | 0.07 | 0.09 | 0.77 |
+| SAL | 0.10 | 0.11 | ???? |
+
+### Water Springs 
+
+#### Madonna di Canneto 
+
+| Target | GBM: RMSE | GBM: R.sq | 
+| :---: | :---: | :---: | 
+| Flow Rate (L/s) | 26.05 | 0.34 | 
+
+### River Arno 
+
+| Target | RF: RMSE | GBM: RMSE | GBM: R.sq | 
+| :---: | :---: | :---: | :---: |
+| Hydrometry (L/s) | 0.37 | 0.34 | ??? | 
+
+### Lake Bilancino 
+
+| Target | RF: RMSE | RF: R.sq | GBM: RMSE | GBM: R.sq | 
+| :---: | :---: | :---: | :---: | :---: |
+| Lake Level (m) | 1.78 | 0.33 | 1.60 | 0.35 |
+| Flow Rate (L/s) | 4.22 | 0.099 | 3.42 | 0.46 |
