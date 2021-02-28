@@ -28,6 +28,10 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 
 <br>
 
+## Error table
+
+<br>
+
 ### Aquifers 
 
 | Target | GBM  | RF: RMSE |
