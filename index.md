@@ -26,6 +26,8 @@ Once feature engineering was carried out, we launched **control systems** for ch
 
 We are very satisfied with the achieved results in the few days of dedicated work. We report below the **RMSE error table** that our models produced.
 
+<br>
+
 ### Aquifers 
 
 | Target | GBM: RMSE | GBM: R.sq | RF: RMSE |
@@ -51,6 +53,8 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 | LT2 | 0.09 | 0.77 | 0.07 | 
 | SAL | 0.11 | ???? | 0.10 |
 
+<br>
+
 ### Water Springs 
 
 #### Madonna di Canneto 
@@ -59,11 +63,15 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 | :---: | :---: | :---: | 
 | Flow Rate (L/s) | 26.05 | 0.34 | 
 
+<br>
+
 ### River Arno 
 
 | Target | RF: RMSE | GBM: RMSE | GBM: R.sq | 
 | :---: | :---: | :---: | :---: |
 | Hydrometry (L/s) | 0.37 | 0.34 | ??? | 
+
+<br>
 
 ### Lake Bilancino 
 
