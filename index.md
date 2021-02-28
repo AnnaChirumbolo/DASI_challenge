@@ -28,10 +28,10 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 
 ### Aquifers 
 
-#### Doganella 
-
-| Well | GBM: RMSE | GBM: R.sq |
+| Target | GBM: RMSE | GBM: R.sq |
 | :--: | :---: | :---: |
+| Doganella: wells | 
+| :-------------: | 
 | 1 | 2.94 | 0.83 |
 | 2 | 1.04 | 0.87 |
 | 3 | 1.59 | 0.77 | 
