@@ -61,10 +61,9 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 
 ### Water Springs 
 
-#### Madonna di Canneto 
-
 | Target | GBM | | 
 | :---: | :---: | :---: |
+| *Madonna di Canneto* |
 | | *RMSE* | *R.sq* | 
 | Flow Rate (L/s) | 26.05 | 0.34 | 
 
