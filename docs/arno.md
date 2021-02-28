@@ -167,4 +167,4 @@ Third model:
 
 ------------------------------------------------------
 
-**Head back to** [**the top of the page**](#top)
+Head back to the [**top of the page**](#top)

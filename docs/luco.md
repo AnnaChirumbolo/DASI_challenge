@@ -118,4 +118,4 @@ And the following graph correlating predicted with actual target values.
 
 --------------------------------------------------
 
-**Head back to** [**the top of the page**](#top)
+Head back to the [**top of the page**](#top)

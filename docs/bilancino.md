@@ -122,4 +122,4 @@ Most influential features in this model are rainfall Cavallina and Mangona, foll
 
 ------------------------------------------------------
 
-**Head back to** [**the top of the page**](#top)
+Head back to the [**top of the page**](#top)
