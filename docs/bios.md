@@ -59,3 +59,5 @@ Maths and IT engineer graduate, I undertook **DASI: Data Arts for Social Impact*
 
 This is who I am: a Data Scientist, aware and ethical, for the benefit of society and the environment!
 
+<br>
+<br>
