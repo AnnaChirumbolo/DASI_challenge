@@ -1636,7 +1636,7 @@ ggplot(pred_River_Arno_Hydrometry_Nave_di_Rosano3, aes(real, pred, fill = above)
   labs(x = "Real values in the test set", y = "Predicted values in the test set", 
        title = "The predicted and true values on the test set", fill = "",
        subtitle = "Random forest model for Hydrometry_Nave_di_Rosano variable in Arno_river") + 
-  theme_21+
+  theme_classic()+
   theme(legend.position = "bottom", legend.direction = "vertical")
 
 
@@ -1875,6 +1875,59 @@ plot_rel.infl
 ggsave("img/arno/27_0.jpg", dpi = 500, width = 10, height=7)
 #### il primo classificato ####
 
+# predicted 
+
+Hydrometry_Nave_di_Rosano.test$predicted <- as.integer(predict(Hydrometry_Nave_di_Rosano_fit1,
+                                               newdata = Hydrometry_Nave_di_Rosano.test,
+                                               n.trees = perf_gbm1))
+
+# plot predicted vs actual
+
+(ggplot(Hydrometry_Nave_di_Rosano.test) +
+    geom_point(aes(x = predicted,
+                   y = Hydrometry_Nave_di_Rosano,
+                   color = predicted - Hydrometry_Nave_di_Rosano),
+               alpha = .7, size = 1) +
+    theme_classic()+
+    ggsave("img/arno/27_1Hydrometry_Nave_di_Rosano_pred.jpg",
+           dpi = 500, width = 10, height=7)
+)
+
+
+## plotting pred vs actual 
+
+reg <- lm(Hydrometry_Nave_di_Rosano ~ predicted, data =  Hydrometry_Nave_di_Rosano.test)
+reg
+#Coefficients:
+#(Intercept)  Flow_Rate coeff 
+# 0.3726       0.9879
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+eq
+# plot
+(gbm_actualvspred <- ggplot(Hydrometry_Nave_di_Rosano.test) +
+    geom_point(aes(x = predicted,
+                   y = Hydrometry_Nave_di_Rosano,
+                   color = predicted - Hydrometry_Nave_di_Rosano),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 0.37264,slope =  0.9879, 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 3, y = 1.5, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Hydrometry Nave di Rosano Arno\n",
+         subtitle = "m")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+ggsave("img/arno/27_2Hydrometry_Nave_di_Rosano_pred_act.jpg",
+       dpi = 500, width = 10, height=7)
+
+
 
 
 
@@ -2052,6 +2105,64 @@ ggplot(p2.test) +
 ggsave("img/arno/32tbats.jpg", tbats, 
        dpi=500, width=8,height=5)
 
+# predicted 
+
+Hydrometry_Nave_di_Rosano.test$predicted <- as.integer(predict(Hydrometry_Nave_di_Rosano_fit1,
+                                                               newdata = Hydrometry_Nave_di_Rosano.test,
+                                                               n.trees = perf_gbm1))
+
+# plot predicted vs actual
+
+(ggplot(Hydrometry_Nave_di_Rosano.test) +
+    geom_point(aes(x = predicted,
+                   y = Hydrometry_Nave_di_Rosano,
+                   color = predicted - Hydrometry_Nave_di_Rosano),
+               alpha = .7, size = 1) +
+    theme_classic()+
+    ggsave("img/arno/29_1Hydrometry_Nave_di_Rosano_pred.jpg",
+           dpi = 500, width = 10, height=7)
+)
+
+
+## plotting pred vs actual 
+
+reg <- lm(Hydrometry_Nave_di_Rosano ~ predicted, data =  Hydrometry_Nave_di_Rosano.test)
+reg
+#Coefficients:
+#(Intercept)  idrmetria coeff 
+# 0.4973      0.9058 
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+eq
+# plot
+(gbm_actualvspred <- ggplot(Hydrometry_Nave_di_Rosano.test) +
+    geom_point(aes(x = predicted,
+                   y = Hydrometry_Nave_di_Rosano,
+                   color = predicted - Hydrometry_Nave_di_Rosano),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 0.4973,slope =  0.9058 , 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 2.5, y = 1.5, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Hydrometry Nave di Rosano Arno\n",
+         subtitle = "m")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+ggsave("img/arno/29_2Hydrometry_Nave_di_Rosano_pred_act.jpg",
+       dpi = 500, width = 10, height=7)
+
+
+
+
+
+
+
 
 
 
@@ -2119,8 +2230,71 @@ Hydrometry_Nave_di_Rosano_effects %>%
              fill = rel.inf))+
   geom_col()+
   coord_flip()+
-  scale_color_brewer(palette = "Dark2")
+  scale_color_brewer(palette = "Dark2")+
+  theme_classic()
 ggsave("img/arno/31Variabili_GB2.jpg", dpi = 500, width = 10, height=7)
+
+
+# predicted 
+
+LC0.test$predicted <- as.integer(predict(LC0.fit,
+                                                               newdata = LC0.test,
+                                                               n.trees = LC0.perf))
+
+# plot predicted vs actual
+
+(ggplot(LC0.test) +
+    geom_point(aes(x = predicted,
+                   y = Hydrometry_Nave_di_Rosano,
+                   color = predicted - Hydrometry_Nave_di_Rosano),
+               alpha = .7, size = 1) +
+    theme_classic()+
+    ggsave("img/arno/32_1Hydrometry_Nave_di_Rosano_pred.jpg",
+           dpi = 500, width = 10, height=7)
+)
+
+
+## plotting pred vs actual 
+
+reg <- lm(Hydrometry_Nave_di_Rosano ~ predicted, data =  LC0.test)
+reg
+#Coefficients:
+#(Intercept)  idrmetria coeff 
+# 0.3918      0.9857
+
+r.sq <- format(summary(reg)$r.squared,digits = 2)
+
+coeff <- coefficients(reg)
+
+eq <- paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1),
+             "\nr.squared = ",r.sq)
+eq
+# plot
+(gbm_actualvspred <- ggplot(LC0.test) +
+    geom_point(aes(x = predicted,
+                   y = Hydrometry_Nave_di_Rosano,
+                   color = predicted - Hydrometry_Nave_di_Rosano),
+               alpha = .7, size = 2) +
+    geom_abline(intercept = 0.4973,slope =  0.9058 , 
+                color = "darkred", linetype ="dashed")+
+    geom_text(x = 2.4, y = 1.5, label = eq, color = "darkred")+
+    labs(title = "Predicted vs Actual values (GBM): Hydrometry Nave di Rosano Arno\n",
+         subtitle = "Le Croci rainfall lag0 (m)")+
+    ylab("Actual\n")+
+    xlab("\nPredicted")+
+    scale_color_continuous(name = "Difference\npredicted - actual")+
+    theme_classic())
+ggsave("img/arno/33_2Hydrometry_Nave_di_Rosano_pred_act.jpg",
+       dpi = 500, width = 10, height=7)
+
+
+
+
+
+
+
+
+
 
 
 
