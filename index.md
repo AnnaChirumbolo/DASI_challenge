@@ -63,8 +63,7 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 
 | Target | GBM | | 
 | :---: | :---: | :---: |
-| *Madonna di Canneto* |
-| | *RMSE* | *R.sq* | 
+| *Madonna di Canneto* | *RMSE* | *R.sq* | 
 | Flow Rate (L/s) | 26.05 | 0.34 | 
 
 <br>
