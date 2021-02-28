@@ -70,10 +70,10 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 
 ### River Arno 
 
-| Target | RF | GBM |  | 
+| Target | RF | | GBM |  | 
 | :---: | :---: | :---: | :---: |
-| | *RMSE* | *RMSE* | *R.sq* | 
-| Hydrometry (L/s) | 0.37 | 0.34 | ??? | 
+| | *RMSE* | *R.sq* |*RMSE* | *R.sq* | 
+| Hydrometry (L/s) | 0.37 | 0.33 | 0.34 | 0.45 | 
 
 <br>
 
