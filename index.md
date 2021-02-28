@@ -36,7 +36,7 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 
 | Target | GBM  | | RF |
 | :--: | :---: | :---: | :----: |
-| *Doganella: wells* | *RMSE* | *R.sq*| *R.sq* |
+| *Doganella: wells* | *RMSE* | *R.sq*| *RMSE* |
 | :-------------: | 
 | 1 | 2.94 | 0.83 |
 | 2 | 1.04 | 0.87 |
@@ -55,7 +55,7 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 | :------------: |
 | CoS | 0.22 | 0.93 | 0.22 |
 | LT2 | 0.09 | 0.77 | 0.07 | 
-| SAL | 0.11 | ???? | 0.10 |
+| SAL | 0.11 | 0.69 | 0.10 |
 
 <br>
 
