@@ -28,9 +28,9 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 
 ### Aquifers 
 
-| Target | GBM: RMSE | GBM: R.sq |
-| :--: | :---: | :---: |
-| Doganella: wells | 
+| Target | GBM: RMSE | GBM: R.sq | RF: RMSE |
+| :--: | :---: | :---: | :----: |
+| *Doganella: wells* | 
 | :-------------: | 
 | 1 | 2.94 | 0.83 |
 | 2 | 1.04 | 0.87 |
@@ -41,21 +41,15 @@ We are very satisfied with the achieved results in the few days of dedicated wor
 | 7 | 0.71 | 0.48 |
 | 8 | 0.77 | 0.82 |
 | 9 | 2.68 | 0.76 |
-
-#### Luco 
-
-| Well | GBM: RMSE | GBM: R.sq | 
-| :---: | :---: | :---: |
+| *Luco: wells* |
+| :-----------: |
 | 1 | 0.14 | ? | 
 | 3 | 0.25 | ? |
-
-#### Auser 
-
-| Well | RF: RMSE | GBM: RMSE | GBM: R.sq | 
-| :---: | :---: | :---: | :---: | 
-| CoS | 0.22 | 0.22 | 0.93 | 
-| LT2 | 0.07 | 0.09 | 0.77 |
-| SAL | 0.10 | 0.11 | ???? |
+| *Auser: wells* |
+| :------------: |
+| CoS | 0.22 | 0.93 | 0.22 |
+| LT2 | 0.09 | 0.77 | 0.07 | 
+| SAL | 0.11 | ???? | 0.10 |
 
 ### Water Springs 
 
