@@ -19,7 +19,8 @@ This interest pushed me further in deepening my current knowledge on data scienc
 I am now about start a new journey as a data scientist at **Sopra Steria**.
 
 
-
+<br>
+<br>
 <br>
 <br>
 <br>
