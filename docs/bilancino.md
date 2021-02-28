@@ -1,7 +1,9 @@
 <br>
 
-# Lake Bilancino
+# Bilancino
 {: #top}
+
+### Lake
 
 * [Data Cleaning and Feature Engineering](#datacleaning)
   * [Target variables](#target)
